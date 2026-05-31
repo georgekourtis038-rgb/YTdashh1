@@ -1567,6 +1567,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   .sub-auto-toggle { width: 100%; justify-content: space-between; padding: 12px 14px; }
 }
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="shell">
@@ -3372,6 +3373,172 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   }
   safeRenderTicker();
   setInterval(safeRenderTicker, 1500);
+
+  // ============================================================
+  // CLOUD SYNC via Supabase
+  // ============================================================
+  const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
+  const APP_KEY = 'finances';
+  const PC_SYNCED_KEYS = ['nw_currency', 'nw:bank', 'nw:stocks', 'nw:crypto', 'nw:other', 'nw:history', 'subs', 'wishlist', 'incoming_orders'];
+
+  let pcSupa = null;
+  let pcPushTimer = null;
+  let pcSuppressSync = false;
+  let pcPendingRemote = null;
+  let pcLastSyncedJson = null;
+
+  const _pcOrigSet = localStorage.setItem.bind(localStorage);
+  const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
+  localStorage.setItem = function(k, v) {
+    _pcOrigSet(k, v);
+    try { if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush(); } catch (e) {}
+  };
+  localStorage.removeItem = function(k) {
+    _pcOrigRemove(k);
+    try { if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush(); } catch (e) {}
+  };
+
+  function pcCollectState() {
+    const out = {};
+    for (const k of PC_SYNCED_KEYS) {
+      const v = localStorage.getItem(k);
+      if (v == null) continue;
+      try { out[k] = JSON.parse(v); } catch {}
+    }
+    return out;
+  }
+
+  function pcIsUserEditing() {
+    const ae = document.activeElement;
+    if (!ae) return false;
+    const tag = ae.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (ae.getAttribute && ae.getAttribute('contenteditable') === 'true') return true;
+    return false;
+  }
+
+  function pcRerender() {
+    try { renderAllNetWorth(); } catch {}
+    try { renderSubs(); } catch {}
+    try { safeRenderTicker(); } catch {}
+  }
+
+  function pcApplyRemoteState(remote) {
+    if (!remote || typeof remote !== 'object') return false;
+    pcSuppressSync = true;
+    let changed = false;
+    try {
+      for (const k of PC_SYNCED_KEYS) {
+        if (k in remote) {
+          const incoming = JSON.stringify(remote[k]);
+          const local = localStorage.getItem(k);
+          if (local !== incoming) { try { _pcOrigSet(k, incoming); changed = true; } catch {} }
+        } else if (localStorage.getItem(k) != null) {
+          try { _pcOrigRemove(k); changed = true; } catch {}
+        }
+      }
+    } finally {
+      pcSuppressSync = false;
+    }
+    if (changed) { try { pcRerender(); } catch (e) {} }
+    return changed;
+  }
+
+  function pcMaybeApplyRemote(remote) {
+    if (pcIsUserEditing()) { pcPendingRemote = remote; return; }
+    pcApplyRemoteState(remote);
+  }
+
+  function pcApplyPendingIfReady() {
+    if (pcPendingRemote && !pcIsUserEditing()) {
+      const r = pcPendingRemote;
+      pcPendingRemote = null;
+      pcApplyRemoteState(r);
+    }
+  }
+
+  async function pcPushNow() {
+    if (!pcSupa) return;
+    const syncState = pcCollectState();
+    const json = JSON.stringify(syncState);
+    if (json === pcLastSyncedJson) return;
+    try {
+      const { error } = await pcSupa
+        .from('app_state')
+        .upsert(
+          { key: APP_KEY, data: syncState, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+      if (!error) pcLastSyncedJson = json;
+    } catch (_) {}
+  }
+
+  function pcSchedulePush() {
+    if (pcSuppressSync) return;
+    clearTimeout(pcPushTimer);
+    pcPushTimer = setTimeout(pcPushNow, 250);
+  }
+
+  function pcFlushPushOnUnload() {
+    if (!pcSupa) return;
+    const syncState = pcCollectState();
+    const json = JSON.stringify(syncState);
+    if (json === pcLastSyncedJson) return;
+    try {
+      fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ key: APP_KEY, data: syncState, updated_at: new Date().toISOString() }),
+        keepalive: true,
+      }).catch(() => {});
+      pcLastSyncedJson = json;
+    } catch (_) {}
+  }
+
+  (async function pcInitCloudSync() {
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_KEY) return;
+    if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
+    pcSupa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+      const { data, error } = await pcSupa
+        .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+      if (!error && data && data.data && Object.keys(data.data).length > 0) {
+        pcLastSyncedJson = JSON.stringify(data.data);
+        pcMaybeApplyRemote(data.data);
+      } else if (Object.keys(pcCollectState()).length > 0) {
+        pcSchedulePush();
+      }
+    } catch (_) {}
+    pcSupa.channel('app_state_' + APP_KEY)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'app_state',
+        filter: 'key=eq.' + APP_KEY,
+      }, (payload) => {
+        if (!payload.new || !payload.new.data) return;
+        const incoming = JSON.stringify(payload.new.data);
+        if (incoming === pcLastSyncedJson) return;
+        pcLastSyncedJson = incoming;
+        pcMaybeApplyRemote(payload.new.data);
+      })
+      .subscribe();
+  })();
+
+  document.addEventListener('focusout', () => {
+    setTimeout(pcApplyPendingIfReady, 0);
+  }, true);
+  window.addEventListener('pagehide', pcFlushPushOnUnload);
+  window.addEventListener('beforeunload', pcFlushPushOnUnload);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) pcFlushPushOnUnload();
+  });
 
 })();
 </script>
