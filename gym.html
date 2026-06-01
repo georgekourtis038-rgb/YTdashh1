@@ -1460,6 +1460,16 @@ img, video, canvas, svg { max-width: 100%; }
 }
 .wl-set-confirm:hover { background: rgba(110,231,183,0.28); }
 
+/* ── Past workouts body — bottom padding so last item isn't hidden by tab bar ── */
+#poTwPastBody {
+  padding-bottom: calc(160px + env(safe-area-inset-bottom));
+}
+
+/* ── Workout logger card — min-height so past workouts section is fully visible ── */
+.wl-card {
+  min-height: 40vh;
+}
+
 /* ── Past workout Edit button ── */
 .po-tw-past-edit {
   flex-shrink: 0; margin-left: auto;
@@ -2319,6 +2329,16 @@ img, video, canvas, svg { max-width: 100%; }
     doneDays[today] ? delete doneDays[today] : (doneDays[today] = new Date().toISOString());
     saveDoneDays(doneDays);
     wlRenderDone(); renderPastWorkouts();
+    const pastBody = $('poTwPastBody');
+    const pastToggle = $('poTwPastToggle');
+    if (pastBody && pastBody.style.display === 'none') {
+      pastBody.style.display = 'flex';
+      pastBody.style.flexDirection = 'column';
+      if (pastToggle) pastToggle.setAttribute('aria-expanded', 'true');
+    }
+    setTimeout(() => {
+      if (pastToggle) pastToggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
   });
 
   // ============================================================
@@ -2988,6 +3008,26 @@ img, video, canvas, svg { max-width: 100%; }
   // If you leave the placeholders unchanged the app still works,
   // just only on this device (data stays in your browser).
   // ============================================================
+  // Visible debug overlay — shows sync events on mobile
+  function dbgLog(msg) {
+    try {
+      let el = document.getElementById('_dbgLog');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = '_dbgLog';
+        el.style.cssText = 'position:fixed;bottom:130px;right:8px;z-index:9999;background:rgba(0,0,0,0.82);color:#6ee7b7;font-size:10px;font-family:monospace;padding:4px 8px;border-radius:6px;max-width:190px;pointer-events:none;white-space:pre-wrap;word-break:break-all;';
+        document.body.appendChild(el);
+      }
+      const now = new Date().toTimeString().slice(0, 8);
+      const lines = (el.textContent || '').split('\n').filter(Boolean).slice(-5);
+      lines.push(now + ' ' + msg);
+      el.textContent = lines.join('\n');
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { if (el) el.textContent = ''; }, 10000);
+    } catch (e) {}
+  }
+  window.dbg = dbgLog;
+
   const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'po-coach';
@@ -3093,6 +3133,7 @@ img, video, canvas, svg { max-width: 100%; }
     const state = pcCollectState();
     const json = JSON.stringify(state);
     if (json === pcLastSyncedJson) return;
+    dbgLog('push↑ ' + APP_KEY);
     try {
       const { error } = await pcSupa
         .from('app_state')
@@ -3100,14 +3141,15 @@ img, video, canvas, svg { max-width: 100%; }
           { key: APP_KEY, data: state, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
-      if (!error) pcLastSyncedJson = json;
-    } catch (_) {}
+      if (!error) { pcLastSyncedJson = json; dbgLog('push✓'); }
+      else dbgLog('push ERR');
+    } catch (_) { dbgLog('push fail'); }
   }
 
   function pcSchedulePush() {
     if (pcSuppressSync) return;
     clearTimeout(pcPushTimer);
-    pcPushTimer = setTimeout(pcPushNow, 250);
+    pcPushTimer = setTimeout(pcPushNow, 0);
   }
 
   // Backup push on unload via fetch keepalive so a fast refresh
@@ -3187,7 +3229,23 @@ img, video, canvas, svg { max-width: 100%; }
   window.addEventListener('pagehide', pcFlushPushOnUnload);
   window.addEventListener('beforeunload', pcFlushPushOnUnload);
   document.addEventListener('visibilitychange', () => {
-    if (document.hidden) pcFlushPushOnUnload();
+    if (!document.hidden) {
+      if (pcSupa) {
+        pcSupa.from('app_state').select('data').eq('key', APP_KEY).maybeSingle()
+          .then(({ data, error }) => {
+            if (!error && data && data.data) {
+              const incoming = JSON.stringify(data.data);
+              if (incoming !== pcLastSyncedJson) {
+                pcLastSyncedJson = incoming;
+                pcMaybeApplyRemote(data.data);
+                dbgLog('pull✓ vis');
+              }
+            }
+          }).catch(() => {});
+      }
+    } else {
+      pcFlushPushOnUnload();
+    }
   });
 })();
 </script>
