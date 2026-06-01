@@ -127,7 +127,7 @@ html, body {
 .po-shell {
   width: 100%; max-width: min(720px, 100vw);
   margin: 0 auto;
-  padding: 24px 16px calc(40px + env(safe-area-inset-bottom));
+  padding: 24px 16px calc(120px + env(safe-area-inset-bottom));
   box-sizing: border-box;
 }
 /* Defeat the default `min-width: auto` on flex/grid items — without
@@ -680,7 +680,7 @@ img, video, canvas, svg { max-width: 100%; }
 
 @media (max-width: 480px) {
   /* === Mobile / iPhone polish === */
-  .po-shell { padding: 14px 10px calc(32px + env(safe-area-inset-bottom)); }
+  .po-shell { padding: 14px 10px calc(120px + env(safe-area-inset-bottom)); }
 
   /* Header — smaller title so the gear button never gets clipped */
   .po-title { font-size: 18px; letter-spacing: -0.01em; }
@@ -1431,6 +1431,79 @@ img, video, canvas, svg { max-width: 100%; }
 .wl-done-btn:hover { background: rgba(110,231,183,0.22); }
 .wl-done-btn:active { transform: scale(0.98); }
 .wl-done-btn.is-done { background: rgba(110,231,183,0.28); border-color: rgba(110,231,183,0.45); }
+
+/* ── Set row inline edit ── */
+.wl-set-row--editing { background: rgba(255,255,255,0.07); gap: 6px; flex-wrap: wrap; }
+.wl-set-edit {
+  background: transparent; border: none; color: var(--text-4);
+  font-size: 14px; cursor: pointer; padding: 0 5px; line-height: 1;
+  -webkit-tap-highlight-color: transparent; transition: color 0.15s;
+}
+.wl-set-edit:hover { color: var(--text-2); }
+.wl-edit-input {
+  width: 58px; padding: 4px 6px;
+  border: 1px solid var(--border-strong);
+  background: rgba(0,0,0,0.4); color: var(--text-1);
+  border-radius: 6px; font-family: inherit;
+  font-size: 14px; font-weight: 600; text-align: center;
+  outline: none; -moz-appearance: textfield;
+}
+.wl-edit-input::-webkit-outer-spin-button,
+.wl-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.wl-edit-input:focus { border-color: rgba(255,255,255,0.4); }
+.wl-edit-unit { font-size: 11px; color: var(--text-3); }
+.wl-set-confirm {
+  background: rgba(110,231,183,0.16); color: var(--good);
+  border: 1px solid rgba(110,231,183,0.3); border-radius: 6px;
+  font-size: 16px; cursor: pointer; padding: 3px 10px; line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+.wl-set-confirm:hover { background: rgba(110,231,183,0.28); }
+
+/* ── Past workout Edit button ── */
+.po-tw-past-edit {
+  flex-shrink: 0; margin-left: auto;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--text-3); border-radius: 6px;
+  font-family: inherit; font-size: 11px; font-weight: 600;
+  padding: 3px 10px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+}
+.po-tw-past-edit:hover { background: rgba(255,255,255,0.06); color: var(--text-1); }
+
+/* ── Past workout edit modal body ── */
+.pe-ex-block {
+  margin-bottom: 14px; padding: 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid var(--border); border-radius: 12px;
+}
+.pe-ex-name {
+  display: block; width: 100%; background: rgba(0,0,0,0.28);
+  border: 1px solid var(--border); color: var(--text-1);
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  padding: 7px 10px; border-radius: 8px; outline: none; margin-bottom: 10px;
+}
+.pe-ex-name:focus { border-color: rgba(255,255,255,0.4); }
+.pe-set-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 0; border-bottom: 1px solid var(--border);
+}
+.pe-set-row:last-of-type { border-bottom: none; }
+.pe-set-num { font-size: 11px; color: var(--text-3); min-width: 38px; font-variant-numeric: tabular-nums; }
+.pe-set-del {
+  background: transparent; border: none; color: var(--text-4);
+  font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
+  margin-left: auto; -webkit-tap-highlight-color: transparent;
+}
+.pe-set-del:hover { color: var(--bad); }
+.pe-add-set {
+  display: block; width: 100%; margin-top: 10px;
+  padding: 7px; background: rgba(255,255,255,0.025);
+  border: 1px dashed var(--border); color: var(--text-2);
+  border-radius: 8px; font-family: inherit; font-size: 12px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; text-align: center;
+}
+.pe-add-set:hover { background: rgba(255,255,255,0.05); }
 </style>
 <link rel="stylesheet" href="/animations.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1669,6 +1742,16 @@ img, video, canvas, svg { max-width: 100%; }
   </div>
 </div>
 
+<!-- Past workout edit modal -->
+<div class="po-modal-bg" id="pastEditBg">
+  <div class="po-modal">
+    <h3 id="pastEditTitle">Edit Workout</h3>
+    <div id="pastEditBody" style="max-height:55vh;overflow-y:auto;margin-bottom:14px;"></div>
+    <div class="po-modal-actions">
+      <button class="po-btn-secondary" id="pastEditClose" style="width:100%;padding:13px">Done</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function() {
@@ -1844,13 +1927,124 @@ img, video, canvas, svg { max-width: 100%; }
         +     sum.totalSets + ' sets · ' + Math.round(sum.totalVol).toLocaleString() + ' ' + u
         +     (isDone ? ' <span class="po-tw-past-day-done">DONE</span>' : '')
         +   '</span>'
+        +   '<button class="po-tw-past-edit" data-dk="' + dk + '">Edit</button>'
         + '</div>'
         + '<div class="po-tw-past-day-summary" style="margin-top:6px;font-size:11px;color:var(--text-3);">'
         +   escape(exNames)
         + '</div>'
         + '</div>';
     }).join('');
+    body.querySelectorAll('.po-tw-past-edit').forEach(btn => {
+      btn.addEventListener('click', () => openPastEdit(btn.dataset.dk));
+    });
   }
+
+  // ── Past Workout Editor ──────────────────────────────────────
+  let pastEditDayKey = null;
+
+  function openPastEdit(dk) {
+    pastEditDayKey = dk;
+    $('pastEditTitle').textContent = 'Edit — ' + fmtPastDate(dk);
+    renderPastEditBody();
+    $('pastEditBg').classList.add('show');
+  }
+
+  function renderPastEditBody() {
+    const body = $('pastEditBody');
+    if (!pastEditDayKey || !body) return;
+    const u = state.units;
+    const groups = {};
+    const order = [];
+    state.exercises.forEach(ex => {
+      (state.logs[ex.id] || []).forEach((log, logIdx) => {
+        if (log.date.slice(0, 10) === pastEditDayKey) {
+          if (!groups[ex.id]) { groups[ex.id] = { ex, sets: [] }; order.push(ex.id); }
+          groups[ex.id].sets.push({ log, logIdx });
+        }
+      });
+    });
+    if (!order.length) {
+      body.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px;">No sets logged for this day.</div>';
+      return;
+    }
+    let html = '';
+    order.forEach(exId => {
+      const { ex, sets } = groups[exId];
+      html += '<div class="pe-ex-block">'
+        + '<input class="pe-ex-name" type="text" value="' + escape(ex.name) + '" data-exid="' + escape(exId) + '" placeholder="Exercise name">';
+      sets.forEach(({ log, logIdx }, i) => {
+        html += '<div class="pe-set-row" data-exid="' + escape(exId) + '" data-idx="' + logIdx + '">'
+          + '<span class="pe-set-num">Set ' + (i + 1) + '</span>';
+        if (!ex.bw) {
+          html += '<input type="number" class="wl-edit-input pe-set-w" value="' + (log.weight || 0) + '" min="0" step="0.5" inputmode="decimal">'
+            + '<span class="wl-edit-unit">' + escape(u) + '</span>';
+        }
+        html += '<input type="number" class="wl-edit-input pe-set-r" value="' + (log.reps || 0) + '" min="1" step="1" inputmode="numeric">'
+          + '<span class="wl-edit-unit">reps</span>'
+          + '<button class="pe-set-del" data-exid="' + escape(exId) + '" data-idx="' + logIdx + '">×</button>'
+          + '</div>';
+      });
+      html += '<button class="pe-add-set" data-exid="' + escape(exId) + '" data-bw="' + (ex.bw ? '1' : '0') + '">+ Add Set</button>'
+        + '</div>';
+    });
+    body.innerHTML = html;
+
+    body.querySelectorAll('.pe-set-w, .pe-set-r').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const row = inp.closest('.pe-set-row');
+        const exId = row.dataset.exid;
+        const idx = parseInt(row.dataset.idx, 10);
+        const arr = state.logs[exId] || [];
+        if (!arr[idx]) return;
+        if (inp.classList.contains('pe-set-w')) arr[idx].weight = parseFloat(inp.value) || 0;
+        else arr[idx].reps = parseInt(inp.value, 10) || 0;
+        state.logs[exId] = arr;
+        saveState(); renderPastWorkouts();
+      });
+    });
+
+    body.querySelectorAll('.pe-ex-name').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const exId = inp.dataset.exid;
+        const ex = state.exercises.find(e => e.id === exId);
+        if (ex && inp.value.trim()) { ex.name = inp.value.trim(); saveState(); renderPastWorkouts(); }
+      });
+    });
+
+    body.querySelectorAll('.pe-set-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const exId = btn.dataset.exid;
+        const idx = parseInt(btn.dataset.idx, 10);
+        const arr = state.logs[exId] || [];
+        arr.splice(idx, 1);
+        if (!arr.length) delete state.logs[exId];
+        else state.logs[exId] = arr;
+        saveState();
+        renderPastEditBody(); renderPastWorkouts(); wlRenderSets();
+      });
+    });
+
+    body.querySelectorAll('.pe-add-set').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const exId = btn.dataset.exid;
+        const isBW = btn.dataset.bw === '1';
+        const arr = state.logs[exId] || [];
+        const dayLogs = arr.filter(l => l.date.slice(0, 10) === pastEditDayKey);
+        const lastLog = dayLogs[dayLogs.length - 1];
+        const [yy, mm, dd] = pastEditDayKey.split('-').map(Number);
+        const setDate = new Date(yy, mm - 1, dd, 12, 0, 0).toISOString();
+        arr.push({ weight: isBW ? 0 : (lastLog ? lastLog.weight : 0), reps: lastLog ? lastLog.reps : 8, date: setDate });
+        state.logs[exId] = arr;
+        saveState();
+        renderPastEditBody(); renderPastWorkouts();
+      });
+    });
+  }
+
+  $('pastEditClose').addEventListener('click', () => {
+    $('pastEditBg').classList.remove('show');
+    pastEditDayKey = null;
+  });
 
   $('poTwPastToggle').addEventListener('click', () => {
     const body = $('poTwPastBody');
@@ -1910,8 +2104,9 @@ img, video, canvas, svg { max-width: 100%; }
         const text = item.ex.bw
           ? 'Set ' + (i + 1) + ' · ' + l.reps + ' reps'
           : 'Set ' + (i + 1) + ' · ' + l.weight + ' ' + u + ' · ' + l.reps + ' reps';
-        html += '<div class="wl-set-row" data-exid="' + escape(exId) + '" data-idx="' + item.logIdx + '">'
+        html += '<div class="wl-set-row" data-exid="' + escape(exId) + '" data-idx="' + item.logIdx + '" data-bw="' + (item.ex.bw ? '1' : '0') + '">'
           + '<span class="wl-set-text">' + text + '</span>'
+          + '<button class="wl-set-edit" aria-label="Edit set" title="Edit">✏</button>'
           + '<button class="wl-set-del" aria-label="Delete set">×</button>'
           + '</div>';
       });
@@ -1930,6 +2125,45 @@ img, video, canvas, svg { max-width: 100%; }
         saveState();
         wlRenderSets(); wlRenderDone(); renderPastWorkouts();
         if (typeof wtRender === 'function') wtRender();
+      });
+    });
+    list.querySelectorAll('.wl-set-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.wl-set-row');
+        const exId = row.dataset.exid;
+        const idx = parseInt(row.dataset.idx, 10);
+        const isBW = row.dataset.bw === '1';
+        const arr = state.logs[exId] || [];
+        const log = arr[idx];
+        if (!log) return;
+        const setLabel = row.querySelector('.wl-set-text').textContent.split('·')[0].trim();
+        let editHtml = '<span class="wl-set-text">' + escape(setLabel) + '</span>';
+        if (!isBW) {
+          editHtml += '<input type="number" class="wl-edit-input wl-edit-w" value="' + (log.weight || 0) + '" min="0" step="0.5" inputmode="decimal">'
+            + '<span class="wl-edit-unit">' + escape(u) + '</span>';
+        }
+        editHtml += '<input type="number" class="wl-edit-input wl-edit-r" value="' + (log.reps || 0) + '" min="1" step="1" inputmode="numeric">'
+          + '<span class="wl-edit-unit">reps</span>'
+          + '<button class="wl-set-confirm" aria-label="Save">✓</button>';
+        row.classList.add('wl-set-row--editing');
+        row.innerHTML = editHtml;
+        const firstInput = row.querySelector('.wl-edit-input');
+        if (firstInput) { firstInput.focus(); firstInput.select(); }
+        const confirmBtn = row.querySelector('.wl-set-confirm');
+        const doConfirm = () => {
+          if (!isBW) arr[idx].weight = parseFloat(row.querySelector('.wl-edit-w').value) || 0;
+          arr[idx].reps = parseInt(row.querySelector('.wl-edit-r').value, 10) || 0;
+          state.logs[exId] = arr;
+          saveState();
+          wlRenderSets(); wlRenderDone(); renderPastWorkouts();
+        };
+        if (confirmBtn) confirmBtn.addEventListener('click', doConfirm);
+        row.querySelectorAll('.wl-edit-input').forEach(inp => {
+          inp.addEventListener('keydown', e => {
+            if (e.key === 'Enter') doConfirm();
+            if (e.key === 'Escape') wlRenderSets();
+          });
+        });
       });
     });
   }
@@ -2809,6 +3043,7 @@ img, video, canvas, svg { max-width: 100%; }
     // key — otherwise renderAll/wtRender/photosRender would read stale
     // in-memory copies from before the remote pull.
     try { state = loadState(); } catch {}
+    try { doneDays = loadDoneDays(); } catch {}
     try { wtEntries = wtLoad(); } catch {}
     try {
       const raw = localStorage.getItem(PHOTO_KEY);
@@ -2929,6 +3164,21 @@ img, video, canvas, svg { max-width: 100%; }
         pcMaybeApplyRemote(payload.new.data);
       })
       .subscribe();
+    // Polling fallback — catches changes if realtime is not enabled on the table
+    setInterval(async () => {
+      if (!pcSupa) return;
+      try {
+        const { data, error } = await pcSupa
+          .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+        if (!error && data && data.data) {
+          const incoming = JSON.stringify(data.data);
+          if (incoming !== pcLastSyncedJson) {
+            pcLastSyncedJson = incoming;
+            pcMaybeApplyRemote(data.data);
+          }
+        }
+      } catch (_) {}
+    }, 30000);
   })();
 
   document.addEventListener('focusout', () => {

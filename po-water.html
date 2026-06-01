@@ -277,6 +277,31 @@ html, body {
   font-family: var(--font-mono); font-size: 12px;
   color: var(--text-2); font-variant-numeric: tabular-nums;
 }
+.hist-edit-btn {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--text-2); font-family: var(--font-mono);
+  font-size: 12px; padding: 2px 6px; border-radius: 4px;
+  font-variant-numeric: tabular-nums;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s;
+}
+.hist-edit-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+.hist-edit-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.hist-edit-input {
+  width: 40px; padding: 2px 4px;
+  background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.14);
+  color: var(--text-1); border-radius: 4px;
+  font-family: var(--font-mono); font-size: 12px; text-align: center;
+  outline: none; -moz-appearance: textfield; font-variant-numeric: tabular-nums;
+}
+.hist-edit-input::-webkit-outer-spin-button,
+.hist-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.hist-edit-input:focus { border-color: rgba(110,231,183,0.4); }
+.hist-edit-save {
+  background: rgba(110,231,183,0.16); color: var(--good);
+  border: 1px solid rgba(110,231,183,0.3); border-radius: 4px;
+  font-size: 13px; cursor: pointer; padding: 1px 6px; line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
 
 /* ----- Mini chart for last 14 days ----- */
 .spark-wrap { padding: 6px 0; }
@@ -843,6 +868,8 @@ html, body {
     wrap.innerHTML = html;
   }
 
+  let editingHistKey = null;
+
   function renderHistory() {
     const list = $('histList');
     const target = Math.ceil(computeTargetMl().total / unitVolMl());
@@ -855,17 +882,60 @@ html, body {
       const n = state.logs[k] || 0;
       days.push({ date: d, key: k, count: n });
     }
-    list.innerHTML = days.map(({date, count}) => {
+    list.innerHTML = days.map(({ date, key: k, count }) => {
       const dows = ['Sun','Mon','Tue','Wed','THU','Fri','Sat'];
       const lbl = dows[date.getDay()] + ' ' + (date.getMonth()+1) + '/' + date.getDate();
       const pct = Math.min(100, (count / target) * 100);
       const cls = (count >= target) ? '' : 'miss';
+      const isEditing = k === editingHistKey;
+      const countHtml = isEditing
+        ? '<span class="hist-edit-wrap">'
+          + '<input type="number" class="hist-edit-input" id="hei_' + k + '" value="' + count + '" min="0" step="1" inputmode="numeric">'
+          + '<button class="hist-edit-save" data-key="' + k + '">✓</button>'
+          + '</span>'
+        : '<button class="hist-edit-btn" data-key="' + k + '" title="Tap to edit">' + count + '/' + target + '</button>';
       return '<div class="hist-row">'
         + '<span class="hist-date">' + lbl + '</span>'
         + '<div class="hist-bar-wrap"><div class="hist-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
-        + '<span class="hist-count">' + count + '/' + target + '</span>'
+        + countHtml
         + '</div>';
     }).join('') || '<div style="text-align:center;font-size:12px;color:var(--text-3);padding:12px 0">No logs yet.</div>';
+
+    list.querySelectorAll('.hist-edit-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        editingHistKey = btn.dataset.key;
+        renderHistory();
+        const inp = document.getElementById('hei_' + editingHistKey);
+        if (inp) { inp.focus(); inp.select(); }
+      });
+    });
+
+    list.querySelectorAll('.hist-edit-save').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const k = btn.dataset.key;
+        const inp = document.getElementById('hei_' + k);
+        if (!inp) return;
+        const val = Math.max(0, parseInt(inp.value, 10) || 0);
+        if (val <= 0) delete state.logs[k];
+        else state.logs[k] = val;
+        editingHistKey = null;
+        saveState();
+        renderWater();
+      });
+    });
+
+    if (editingHistKey) {
+      const inp = document.getElementById('hei_' + editingHistKey);
+      if (inp) {
+        inp.addEventListener('keydown', e => {
+          if (e.key === 'Enter') {
+            const saveBtn = list.querySelector('.hist-edit-save[data-key="' + editingHistKey + '"]');
+            if (saveBtn) saveBtn.click();
+          }
+          if (e.key === 'Escape') { editingHistKey = null; renderHistory(); }
+        });
+      }
+    }
   }
 
   function renderSparkline(target) {
@@ -1250,6 +1320,21 @@ html, body {
         pcMaybeApplyRemote(payload.new.data);
       })
       .subscribe();
+    // Polling fallback — catches changes if realtime is not enabled on the table
+    setInterval(async () => {
+      if (!pcSupa) return;
+      try {
+        const { data, error } = await pcSupa
+          .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+        if (!error && data && data.data) {
+          const incoming = JSON.stringify(data.data);
+          if (incoming !== pcLastSyncedJson) {
+            pcLastSyncedJson = incoming;
+            pcMaybeApplyRemote(data.data);
+          }
+        }
+      } catch (_) {}
+    }, 30000);
   })();
 
   document.addEventListener('focusout', () => {

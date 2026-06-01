@@ -1201,6 +1201,21 @@ main {
         pcMaybeApplyRemote(payload.new.data);
       })
       .subscribe();
+    // Polling fallback — catches changes if realtime is not enabled on the table
+    setInterval(async () => {
+      if (!pcSupa) return;
+      try {
+        const { data, error } = await pcSupa
+          .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+        if (!error && data && data.data) {
+          const incoming = JSON.stringify(data.data);
+          if (incoming !== pcLastSyncedJson) {
+            pcLastSyncedJson = incoming;
+            pcMaybeApplyRemote(data.data);
+          }
+        }
+      } catch (_) {}
+    }, 30000);
   })();
 
   document.addEventListener('focusout', () => {
