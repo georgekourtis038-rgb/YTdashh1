@@ -277,6 +277,12 @@ html, body {
   border-color: rgba(107,227,164,0.20);
   background: rgba(107,227,164,0.06);
 }
+.action-btn.sync {
+  color: #000;
+  border-color: #6BE3A4;
+  background: #6BE3A4;
+  font-weight: 700;
+}
 </style>
 </head>
 <body>
@@ -399,6 +405,11 @@ html, body {
     <div class="setting-section-label">App Settings</div>
     <button class="action-btn export" id="btnExport">Export all data as JSON</button>
     <button class="action-btn danger" id="btnReset">Reset today's data</button>
+  </div>
+
+  <!-- MANUAL SYNC -->
+  <div class="setting-section">
+    <button class="action-btn sync" id="btnSyncNow">↑ Sync to cloud now</button>
   </div>
 </aside>
 
@@ -621,13 +632,45 @@ html, body {
     } catch (_) {}
   };
 
-  // Push on every input change so data isn't held until drawer closes.
+  // Push on every input change. Use both 'change' and 'input' because iOS
+  // time pickers only fire 'input' while the wheel spins and 'change' only
+  // after the picker is dismissed — if the user never taps outside, the
+  // change event never fires. All other inputs get 'change' only (avoids
+  // a push on every keystroke for text/number fields).
+  var ST_KEY_MAP = {
+    settingName: 'dash_name', settingAge: 'dash_age', settingHeight: 'dash_height',
+    settingWake: 'dash_wake_time', settingSleep: 'dash_sleep_time'
+  };
   ['settingName', 'settingAge', 'settingHeight', 'settingWake', 'settingSleep'].forEach(function(id) {
     var el = document.getElementById(id);
-    if (el) el.addEventListener('change', saveAll);
+    if (!el) return;
+    function onChanged() {
+      window.dbg('input changed: ' + (ST_KEY_MAP[id] || id));
+      saveAll();
+      stSchedulePush();
+    }
+    el.addEventListener('change', onChanged);
+    if (id === 'settingWake' || id === 'settingSleep') {
+      el.addEventListener('input', onChanged);
+    }
   });
-  document.getElementById('sexToggle').addEventListener('click', function() {
-    setTimeout(saveAll, 0);
+  // Sex toggle: active class is set by the earlier listener, then we save.
+  // Use setTimeout(0) so the active class is applied before saveAll reads it.
+  document.getElementById('sexToggle').addEventListener('click', function(e) {
+    if (!e.target.closest('.sex-btn')) return;
+    setTimeout(function() {
+      window.dbg('input changed: dash_sex');
+      saveAll();
+      stSchedulePush();
+    }, 0);
+  });
+
+  // Manual sync button — immediate push without debounce, useful on mobile
+  // when the automatic push hasn't fired yet.
+  document.getElementById('btnSyncNow').addEventListener('click', function() {
+    window.dbg('[settings] manual sync');
+    saveAll();
+    stPushNow();
   });
 
   (async function stInitSync() {
