@@ -333,3 +333,153 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* ─── BREATHING / IDLE ANIMATIONS ─────────────────────────── */
+
+@keyframes gd-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.85; transform: scale(0.98); }
+}
+
+@keyframes gd-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 165, 0, 0); }
+  50% { box-shadow: 0 0 16px 4px rgba(255, 165, 0, 0.15); }
+}
+
+@keyframes gd-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes gd-shimmer-bg {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes gd-ticker-fade {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes gd-border-glow {
+  0%, 100% { border-color: rgba(125, 211, 252, 0.16); }
+  50% { border-color: rgba(125, 211, 252, 0.45); }
+}
+
+@keyframes gd-count-pop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.3); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gd-slide-in-right {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gd-slide-in-left {
+  from { opacity: 0; transform: translateX(-20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gd-spin-in {
+  from { opacity: 0; transform: rotate(-8deg) scale(0.9); }
+  to { opacity: 1; transform: rotate(0deg) scale(1); }
+}
+
+/* ─── IDLE: Day ring pulses subtly ─────────────────────────── */
+.day-ring-wrap {
+  animation: gd-pulse-glow 4s ease-in-out infinite;
+  animation-delay: 1.5s;
+}
+
+/* ─── IDLE: Streak badge floats ────────────────────────────── */
+.gm-streak {
+  animation: gd-float 3.5s ease-in-out infinite;
+}
+
+/* ─── IDLE: Water pill border glows when behind pace ───────── */
+.topbar-water-pill.warn {
+  animation: gd-border-glow 2.5s ease-in-out infinite;
+}
+
+/* ─── IDLE: Missed supplement items breathe red ────────────── */
+.stack-item.missed {
+  animation: gd-breathe 2s ease-in-out infinite;
+}
+
+/* ─── INTERACTION: Water count bounces on update ───────────── */
+#topbarWaterCount {
+  display: inline-block;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── INTERACTION: Finance button floats on hover ──────────── */
+.topbar-finance-btn:hover {
+  animation: gd-float 1.5s ease-in-out infinite;
+}
+
+/* ─── ENTRANCE: Tomorrow card slides in from right ─────────── */
+.gm-card-tomorrow {
+  animation: gd-slide-in-right 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.4s;
+}
+
+/* ─── ENTRANCE: Stack windows alternate left/right ─────────── */
+.stack-window:nth-child(odd) {
+  animation: gd-slide-in-left 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stack-window:nth-child(even) {
+  animation: gd-slide-in-right 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stack-window:nth-child(1) { animation-delay: 0.12s; }
+.stack-window:nth-child(2) { animation-delay: 0.20s; }
+.stack-window:nth-child(3) { animation-delay: 0.28s; }
+
+/* ─── ENTRANCE: Streak spins in ────────────────────────────── */
+.gm-streak {
+  animation: gd-spin-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both,
+             gd-float 3.5s ease-in-out 0.6s infinite;
+}
+
+/* ─── INTERACTION: All tappable cards scale on press ───────── */
+.gm-card,
+.gm-card-tomorrow,
+.wt-card,
+.stack-card,
+.wt-comp {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.18s ease !important;
+  cursor: pointer;
+}
+
+.gm-card:active,
+.gm-card-tomorrow:active,
+.wt-card:active,
+.stack-card:active,
+.wt-comp:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+
+/* ─── INTERACTION: Streak badge pops on goal complete ──────── */
+.gm-streak.bumped {
+  animation: gd-count-pop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ─── PAGE TRANSITION: body fades in ───────────────────────── */
+body {
+  animation: gd-fade-in 0.3s ease both;
+}
+
+/* ─── REDUCED MOTION: keep everything calm ─────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .day-ring-wrap,
+  .gm-streak,
+  .topbar-water-pill.warn,
+  .stack-item.missed,
+  .topbar-finance-btn:hover {
+    animation: none !important;
+  }
+}
