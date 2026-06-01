@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0b">
+<link rel="manifest" href="/manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Settings — Dashboard</title>
+<script src="topbar.js" defer></script>
+<link rel="stylesheet" href="/animations.css">
+<style>
+:root {
+  --text-primary: #FAFAFA;
+  --text-secondary: #B8B6B0;
+  --text-tertiary: #76746E;
+  --success: #6BE3A4;
+  --warning: #F2C063;
+  --danger: #FF6B6B;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0;
+  background: #0a0a0b;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.settings-page {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 22px 20px 100px;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 22px;
+}
+
+.hamburger-btn {
+  width: 44px; height: 44px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.10s;
+}
+.hamburger-btn:active { transform: scale(0.93); }
+
+.settings-title {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  margin: 0;
+}
+
+.settings-hint {
+  font-size: 13px;
+  color: var(--text-tertiary);
+  padding: 18px 20px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.summary-card {
+  background: rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 16px;
+  border: 1px solid rgba(255,255,255,0.06);
+}
+.summary-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.summary-card-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.summary-card-sub {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+}
+
+/* ── Sidebar overlay ── */
+.sidebar-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65);
+  z-index: 200;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.28s ease;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.sidebar-overlay.open { opacity: 1; pointer-events: all; }
+
+/* ── Sidebar drawer ── */
+.sidebar {
+  position: fixed;
+  top: 0; bottom: 0; left: 0;
+  width: min(320px, 88vw);
+  background: #111114;
+  z-index: 201;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: max(24px, env(safe-area-inset-top)) 18px calc(36px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  transform: translateX(-100%);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  border-right: 1px solid rgba(255,255,255,0.07);
+}
+.sidebar.open { transform: translateX(0); }
+
+.sidebar-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 22px;
+}
+.sidebar-heading {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.sidebar-close-btn {
+  width: 32px; height: 32px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 9px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.sidebar-close-btn:active { background: rgba(255,255,255,0.10); }
+
+/* ── Setting sections ── */
+.setting-section { margin-bottom: 22px; }
+.setting-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+  padding: 0 4px;
+}
+.setting-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+.setting-row:last-child { border-bottom: none; }
+.setting-row-left { flex: 1; min-width: 0; }
+.setting-row-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+.setting-row-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+.setting-input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: 16px;
+  padding: 5px 9px;
+  text-align: right;
+  width: 90px;
+  outline: none;
+  -webkit-appearance: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.setting-input:focus {
+  border-color: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.10);
+}
+.setting-input[readonly] {
+  color: var(--text-tertiary);
+  cursor: default;
+}
+.setting-input-name {
+  width: 130px;
+  text-align: left;
+  font-family: var(--font);
+  font-size: 14px;
+}
+.setting-input-time { width: 96px; }
+
+/* ── Sex toggle ── */
+.sex-toggle { display: flex; gap: 4px; }
+.sex-btn {
+  padding: 5px 9px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-family: var(--font);
+  font-size: 12px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.sex-btn.active {
+  background: rgba(255,255,255,0.12);
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.22);
+}
+
+/* ── Action buttons ── */
+.action-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.10s;
+  display: block;
+  margin-bottom: 8px;
+}
+.action-btn:last-child { margin-bottom: 0; }
+.action-btn:active { transform: scale(0.97); }
+.action-btn.danger {
+  color: var(--danger);
+  border-color: rgba(255,107,107,0.20);
+  background: rgba(255,107,107,0.06);
+}
+.action-btn.export {
+  color: var(--success);
+  border-color: rgba(107,227,164,0.20);
+  background: rgba(107,227,164,0.06);
+}
+</style>
+</head>
+<body>
+
+<div class="settings-page">
+  <div class="settings-header">
+    <button class="hamburger-btn" id="openDrawer" aria-label="Open settings">☰</button>
+    <h1 class="settings-title">Settings</h1>
+  </div>
+  <p class="settings-hint">Tap ☰ to configure your personal info, water settings, and data tools.</p>
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="summary-card-label">Wake time</div>
+      <div class="summary-card-value" id="summaryWake">—</div>
+      <div class="summary-card-sub">start of day ring</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">Sleep time</div>
+      <div class="summary-card-value" id="summarySleep">—</div>
+      <div class="summary-card-sub">end of day ring</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">Bottle size</div>
+      <div class="summary-card-value" id="summaryBottle">—</div>
+      <div class="summary-card-sub">water tracker</div>
+    </div>
+    <div class="summary-card">
+      <div class="summary-card-label">Caffeine</div>
+      <div class="summary-card-value" id="summaryCaffeine">—</div>
+      <div class="summary-card-sub">per day</div>
+    </div>
+  </div>
+</div>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<aside class="sidebar" id="sidebar" aria-label="Settings drawer">
+  <div class="sidebar-top">
+    <span class="sidebar-heading">Settings</span>
+    <button class="sidebar-close-btn" id="closeDrawer" aria-label="Close">✕</button>
+  </div>
+
+  <!-- PERSONAL INFO -->
+  <div class="setting-section">
+    <div class="setting-section-label">Personal Info</div>
+    <div class="setting-card">
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Name</div>
+        </div>
+        <input class="setting-input setting-input-name" id="settingName" type="text" value="George Kourtis" autocomplete="off">
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Weight</div>
+          <div class="setting-row-sub" id="weightSub">logged from gym</div>
+        </div>
+        <input class="setting-input" id="settingWeight" type="text" readonly>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Age</div>
+        </div>
+        <input class="setting-input" id="settingAge" type="number" min="1" max="120" value="17" inputmode="numeric">
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Height (cm)</div>
+        </div>
+        <input class="setting-input" id="settingHeight" type="number" min="50" max="250" value="175" inputmode="numeric">
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Sex</div>
+        </div>
+        <div class="sex-toggle" id="sexToggle">
+          <button class="sex-btn active" data-sex="male">M</button>
+          <button class="sex-btn" data-sex="female">F</button>
+          <button class="sex-btn" data-sex="other">—</button>
+        </div>
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Wake time</div>
+        </div>
+        <input class="setting-input setting-input-time" id="settingWake" type="time" value="08:00">
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Sleep time</div>
+        </div>
+        <input class="setting-input setting-input-time" id="settingSleep" type="time" value="23:00">
+      </div>
+    </div>
+  </div>
+
+  <!-- WATER SETTINGS -->
+  <div class="setting-section">
+    <div class="setting-section-label">Water Settings</div>
+    <div class="setting-card">
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Bottle size</div>
+          <div class="setting-row-sub">ml per drink</div>
+        </div>
+        <input class="setting-input" id="settingBottle" type="number" min="50" max="2000" value="500" inputmode="numeric">
+      </div>
+      <div class="setting-row">
+        <div class="setting-row-left">
+          <div class="setting-row-label">Caffeine / day</div>
+          <div class="setting-row-sub">mg</div>
+        </div>
+        <input class="setting-input" id="settingCaffeine" type="number" min="0" max="2000" value="200" inputmode="numeric">
+      </div>
+    </div>
+  </div>
+
+  <!-- APP SETTINGS -->
+  <div class="setting-section">
+    <div class="setting-section-label">App Settings</div>
+    <button class="action-btn export" id="btnExport">Export all data as JSON</button>
+    <button class="action-btn danger" id="btnReset">Reset today's data</button>
+  </div>
+</aside>
+
+<script>
+(function () {
+  'use strict';
+
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
+  function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
+  function lsRaw(k) { return localStorage.getItem(k); }
+  function lsRawSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+
+  function todayKey() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+
+  // ── Sidebar ──────────────────────────────────────────────────
+  const overlay   = document.getElementById('sidebarOverlay');
+  const sidebar   = document.getElementById('sidebar');
+  const openBtn   = document.getElementById('openDrawer');
+  const closeBtn  = document.getElementById('closeDrawer');
+
+  function openSidebar()  {
+    loadSettings();
+    overlay.classList.add('open');
+    sidebar.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSidebar() {
+    saveAll();
+    overlay.classList.remove('open');
+    sidebar.classList.remove('open');
+    document.body.style.overflow = '';
+    refreshSummary();
+  }
+
+  openBtn.addEventListener('click', openSidebar);
+  closeBtn.addEventListener('click', closeSidebar);
+  overlay.addEventListener('click', closeSidebar);
+
+  // ── Load from localStorage ───────────────────────────────────
+  function loadSettings() {
+    document.getElementById('settingName').value   = lsRaw('dash_name')   || 'George Kourtis';
+    document.getElementById('settingAge').value    = lsRaw('dash_age')    || '17';
+    document.getElementById('settingHeight').value = lsRaw('dash_height') || '175';
+    document.getElementById('settingWake').value   = lsRaw('dash_wake_time')  || '08:00';
+    document.getElementById('settingSleep').value  = lsRaw('dash_sleep_time') || '23:00';
+
+    const sex = lsRaw('dash_sex') || 'male';
+    document.querySelectorAll('.sex-btn').forEach(b => b.classList.toggle('active', b.dataset.sex === sex));
+
+    // Weight from gym tracker (po_coach_weights)
+    const weights  = lsGet('po_coach_weights');
+    const gymState = lsGet('po_coach_v1');
+    const unit     = (gymState && gymState.units) || 'kg';
+    if (Array.isArray(weights) && weights.length > 0) {
+      const last = weights[weights.length - 1];
+      document.getElementById('settingWeight').value = last.weight.toFixed(1) + ' ' + unit;
+      document.getElementById('weightSub').textContent = 'logged from gym · ' + last.dateKey;
+    } else {
+      document.getElementById('settingWeight').value = '—';
+      document.getElementById('weightSub').textContent = 'no gym entry yet';
+    }
+
+    // Water settings (po_water_v1)
+    const water = lsGet('po_water_v1') || {};
+    document.getElementById('settingBottle').value   = water.bottleMl != null         ? water.bottleMl         : 500;
+    document.getElementById('settingCaffeine').value = water.caffeineMgPerDay != null ? water.caffeineMgPerDay : 200;
+  }
+
+  // ── Save all ─────────────────────────────────────────────────
+  function saveAll() {
+    lsRawSet('dash_name',   document.getElementById('settingName').value.trim());
+    lsRawSet('dash_age',    document.getElementById('settingAge').value);
+    lsRawSet('dash_height', document.getElementById('settingHeight').value);
+
+    const activeSex = document.querySelector('.sex-btn.active');
+    if (activeSex) lsRawSet('dash_sex', activeSex.dataset.sex);
+
+    const wake  = document.getElementById('settingWake').value;
+    const sleep = document.getElementById('settingSleep').value;
+    lsRawSet('dash_wake_time',  wake);
+    lsRawSet('dash_sleep_time', sleep);
+
+    // Dispatch so any other open tab running index.html updates the day ring
+    window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
+    window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
+
+    // Water settings — merge into existing po_water_v1 object
+    const water = lsGet('po_water_v1') || {};
+    const bottle   = parseInt(document.getElementById('settingBottle').value, 10);
+    const caffeine = parseInt(document.getElementById('settingCaffeine').value, 10);
+    if (!isNaN(bottle)   && bottle   > 0)  water.bottleMl          = bottle;
+    if (!isNaN(caffeine) && caffeine >= 0) water.caffeineMgPerDay  = caffeine;
+    lsSet('po_water_v1', water);
+  }
+
+  // ── Sex toggle ───────────────────────────────────────────────
+  document.getElementById('sexToggle').addEventListener('click', e => {
+    const btn = e.target.closest('.sex-btn');
+    if (!btn) return;
+    document.querySelectorAll('.sex-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+
+  // ── Summary cards ────────────────────────────────────────────
+  function refreshSummary() {
+    document.getElementById('summaryWake').textContent    = lsRaw('dash_wake_time')  || '08:00';
+    document.getElementById('summarySleep').textContent   = lsRaw('dash_sleep_time') || '23:00';
+    const water = lsGet('po_water_v1') || {};
+    document.getElementById('summaryBottle').textContent   = (water.bottleMl != null         ? water.bottleMl         : 500) + ' ml';
+    document.getElementById('summaryCaffeine').textContent = (water.caffeineMgPerDay != null ? water.caffeineMgPerDay : 200) + ' mg';
+  }
+
+  // ── Export ───────────────────────────────────────────────────
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const data = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      try { data[k] = JSON.parse(localStorage.getItem(k)); } catch(e) { data[k] = localStorage.getItem(k); }
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    a.download = 'dashboard-data-' + new Date().toISOString().slice(0, 10) + '.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  });
+
+  // ── Reset today ──────────────────────────────────────────────
+  document.getElementById('btnReset').addEventListener('click', () => {
+    if (!confirm("Reset all of today's data?\n\nThis clears today's goals, water log, and supplement checks. This cannot be undone.")) return;
+    const today = todayKey();
+    try { localStorage.removeItem('goals:' + today); } catch(e) {}
+    const water = lsGet('po_water_v1') || {};
+    if (water.logs) { delete water.logs[today]; lsSet('po_water_v1', water); }
+    try { localStorage.removeItem('stack:taken:' + today); } catch(e) {}
+    alert("Today's data has been reset.");
+  });
+
+  // ── Boot ─────────────────────────────────────────────────────
+  refreshSummary();
+})();
+</script>
+<script src="/anim-hooks.js" defer></script>
+</body>
+</html>

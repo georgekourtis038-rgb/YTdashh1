@@ -157,8 +157,8 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     </a>
     <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
   </div>
-  <a href="finance.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Finance">
-    <span class="topbar-finance-icon">📊</span>
+  <a href="settings.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Settings">
+    <span class="topbar-finance-icon">⚙️</span>
   </a>
 </header>`;
 

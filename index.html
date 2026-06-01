@@ -628,7 +628,7 @@ body::after {
     <div class="day-ring-text">
       <div class="day-ring-status"    id="dayRingStatus">Loading…</div>
       <div class="day-ring-remaining" id="dayRingRemaining">—</div>
-      <div class="day-ring-hours">8:00 AM – 12:00 AM</div>
+      <div class="day-ring-hours" id="dayRingHours">8:00 AM – 12:00 AM</div>
     </div>
   </div>
 
@@ -693,8 +693,23 @@ body::after {
   // Paste your Anthropic key here to enable ✨ Polish. Empty = falls back to plain add.
   const ANTHROPIC_API_KEY = '';
 
-  const WAKE_HOUR  = 8;
-  const SLEEP_HOUR = 24;
+  function getWakeSleepHours() {
+    function parseTimeStr(str, def) {
+      if (!str) return def;
+      const parts = str.split(':');
+      return Number(parts[0]) + (Number(parts[1]) || 0) / 60;
+    }
+    return {
+      wake:  parseTimeStr(localStorage.getItem('dash_wake_time'), 8),
+      sleep: parseTimeStr(localStorage.getItem('dash_sleep_time'), 24)
+    };
+  }
+  function formatHour(h) {
+    const hNorm = Math.floor(h % 24);
+    const ampm  = hNorm >= 12 ? 'PM' : 'AM';
+    const h12   = hNorm % 12 || 12;
+    return h12 + ':00 ' + ampm;
+  }
 
   // ---------- storage helpers ----------
   function storeGet(key) {
@@ -897,6 +912,7 @@ body::after {
   fillEl.setAttribute('stroke-dashoffset', C);
 
   function updateDayRing() {
+    const { wake: WAKE_HOUR, sleep: SLEEP_HOUR } = getWakeSleepHours();
     const now = new Date();
     const hours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
     const percentEl   = document.getElementById('dayRingPercent');
@@ -904,6 +920,8 @@ body::after {
     const clockEl     = document.getElementById('dayRingClock');
     const statusEl    = document.getElementById('dayRingStatus');
     const remainingEl = document.getElementById('dayRingRemaining');
+    const hoursEl     = document.getElementById('dayRingHours');
+    if (hoursEl) hoursEl.textContent = formatHour(WAKE_HOUR) + ' – ' + formatHour(SLEEP_HOUR);
 
     clockEl.textContent = formatClock(now);
 
@@ -1281,6 +1299,7 @@ body::after {
   // Re-render when storage changes from another tab (or our bridged parent).
   window.addEventListener('storage', () => {
     loadToday(); loadTomorrow(); renderStreak();
+    updateDayRing();
   });
 })();
 </script>
