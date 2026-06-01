@@ -1916,7 +1916,7 @@ img, video, canvas, svg { max-width: 100%; }
     const today = wlTodayKey();
     const all = logsByDay();
     const past = Object.entries(all)
-      .filter(([dk]) => dk !== today)
+      .filter(([dk]) => dk !== today || !!doneDays[dk])
       .sort((a, b) => b[0].localeCompare(a[0]));
     $('poTwPastCount').textContent = past.length;
     const body = $('poTwPastBody');
@@ -2084,6 +2084,9 @@ img, video, canvas, svg { max-width: 100%; }
 
   function wlTodaySets() {
     const today = wlTodayKey();
+    // When today's workout is marked done, the active logger shows empty
+    // (sets are still in state.logs so they appear in past workouts)
+    if (doneDays[today]) return [];
     const result = [];
     state.exercises.forEach(ex => {
       (state.logs[ex.id] || []).forEach((log, logIdx) => {
@@ -2328,7 +2331,7 @@ img, video, canvas, svg { max-width: 100%; }
     const today = wlTodayKey();
     doneDays[today] ? delete doneDays[today] : (doneDays[today] = new Date().toISOString());
     saveDoneDays(doneDays);
-    wlRenderDone(); renderPastWorkouts();
+    wlRenderDone(); wlRenderSets(); renderPastWorkouts();
     const pastBody = $('poTwPastBody');
     const pastToggle = $('poTwPastToggle');
     if (pastBody && pastBody.style.display === 'none') {
@@ -3037,6 +3040,7 @@ img, video, canvas, svg { max-width: 100%; }
   let pcPushTimer = null;
   let pcSuppressSync = false;
   let pcPendingRemote = null;
+  let pcPushPending = false;  // set when push is attempted before Supabase is ready
   // JSON of the last state we sent or received — used to ignore
   // realtime echoes of our own pushes so we don't infinite-loop.
   let pcLastSyncedJson = null;
@@ -3129,10 +3133,14 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   async function pcPushNow() {
-    if (!pcSupa) return;
+    if (!pcSupa) {
+      pcPushPending = true;
+      dbgLog('push queued (no conn)');
+      return;
+    }
     const state = pcCollectState();
     const json = JSON.stringify(state);
-    if (json === pcLastSyncedJson) return;
+    if (json === pcLastSyncedJson) { dbgLog('push skip (no Δ)'); return; }
     dbgLog('push↑ ' + APP_KEY);
     try {
       const { error } = await pcSupa
@@ -3141,13 +3149,14 @@ img, video, canvas, svg { max-width: 100%; }
           { key: APP_KEY, data: state, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
-      if (!error) { pcLastSyncedJson = json; dbgLog('push✓'); }
+      if (!error) { pcLastSyncedJson = json; pcPushPending = false; dbgLog('push✓'); }
       else dbgLog('push ERR');
     } catch (_) { dbgLog('push fail'); }
   }
 
   function pcSchedulePush() {
     if (pcSuppressSync) return;
+    dbgLog('sched push');
     clearTimeout(pcPushTimer);
     pcPushTimer = setTimeout(pcPushNow, 0);
   }
@@ -3182,12 +3191,15 @@ img, video, canvas, svg { max-width: 100%; }
     // Skip if the placeholder values are still in place (local-only mode)
     if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
     pcSupa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    // Fire any push that was queued before Supabase connected
+    if (pcPushPending) { pcPushPending = false; setTimeout(pcPushNow, 0); }
     try {
       const { data, error } = await pcSupa
         .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
       if (!error && data && data.data && Object.keys(data.data).length > 0) {
         pcLastSyncedJson = JSON.stringify(data.data);
         pcMaybeApplyRemote(data.data);
+        dbgLog('pull✓ init');
       } else if (Object.keys(pcCollectState()).length > 0) {
         pcSchedulePush();
       }
