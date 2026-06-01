@@ -1,0 +1,335 @@
+/* ================================================================
+   George's Dashboard — animations.css
+   Drop one <link> on every HTML page and you're done.
+   Covers: index.html · health.html · gym.html · po-water.html
+   ================================================================ */
+
+/* ─── 1. KEYFRAME DEFINITIONS ─────────────────────────────────── */
+
+@keyframes gd-fade-up {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes gd-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes gd-scale-in {
+  from { opacity: 0; transform: scale(0.93); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes gd-slide-right {
+  from { opacity: 0; transform: translateX(-12px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes gd-progress-grow {
+  from { width: 0 !important; }
+}
+
+@keyframes gd-ring-draw {
+  from { stroke-dashoffset: 339.292; }
+}
+
+@keyframes gd-ripple {
+  0%   { transform: scale(0);   opacity: 0.5; }
+  100% { transform: scale(2.8); opacity: 0; }
+}
+
+@keyframes gd-check-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.22); }
+  70%  { transform: scale(0.92); }
+  100% { transform: scale(1); }
+}
+
+@keyframes gd-streak-bounce {
+  0%   { transform: translateY(0); }
+  30%  { transform: translateY(-4px); }
+  60%  { transform: translateY(1px); }
+  100% { transform: translateY(0); }
+}
+
+@keyframes gd-shimmer {
+  from { background-position: -200% center; }
+  to   { background-position:  200% center; }
+}
+
+@keyframes gd-tab-bounce {
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-4px) scale(1.12); }
+  65%  { transform: translateY(1px) scale(0.96); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+
+/* ─── 2. PAGE ENTRY — staggered card reveal ───────────────────── */
+
+/* Shared entry defaults — invisible until animation fires */
+.dash-title,
+.ticker-row,
+.goal-ticker,
+.day-ring-wrap,
+.section,
+.gm-card,
+.gm-card-tomorrow,
+.wt-card,
+.wt-comp,
+.stack-card,
+.po-shell,
+.po-day-pill {
+  animation: gd-fade-up 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger each block */
+.dash-title          { animation-delay: 0.04s; }
+.ticker-row,
+.goal-ticker         { animation-delay: 0.10s; }
+.day-ring-wrap       { animation-delay: 0.16s; }
+.section             { animation-delay: 0.22s; }
+.gm-card             { animation-delay: 0.28s; }
+.gm-card-tomorrow    { animation-delay: 0.36s; }
+
+/* Health page */
+.stack-card          { animation-delay: 0.12s; }
+.stack-progress-fill { animation-delay: 0.30s; }
+
+/* Gym page */
+.po-day-pill         { animation-delay: 0.06s; }
+.wt-card             { animation-delay: 0.14s; }
+.wt-comp             { animation-delay: 0.22s; }
+.po-shell            { animation-delay: 0.10s; }
+
+
+/* ─── 3. PROGRESS BAR — animated width fill on load ──────────── */
+
+.stack-progress-fill {
+  animation: gd-progress-grow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.45s;
+}
+
+.gm-bar-seg {
+  animation: gd-progress-grow 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.50s;
+}
+
+
+/* ─── 4. DAY RING — SVG stroke draws in on load ──────────────── */
+
+/* The ring uses inline SVG stroke-dasharray/offset.
+   We hook the <circle> inside .day-ring */
+#dayRingFill {
+  animation: gd-ring-draw 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.25s;
+}
+
+.day-ring-pct {
+  animation: gd-scale-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.55s;
+}
+
+
+/* ─── 5. GOAL / STACK ROWS — fade-up as list items ───────────── */
+
+.gm-row,
+.stack-item {
+  animation: gd-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Stagger each list item with nth-child */
+.gm-row:nth-child(1),  .stack-item:nth-child(1)  { animation-delay: 0.32s; }
+.gm-row:nth-child(2),  .stack-item:nth-child(2)  { animation-delay: 0.38s; }
+.gm-row:nth-child(3),  .stack-item:nth-child(3)  { animation-delay: 0.44s; }
+.gm-row:nth-child(4),  .stack-item:nth-child(4)  { animation-delay: 0.50s; }
+.gm-row:nth-child(5),  .stack-item:nth-child(5)  { animation-delay: 0.56s; }
+.gm-row:nth-child(n+6),.stack-item:nth-child(n+6){ animation-delay: 0.62s; }
+
+
+/* ─── 6. CHECKBOX / GOAL COMPLETE — bounce pop ───────────────── */
+
+.gm-check:checked,
+.gm-check.checked,
+.stack-check.checked {
+  animation: gd-check-pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Smooth strike-through on completed row text */
+.gm-row.done .gm-text,
+.stack-item.done .stack-item-name-text {
+  transition: opacity 0.3s ease, text-decoration-color 0.4s ease;
+  opacity: 0.45;
+  text-decoration-color: currentColor;
+}
+
+
+/* ─── 7. STREAK COUNTER — bounce when it changes ─────────────── */
+
+.gm-streak-num {
+  display: inline-block;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s;
+}
+.gm-streak-num.bumped {
+  animation: gd-streak-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+
+/* ─── 8. WATER BUTTON RIPPLE ──────────────────────────────────── */
+
+/* The + button in the topbar */
+.topbar-water-add {
+  position: relative;
+  overflow: hidden;
+}
+
+.topbar-water-add::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(125, 211, 252, 0.55);
+  pointer-events: none;
+  transform: scale(0);
+  opacity: 0;
+}
+
+.topbar-water-add.ripple::after {
+  animation: gd-ripple 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+
+/* ─── 9. BOTTOM TAB BAR — icon bounce on tap ─────────────────── */
+
+.bottombar-tab-icon {
+  display: inline-block;
+  /* already has transition from topbar.js — we extend it */
+  transition: opacity 0.18s, filter 0.18s, transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+}
+
+/* When the tab becomes active (page load or tap), bounce the icon */
+.bottombar-tab.active .bottombar-tab-icon {
+  animation: gd-tab-bounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 0.05s;
+}
+
+
+/* ─── 10. CARD HOVER — subtle lift ───────────────────────────── */
+
+.gm-card,
+.gm-card-tomorrow,
+.wt-card,
+.wt-comp,
+.stack-card,
+.wt-progress-link {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s ease;
+}
+
+.gm-card:hover,
+.gm-card-tomorrow:hover,
+.wt-card:hover,
+.wt-comp:hover,
+.stack-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+
+/* ─── 11. BUTTONS — press scale ──────────────────────────────── */
+
+.gm-add,
+.gm-polish,
+.gm-push-btn,
+.stack-add-btn,
+.stack-low-btn,
+.wt-save-btn,
+.wt-edit-btn,
+.wt-overlay-action,
+.topbar-finance-btn {
+  transition: transform 0.12s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.12s ease,
+              background 0.18s ease !important;
+}
+
+.gm-add:active,
+.gm-polish:active,
+.gm-push-btn:active,
+.stack-add-btn:active,
+.stack-low-btn:active,
+.wt-save-btn:active,
+.wt-edit-btn:active,
+.wt-overlay-action:active,
+.topbar-finance-btn:active {
+  transform: scale(0.93);
+  opacity: 0.8;
+}
+
+
+/* ─── 12. TICKER / GOAL LABEL — slide in from left ───────────── */
+
+.goal-ticker-text,
+.goal-ticker-label,
+.stack-ticker-msg {
+  animation: gd-slide-right 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.18s;
+}
+
+
+/* ─── 13. MODAL / OVERLAY — smooth open ─────────────────────── */
+
+.wt-overlay,
+.wt-viewer,
+.modal-bg,
+.po-modal-bg {
+  transition: opacity 0.28s ease !important;
+}
+
+.wt-overlay-inner,
+.wt-viewer > *,
+.modal,
+.po-modal {
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+              opacity 0.28s ease !important;
+}
+
+
+/* ─── 14. STACK WINDOW (health time blocks) — slide in ────────── */
+
+.stack-window {
+  animation: gd-fade-up 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.stack-window:nth-child(1) { animation-delay: 0.20s; }
+.stack-window:nth-child(2) { animation-delay: 0.28s; }
+.stack-window:nth-child(3) { animation-delay: 0.36s; }
+.stack-window:nth-child(4) { animation-delay: 0.44s; }
+
+
+/* ─── 15. TOPBAR — fade-down on load ─────────────────────────── */
+
+.topbar {
+  animation: gd-fade-in 0.35s ease both;
+  animation-delay: 0.02s;
+}
+
+.bottombar {
+  animation: gd-fade-up 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 0.08s;
+}
+
+
+/* ─── 16. RESPECT prefers-reduced-motion ─────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
