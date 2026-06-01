@@ -406,6 +406,16 @@ html, body {
 (function () {
   'use strict';
 
+  window.dbg = function(msg) {
+    var p = document.getElementById('dbgPanel');
+    if (!p) return;
+    var t = new Date().toTimeString().slice(0, 8);
+    var line = document.createElement('div');
+    line.textContent = t + ' ' + msg;
+    p.appendChild(line);
+    p.scrollTop = p.scrollHeight;
+  };
+
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
   function lsRaw(k) { return localStorage.getItem(k); }
@@ -578,7 +588,7 @@ html, body {
         }
       }
     } finally { stSuppressSync = false; }
-    if (changed) { loadSettings(); refreshSummary(); }
+    if (changed) { window.dbg('[settings] applied remote state'); loadSettings(); refreshSummary(); }
   }
 
   async function stPushNow() {
@@ -586,12 +596,14 @@ html, body {
     const d = stCollect();
     const json = JSON.stringify(d);
     if (json === stLastJson) return;
+    window.dbg('[settings] pushing...');
     try {
       const { error } = await stSupa
         .from('app_state')
         .upsert({ key: ST_ROW_KEY, data: d, updated_at: new Date().toISOString() }, { onConflict: 'key' });
-      if (!error) stLastJson = json;
-    } catch (_) {}
+      if (!error) { stLastJson = json; window.dbg('[settings] pushed ok'); }
+      else window.dbg('[settings] push err: ' + error.message);
+    } catch (e) { window.dbg('[settings] push ex: ' + e); }
   }
 
   function stSchedulePush() {
@@ -621,16 +633,21 @@ html, body {
   (async function stInitSync() {
     if (!window.supabase) return;
     stSupa = window.supabase.createClient(ST_URL, ST_ANONKEY);
+    window.dbg('[settings] init');
     try {
       const { data, error } = await stSupa
         .from('app_state').select('data').eq('key', ST_ROW_KEY).maybeSingle();
       if (!error && data && data.data && Object.keys(data.data).length > 0) {
+        window.dbg('[settings] pulled ' + Object.keys(data.data).length + ' keys');
         stLastJson = JSON.stringify(data.data);
         stApply(data.data);
       } else if (Object.keys(stCollect()).length > 0) {
+        window.dbg('[settings] no remote, pushing local');
         stSchedulePush();
+      } else {
+        window.dbg('[settings] pull: ' + (error ? error.message : 'no data'));
       }
-    } catch (_) {}
+    } catch (e) { window.dbg('[settings] pull ex: ' + e); }
 
     stSupa.channel('app_state_' + ST_ROW_KEY)
       .on('postgres_changes', {
@@ -640,6 +657,7 @@ html, body {
         if (!payload.new || !payload.new.data) return;
         const incoming = JSON.stringify(payload.new.data);
         if (incoming === stLastJson) return;
+        window.dbg('[settings] realtime update');
         stLastJson = incoming;
         stApply(payload.new.data);
       })
@@ -648,5 +666,6 @@ html, body {
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
+<div id="dbgPanel" style="position:fixed;bottom:8px;left:8px;max-width:280px;max-height:150px;overflow-y:auto;background:rgba(0,0,0,0.78);color:#fff;font-size:11px;font-family:ui-monospace,monospace;padding:8px;border-radius:6px;z-index:9999;line-height:1.4;pointer-events:none;"></div>
 </body>
 </html>
