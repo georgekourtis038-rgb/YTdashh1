@@ -1671,16 +1671,6 @@ img, video, canvas, svg { max-width: 100%; }
 
 <script>
 (function() {
-  window.dbg = function(msg) {
-    var p = document.getElementById('dbgPanel');
-    if (!p) return;
-    var t = new Date().toTimeString().slice(0, 8);
-    var line = document.createElement('div');
-    line.textContent = t + ' ' + msg;
-    p.appendChild(line);
-    p.scrollTop = p.scrollHeight;
-  };
-
   // ============================================================
   // STATE — all logs + edits live in browser localStorage. Each
   // device has its own copy. Export JSON from settings if you
@@ -3327,7 +3317,6 @@ img, video, canvas, svg { max-width: 100%; }
     const state = pcCollectState();
     const json = JSON.stringify(state);
     if (json === pcLastSyncedJson) return;
-    window.dbg('[gym] pushing...');
     try {
       const { error } = await pcSupa
         .from('app_state')
@@ -3335,9 +3324,8 @@ img, video, canvas, svg { max-width: 100%; }
           { key: APP_KEY, data: state, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
-      if (!error) { pcLastSyncedJson = json; window.dbg('[gym] pushed ok'); }
-      else window.dbg('[gym] push err: ' + error.message);
-    } catch (e) { window.dbg('[gym] push ex: ' + e); }
+      if (!error) pcLastSyncedJson = json;
+    } catch (_) {}
   }
 
   function pcSchedulePush() {
@@ -3376,21 +3364,16 @@ img, video, canvas, svg { max-width: 100%; }
     // Skip if the placeholder values are still in place (local-only mode)
     if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
     pcSupa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-    window.dbg('[gym] init');
     try {
       const { data, error } = await pcSupa
         .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
       if (!error && data && data.data && Object.keys(data.data).length > 0) {
-        window.dbg('[gym] pulled, applying');
         pcLastSyncedJson = JSON.stringify(data.data);
         pcMaybeApplyRemote(data.data);
       } else if (Object.keys(pcCollectState()).length > 0) {
-        window.dbg('[gym] no remote, pushing local');
         pcSchedulePush();
-      } else {
-        window.dbg('[gym] pull: ' + (error ? error.message : 'no data'));
       }
-    } catch (e) { window.dbg('[gym] pull ex: ' + e); }
+    } catch (_) {}
     pcSupa.channel('app_state_' + APP_KEY)
       .on('postgres_changes', {
         event: '*',
@@ -3401,7 +3384,6 @@ img, video, canvas, svg { max-width: 100%; }
         if (!payload.new || !payload.new.data) return;
         const incoming = JSON.stringify(payload.new.data);
         if (incoming === pcLastSyncedJson) return; // echo of our own push
-        window.dbg('[gym] realtime update');
         pcLastSyncedJson = incoming;
         pcMaybeApplyRemote(payload.new.data);
       })
@@ -3419,6 +3401,6 @@ img, video, canvas, svg { max-width: 100%; }
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
-<div id="dbgPanel" style="position:fixed;bottom:8px;left:8px;max-width:280px;max-height:150px;overflow-y:auto;background:rgba(0,0,0,0.78);color:#fff;font-size:11px;font-family:ui-monospace,monospace;padding:8px;border-radius:6px;z-index:9999;line-height:1.4;pointer-events:none;"></div>
+
 </body>
 </html>
