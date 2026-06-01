@@ -10,6 +10,7 @@
 <title>Settings — Dashboard</title>
 <script src="topbar.js" defer></script>
 <link rel="stylesheet" href="/animations.css">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root {
   --text-primary: #FAFAFA;
@@ -542,6 +543,108 @@ html, body {
 
   // ── Boot ─────────────────────────────────────────────────────
   refreshSummary();
+
+  // ============================================================
+  // SUPABASE SYNC — personal settings keys
+  // Mirrors dash_* keys to app_state row keyed "settings".
+  // Pull on load, push on every input change, subscribe realtime.
+  // ============================================================
+  const ST_URL     = 'https://oyylbiscxnymnmetyrho.supabase.co';
+  const ST_ANONKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
+  const ST_ROW_KEY = 'settings';
+  const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex'];
+
+  let stSupa = null, stPushTimer = null, stLastJson = null, stSuppressSync = false;
+  const _stOrigSet = localStorage.setItem.bind(localStorage);
+
+  function stCollect() {
+    const out = {};
+    for (const k of ST_LS_KEYS) {
+      const v = localStorage.getItem(k);
+      if (v != null) out[k] = v;
+    }
+    return out;
+  }
+
+  function stApply(remote) {
+    if (!remote || typeof remote !== 'object') return;
+    let changed = false;
+    stSuppressSync = true;
+    try {
+      for (const k of ST_LS_KEYS) {
+        if (k in remote && localStorage.getItem(k) !== String(remote[k])) {
+          _stOrigSet(k, remote[k]);
+          changed = true;
+        }
+      }
+    } finally { stSuppressSync = false; }
+    if (changed) { loadSettings(); refreshSummary(); }
+  }
+
+  async function stPushNow() {
+    if (!stSupa) return;
+    const d = stCollect();
+    const json = JSON.stringify(d);
+    if (json === stLastJson) return;
+    try {
+      const { error } = await stSupa
+        .from('app_state')
+        .upsert({ key: ST_ROW_KEY, data: d, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      if (!error) stLastJson = json;
+    } catch (_) {}
+  }
+
+  function stSchedulePush() {
+    if (stSuppressSync) return;
+    clearTimeout(stPushTimer);
+    stPushTimer = setTimeout(stPushNow, 400);
+  }
+
+  // Intercept localStorage.setItem so any save of a settings key
+  // (e.g. from saveAll / lsRawSet) automatically schedules a push.
+  localStorage.setItem = function(k, v) {
+    _stOrigSet(k, v);
+    try {
+      if (!stSuppressSync && ST_LS_KEYS.indexOf(k) !== -1) stSchedulePush();
+    } catch (_) {}
+  };
+
+  // Push on every input change so data isn't held until drawer closes.
+  ['settingName', 'settingAge', 'settingHeight', 'settingWake', 'settingSleep'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener('change', saveAll);
+  });
+  document.getElementById('sexToggle').addEventListener('click', function() {
+    setTimeout(saveAll, 0);
+  });
+
+  (async function stInitSync() {
+    if (!window.supabase) return;
+    stSupa = window.supabase.createClient(ST_URL, ST_ANONKEY);
+    try {
+      const { data, error } = await stSupa
+        .from('app_state').select('data').eq('key', ST_ROW_KEY).maybeSingle();
+      if (!error && data && data.data && Object.keys(data.data).length > 0) {
+        stLastJson = JSON.stringify(data.data);
+        stApply(data.data);
+      } else if (Object.keys(stCollect()).length > 0) {
+        stSchedulePush();
+      }
+    } catch (_) {}
+
+    stSupa.channel('app_state_' + ST_ROW_KEY)
+      .on('postgres_changes', {
+        event: '*', schema: 'public', table: 'app_state',
+        filter: 'key=eq.' + ST_ROW_KEY,
+      }, function(payload) {
+        if (!payload.new || !payload.new.data) return;
+        const incoming = JSON.stringify(payload.new.data);
+        if (incoming === stLastJson) return;
+        stLastJson = incoming;
+        stApply(payload.new.data);
+      })
+      .subscribe();
+  })();
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
