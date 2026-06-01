@@ -179,6 +179,10 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const p = (window.location.pathname || '').toLowerCase();
     return p.endsWith('/finance.html') || p.endsWith('finance.html');
   }
+  function isSettingsPage() {
+    const p = (window.location.pathname || '').toLowerCase();
+    return p.endsWith('/settings.html') || p.endsWith('settings.html');
+  }
   function isEmbedded() {
     try { return window.self !== window.top; } catch (e) { return true; }
   }
@@ -208,6 +212,10 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       t.classList.toggle('active', t.getAttribute('data-page') === active);
     });
     document.body.classList.add('has-bottombar');
+    if (isSettingsPage()) {
+      const finBtn = document.getElementById('topbarFinance');
+      if (finBtn) finBtn.href = sessionStorage.getItem('dash_prev_page') || 'index.html';
+    }
   }
 
   function calendarDateKey() {
@@ -332,6 +340,9 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   }
 
   function boot() {
+    if (!isSettingsPage()) {
+      try { sessionStorage.setItem('dash_prev_page', window.location.href); } catch(e) {}
+    }
     injectStyleAndHTML();
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); addWater(); });
