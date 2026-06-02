@@ -797,53 +797,12 @@ main {
   <div id="waterSetModalBg">
     <div class="modal">
       <h3>Water Settings</h3>
-
-      <div class="wset-section">
-        <h4>Profile</h4>
-        <div class="wfield-row">
-          <div class="wfield">
-            <label>Weight</label>
-            <input type="number" id="setWeight" step="0.5" min="20" max="300">
-          </div>
-          <div class="wfield">
-            <label>Weight unit</label>
-            <div class="wseg" id="setWeightUnit">
-              <button data-u="kg">kg</button>
-              <button data-u="lb">lb</button>
-            </div>
-          </div>
-        </div>
-        <div class="wfield-row">
-          <div class="wfield">
-            <label>Age</label>
-            <input type="number" id="setAge" min="13" max="100">
-          </div>
-          <div class="wfield">
-            <label>Sex</label>
-            <div class="wseg" id="setSex">
-              <button data-s="m">Male</button>
-              <button data-s="f">Female</button>
-              <button data-s="o">Other</button>
-            </div>
-          </div>
-        </div>
-        <div class="wfield">
-          <label>Activity (training hours per week)</label>
-          <input type="number" id="setActivity" min="0" max="40" step="0.5">
-        </div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:18px;line-height:1.5">
+        Weight &amp; age come from Settings and are used automatically for your daily target.
       </div>
 
       <div class="wset-section">
-        <h4>Display</h4>
-        <div class="wfield">
-          <label>Show water as</label>
-          <div class="wseg" id="setUnit">
-            <button data-u="bottle">Bottles</button>
-            <button data-u="glass">Glasses</button>
-            <button data-u="oz">oz</button>
-            <button data-u="ml">ml</button>
-          </div>
-        </div>
+        <h4>Container sizes</h4>
         <div class="wfield-row">
           <div class="wfield">
             <label>Bottle size (ml)</label>
@@ -857,13 +816,12 @@ main {
       </div>
 
       <div class="wset-section">
-        <h4>Caffeine</h4>
+        <h4>Sex</h4>
         <div class="wfield">
-          <label>Average caffeine per day (mg)</label>
-          <input type="number" id="setCaffeine" min="0" max="1000" step="10">
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;line-height:1.4">
-            ~1 cup of coffee = 95mg · espresso shot = 75mg · energy drink = 160mg.
-            Above 200mg/day starts to add a small water requirement.
+          <div class="wseg" id="setSex">
+            <button data-s="m">Male</button>
+            <button data-s="f">Female</button>
+            <button data-s="o">Other</button>
           </div>
         </div>
       </div>
@@ -1539,6 +1497,7 @@ main {
     clearTimeout(pcPushTimer);
     pcPushTimer = setTimeout(pcPushNow, 0);
   }
+  window.pcSchedulePush = pcSchedulePush;
 
   function pcFlushPushOnUnload() {
     if (!pcSupa) return;
@@ -1642,7 +1601,10 @@ main {
   function wLoad() {
     try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
   }
-  function wSave(data) { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+  function wSave(data) {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch (e) {}
+  }
 
   function wDateStr(date) {
     var y = date.getFullYear();
@@ -1656,7 +1618,21 @@ main {
     return wDateStr(now);
   }
 
-  var W_DEFAULTS = { bottleMl: 500, glassMl: 355, weightKg: null, weightUnit: 'kg', age: null, sex: 'm', activityHours: 0, caffeinePerDay: 0, subs: [] };
+  var W_DEFAULTS = { bottleMl: 500, glassMl: 355, sex: 'm', subs: [] };
+
+  function wReadDashNum(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw === null) return null;
+      var v = JSON.parse(raw);
+      if (typeof v === 'number' && !isNaN(v)) return v;
+      var f = parseFloat(v);
+      return isNaN(f) ? null : f;
+    } catch (e) {
+      var f2 = parseFloat(localStorage.getItem(key));
+      return isNaN(f2) ? null : f2;
+    }
+  }
 
   function wGetSettings() { return Object.assign({}, W_DEFAULTS, wLoad().settings || {}); }
   function wSaveSettings(s) { var d = wLoad(); d.settings = s; wSave(d); }
@@ -1671,12 +1647,8 @@ main {
 
   function wTarget(s) {
     var base = 2500;
-    if (s.weightKg && s.weightKg > 0) {
-      var kg = s.weightUnit === 'lb' ? s.weightKg * 0.453592 : s.weightKg;
-      base = kg * 35;
-    }
-    if (s.activityHours > 0) base += (s.activityHours / 7) * 500;
-    if (s.caffeinePerDay > 200) base += (s.caffeinePerDay - 200) * 1.5;
+    var kg = wReadDashNum('dash_weight');
+    if (kg && kg > 0) base = kg * 35;
     (s.subs || []).forEach(function (sub) { if (sub.extraMl) base += sub.extraMl; });
     return Math.round(base / 50) * 50;
   }
@@ -1716,18 +1688,11 @@ main {
 
   function wRenderWhyBody(s, target) {
     var rows = [];
-    if (s.weightKg && s.weightKg > 0) {
-      var kg = s.weightUnit === 'lb' ? s.weightKg * 0.453592 : s.weightKg;
-      var label = s.weightUnit === 'lb' ? Math.round(s.weightKg) + ' lb' : Math.round(kg) + ' kg';
-      rows.push({ label: 'Base (' + label + ' \xD7 35ml/kg)', val: Math.round(kg * 35) + ' ml' });
+    var kg = wReadDashNum('dash_weight');
+    if (kg && kg > 0) {
+      rows.push({ label: 'Base (' + Math.round(kg) + 'kg \xD7 35ml/kg)', val: Math.round(kg * 35) + ' ml' });
     } else {
-      rows.push({ label: 'Base (default, no weight set)', val: '2500 ml' });
-    }
-    if (s.activityHours > 0) {
-      rows.push({ label: 'Activity (' + s.activityHours + 'h/week)', val: '+' + Math.round((s.activityHours / 7) * 500) + ' ml' });
-    }
-    if (s.caffeinePerDay > 200) {
-      rows.push({ label: 'Caffeine offset (' + s.caffeinePerDay + 'mg/day)', val: '+' + Math.round((s.caffeinePerDay - 200) * 1.5) + ' ml' });
+      rows.push({ label: 'Base (set weight in Settings to personalise)', val: '2500 ml' });
     }
     (s.subs || []).forEach(function (sub) {
       if (sub.extraMl) rows.push({ label: sub.name, val: '+' + sub.extraMl + ' ml' });
@@ -1788,13 +1753,8 @@ main {
 
   function wOpenSettings() {
     var s = wGetSettings();
-    document.getElementById('setWeight').value = s.weightKg != null ? s.weightKg : '';
-    document.getElementById('setAge').value = s.age != null ? s.age : '';
-    document.getElementById('setActivity').value = s.activityHours || '';
-    document.getElementById('setCaffeine').value = s.caffeinePerDay || '';
     document.getElementById('setBottleMl').value = s.bottleMl;
     document.getElementById('setGlassMl').value = s.glassMl;
-    wSegActivate('setWeightUnit', 'data-u', s.weightUnit);
     wSegActivate('setSex', 'data-s', s.sex);
     wRenderSubsList(s.subs || []);
     document.getElementById('waterSetModalBg').classList.add('show');
@@ -1802,20 +1762,10 @@ main {
 
   function wCloseSettings() {
     var s = wGetSettings();
-    var wv = parseFloat(document.getElementById('setWeight').value);
-    s.weightKg = isNaN(wv) ? null : wv;
-    var av = parseInt(document.getElementById('setAge').value);
-    s.age = isNaN(av) ? null : av;
-    var actv = parseFloat(document.getElementById('setActivity').value);
-    s.activityHours = isNaN(actv) ? 0 : actv;
-    var cafv = parseInt(document.getElementById('setCaffeine').value);
-    s.caffeinePerDay = isNaN(cafv) ? 0 : cafv;
     var bv = parseInt(document.getElementById('setBottleMl').value);
     s.bottleMl = isNaN(bv) || bv < 100 ? 500 : bv;
     var gv = parseInt(document.getElementById('setGlassMl').value);
     s.glassMl = isNaN(gv) || gv < 50 ? 355 : gv;
-    var wuActive = document.querySelector('#setWeightUnit button.active');
-    if (wuActive) s.weightUnit = wuActive.dataset.u;
     var sexActive = document.querySelector('#setSex button.active');
     if (sexActive) s.sex = sexActive.dataset.s;
     wSaveSettings(s);
@@ -1877,22 +1827,8 @@ main {
     wRender();
   });
 
-  document.getElementById('setWeightUnit').addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-u]');
-    if (!btn) return;
-    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-  });
-
   document.getElementById('setSex').addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-s]');
-    if (!btn) return;
-    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-  });
-
-  document.getElementById('setUnit').addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-u]');
     if (!btn) return;
     this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
     btn.classList.add('active');
