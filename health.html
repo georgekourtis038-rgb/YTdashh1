@@ -1056,26 +1056,6 @@ main {
   const APP_KEY = 'health-stack';
   function pcKeyInScope(k) { return typeof k === 'string' && k.indexOf('stack:') === 0; }
 
-  // Visible debug overlay — shows sync events on mobile
-  function dbgLog(msg) {
-    try {
-      let el = document.getElementById('_dbgLog');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = '_dbgLog';
-        el.style.cssText = 'position:fixed;bottom:130px;right:8px;z-index:9999;background:rgba(0,0,0,0.82);color:#6ee7b7;font-size:10px;font-family:monospace;padding:4px 8px;border-radius:6px;max-width:190px;pointer-events:none;white-space:pre-wrap;word-break:break-all;';
-        document.body.appendChild(el);
-      }
-      const now = new Date().toTimeString().slice(0, 8);
-      const lines = (el.textContent || '').split('\n').filter(Boolean).slice(-5);
-      lines.push(now + ' ' + msg);
-      el.textContent = lines.join('\n');
-      clearTimeout(el._t);
-      el._t = setTimeout(() => { if (el) el.textContent = ''; }, 10000);
-    } catch (e) {}
-  }
-  window.dbg = dbgLog;
-
   let pcSupa = null;
   let pcPushTimer = null;
   let pcSuppressSync = false;
@@ -1164,7 +1144,6 @@ main {
     const syncState = pcCollectState();
     const json = JSON.stringify(syncState);
     if (json === pcLastSyncedJson) return;
-    dbgLog('push↑ ' + APP_KEY);
     try {
       const { error } = await pcSupa
         .from('app_state')
@@ -1172,9 +1151,8 @@ main {
           { key: APP_KEY, data: syncState, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
-      if (!error) { pcLastSyncedJson = json; dbgLog('push✓'); }
-      else dbgLog('push ERR');
-    } catch (_) { dbgLog('push fail'); }
+      if (!error) { pcLastSyncedJson = json; }
+    } catch (_) {}
   }
 
   function pcSchedulePush() {
@@ -1264,7 +1242,6 @@ main {
               if (incoming !== pcLastSyncedJson) {
                 pcLastSyncedJson = incoming;
                 pcMaybeApplyRemote(data.data);
-                dbgLog('pull✓ vis');
               }
             }
           }).catch(() => {});

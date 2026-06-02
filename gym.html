@@ -25,10 +25,7 @@
   window.__lsOrigSet = _orig; // expose so the IIFE can use it as _pcOrigSet
   localStorage.setItem = function(k, v) {
     _orig(k, v);
-    try {
-      if (window.dbg) window.dbg('intercepted: ' + k);
-      if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k);
-    } catch (e) {}
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch (e) {}
   };
 })();
 
@@ -3029,26 +3026,6 @@ img, video, canvas, svg { max-width: 100%; }
   // If you leave the placeholders unchanged the app still works,
   // just only on this device (data stays in your browser).
   // ============================================================
-  // Visible debug overlay — shows sync events on mobile
-  function dbgLog(msg) {
-    try {
-      let el = document.getElementById('_dbgLog');
-      if (!el) {
-        el = document.createElement('div');
-        el.id = '_dbgLog';
-        el.style.cssText = 'position:fixed;bottom:130px;right:8px;z-index:9999;background:rgba(0,0,0,0.82);color:#6ee7b7;font-size:10px;font-family:monospace;padding:4px 8px;border-radius:6px;max-width:190px;pointer-events:none;white-space:pre-wrap;word-break:break-all;';
-        document.body.appendChild(el);
-      }
-      const now = new Date().toTimeString().slice(0, 8);
-      const lines = (el.textContent || '').split('\n').filter(Boolean).slice(-5);
-      lines.push(now + ' ' + msg);
-      el.textContent = lines.join('\n');
-      clearTimeout(el._t);
-      el._t = setTimeout(() => { if (el) el.textContent = ''; }, 10000);
-    } catch (e) {}
-  }
-  window.dbg = dbgLog;
-
   const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'po-coach';
@@ -3151,13 +3128,11 @@ img, video, canvas, svg { max-width: 100%; }
   async function pcPushNow() {
     if (!pcSupa) {
       pcPushPending = true;
-      dbgLog('push queued (no conn)');
       return;
     }
     const state = pcCollectState();
     const json = JSON.stringify(state);
-    if (json === pcLastSyncedJson) { dbgLog('push skip (no Δ)'); return; }
-    dbgLog('push↑ ' + APP_KEY);
+    if (json === pcLastSyncedJson) return;
     try {
       const { error } = await pcSupa
         .from('app_state')
@@ -3165,14 +3140,12 @@ img, video, canvas, svg { max-width: 100%; }
           { key: APP_KEY, data: state, updated_at: new Date().toISOString() },
           { onConflict: 'key' }
         );
-      if (!error) { pcLastSyncedJson = json; pcPushPending = false; dbgLog('push✓'); }
-      else dbgLog('push ERR');
-    } catch (_) { dbgLog('push fail'); }
+      if (!error) { pcLastSyncedJson = json; pcPushPending = false; }
+    } catch (_) {}
   }
 
   function pcSchedulePush() {
     if (pcSuppressSync) return;
-    dbgLog('sched push');
     clearTimeout(pcPushTimer);
     pcPushTimer = setTimeout(pcPushNow, 0);
   }
@@ -3215,7 +3188,6 @@ img, video, canvas, svg { max-width: 100%; }
       if (!error && data && data.data && Object.keys(data.data).length > 0) {
         pcLastSyncedJson = JSON.stringify(data.data);
         pcMaybeApplyRemote(data.data);
-        dbgLog('pull✓ init');
       } else if (Object.keys(pcCollectState()).length > 0) {
         pcSchedulePush();
       }
@@ -3266,7 +3238,6 @@ img, video, canvas, svg { max-width: 100%; }
               if (incoming !== pcLastSyncedJson) {
                 pcLastSyncedJson = incoming;
                 pcMaybeApplyRemote(data.data);
-                dbgLog('pull✓ vis');
               }
             }
           }).catch(() => {});
