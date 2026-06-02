@@ -1541,6 +1541,36 @@ img, video, canvas, svg { max-width: 100%; }
   </div>
 </div>
 
+<!-- Settings modal -->
+<div class="po-modal-bg" id="settingsBg">
+  <div class="po-modal">
+    <h3>Settings</h3>
+
+    <div class="po-set-section">
+      <h4>Weight Unit</h4>
+      <div class="po-modal-seg" id="setUnitsCtrl">
+        <button data-unit="kg">kg</button>
+        <button data-unit="lb">lb</button>
+      </div>
+    </div>
+
+    <div class="po-set-section">
+      <h4>Exercises</h4>
+      <div class="po-set-list" id="setExList"></div>
+      <button class="po-add-row-btn" id="setAddExBtn">+ Add exercise</button>
+    </div>
+
+    <div class="po-set-section">
+      <h4>Data</h4>
+      <button class="po-btn-secondary" id="setExportBtn" style="width:100%">Export JSON</button>
+    </div>
+
+    <div class="po-modal-actions">
+      <button class="po-btn-primary" id="settingsClose">Done</button>
+    </div>
+  </div>
+</div>
+
 <!-- Past workout edit modal -->
 <div class="po-modal-bg" id="pastEditBg">
   <div class="po-modal">
@@ -2321,6 +2351,91 @@ img, video, canvas, svg { max-width: 100%; }
     setTimeout(() => {
       if (pastToggle) pastToggle.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
+  });
+
+  // ── Settings modal ────────────────────────────────────────────
+  function renderSettingsExList() {
+    const list = $('setExList');
+    if (!list) return;
+    if (!state.exercises.length) {
+      list.innerHTML = '<div style="padding:8px 0;font-size:12px;color:var(--text-3);">No exercises yet.</div>';
+      return;
+    }
+    list.innerHTML = state.exercises.map(ex =>
+      '<div class="po-set-row" data-exid="' + escape(ex.id) + '">'
+      + '<input type="text" value="' + escape(ex.name) + '" data-exid="' + escape(ex.id) + '">'
+      + '<button class="po-mini-btn" data-exid="' + escape(ex.id) + '" title="Delete">×</button>'
+      + '</div>'
+    ).join('');
+    list.querySelectorAll('input[data-exid]').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const ex = state.exercises.find(e => e.id === inp.dataset.exid);
+        if (ex && inp.value.trim()) { ex.name = inp.value.trim(); saveState(); }
+      });
+    });
+    list.querySelectorAll('.po-mini-btn[data-exid]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!confirm('Delete this exercise and all its logs?')) return;
+        const id = btn.dataset.exid;
+        state.exercises = state.exercises.filter(e => e.id !== id);
+        delete state.logs[id];
+        saveState();
+        renderSettingsExList();
+        renderAll();
+      });
+    });
+  }
+
+  function openSettings() {
+    $('setUnitsCtrl').querySelectorAll('button').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.unit === state.units);
+    });
+    renderSettingsExList();
+    $('settingsBg').classList.add('show');
+  }
+
+  $('settingsBtn').addEventListener('click', openSettings);
+
+  $('settingsClose').addEventListener('click', () => {
+    $('settingsBg').classList.remove('show');
+  });
+
+  $('settingsBg').addEventListener('click', (e) => {
+    if (e.target === $('settingsBg')) $('settingsBg').classList.remove('show');
+  });
+
+  $('setUnitsCtrl').addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-unit]');
+    if (!btn) return;
+    state.units = btn.dataset.unit;
+    saveState();
+    $('setUnitsCtrl').querySelectorAll('button').forEach(b => {
+      b.classList.toggle('active', b.dataset.unit === state.units);
+    });
+    renderAll();
+  });
+
+  $('setAddExBtn').addEventListener('click', () => {
+    const name = prompt('Exercise name:');
+    if (!name || !name.trim()) return;
+    const nex = {
+      id: uid(), name: name.trim(),
+      gym: (state.gyms[0] || { id: 'home' }).id,
+      day: (state.days[0] || { id: 'push' }).id,
+      bw: false, startWeight: 0, repMin: 6, repMax: 12, step: 5
+    };
+    state.exercises.push(nex);
+    saveState();
+    renderSettingsExList();
+    renderAll();
+  });
+
+  $('setExportBtn').addEventListener('click', () => {
+    const blob = new Blob([JSON.stringify({ state, doneDays }, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'workout-data.json'; a.click();
+    URL.revokeObjectURL(url);
   });
 
   // ============================================================
