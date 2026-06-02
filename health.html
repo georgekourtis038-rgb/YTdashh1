@@ -84,21 +84,242 @@ main {
   display: flex; align-items: center; gap: 12px;
 }
 .section-title::before { content: '≡'; font-size: 14px; opacity: 0.5; }
-.water-embed { margin-top: 56px; }
-.water-iframe {
-  display: block;
-  width: 100%;
-  height: 880px;
-  border: 0;
-  background: transparent;
-  border-radius: 16px;
-  overflow: hidden;
-  color-scheme: dark;
+/* ===== INLINED WATER TRACKER ===== */
+.water-section {
+  /* scoped overrides so water cards use their own dark card colour */
+  --bg-card: #111113;
+  --text-1: #ffffff;
+  --text-2: rgba(255,255,255,0.6);
+  --text-3: rgba(255,255,255,0.4);
+  --text-4: rgba(255,255,255,0.25);
+  --good: #6ee7b7;
+  --warn: #fbbf24;
+  --bad: #ff8a8a;
+  --info: #7DD3FC;
+  margin-top: 40px;
 }
-@media (max-width: 480px) {
-  .water-embed { margin-top: 40px; }
-  .water-iframe { height: 780px; }
+.water-icon-btn {
+  margin-left: auto; flex-shrink: 0;
+  width: 32px; height: 32px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-tertiary); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.18s, color 0.18s;
 }
+.water-icon-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
+.water-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 18px; padding: 22px 20px 18px; margin-bottom: 14px;
+}
+.water-label {
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--text-3); margin-bottom: 8px; text-transform: uppercase;
+}
+.water-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+.water-num {
+  font-size: 56px; font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-1);
+}
+.water-target { font-size: 18px; color: var(--text-3); font-weight: 500; }
+.water-bar-wrap { position: relative; margin: 14px 0 22px; }
+.water-bar-track {
+  position: relative; height: 28px; border-radius: 14px;
+  background: rgba(255,255,255,0.04); overflow: hidden;
+}
+.water-bar-fill {
+  position: absolute; top: 0; bottom: 0; left: 0; border-radius: 14px;
+  background: linear-gradient(90deg, var(--info), var(--good));
+  transition: width 0.4s ease;
+  box-shadow: 0 0 18px rgba(110,231,183,0.18);
+}
+.water-bar-fill.over { background: linear-gradient(90deg, var(--good), var(--warn)); }
+.water-bar-zone { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.18); }
+.water-bar-labels {
+  display: flex; justify-content: space-between; margin-top: 6px;
+  font-size: 10px; color: var(--text-3); font-family: var(--font-mono);
+}
+.water-bar-labels .water-zone-name { color: var(--good); font-weight: 700; letter-spacing: 0.10em; text-transform: lowercase; }
+.water-actions { display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: stretch; }
+.water-minus-btn {
+  background: rgba(255,255,255,0.06); border: none; border-radius: 16px;
+  color: var(--text-1); font-size: 22px; font-weight: 700; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.water-minus-btn:hover { background: rgba(255,255,255,0.10); }
+.water-minus-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.water-plus-btn {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b; border: none; border-radius: 16px;
+  font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; padding: 16px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+}
+.water-plus-btn:hover { transform: translateY(-1px); }
+.water-plus-btn:active { transform: scale(0.98); }
+.water-helper { text-align: center; font-size: 12px; color: var(--text-3); margin-top: 12px; font-style: italic; }
+.water-helper.good { color: var(--good); font-style: normal; }
+.why-toggle {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  background: transparent; border: 1px solid var(--border); color: var(--text-2);
+  border-radius: 10px; padding: 11px 14px; cursor: pointer; margin-top: 14px;
+  font-family: inherit; font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+  -webkit-tap-highlight-color: transparent;
+}
+.why-toggle:hover { background: rgba(255,255,255,0.04); color: var(--text-1); }
+.why-arrow { transition: transform 0.2s; font-size: 14px; }
+.why-toggle[aria-expanded="true"] .why-arrow { transform: rotate(180deg); }
+.why-body {
+  margin-top: 8px; padding: 14px 16px;
+  background: rgba(255,255,255,0.025); border: 1px solid var(--border);
+  border-radius: 10px; display: none;
+}
+.why-body.show { display: block; }
+.why-row { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; padding: 4px 0; font-variant-numeric: tabular-nums; }
+.why-row .why-label { color: var(--text-2); }
+.why-row .why-val { color: var(--text-1); font-weight: 600; font-family: var(--font-mono); }
+.why-row.total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px; }
+.why-row.total .why-label { color: var(--good); font-weight: 700; }
+.why-row.total .why-val { color: var(--good); }
+.hist-row {
+  display: grid; grid-template-columns: 70px 1fr auto; gap: 10px;
+  padding: 10px 0; align-items: center; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-date { font-size: 11px; color: var(--text-3); font-family: var(--font-mono); }
+.hist-bar-wrap { height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
+.hist-bar-fill { height: 100%; background: linear-gradient(90deg, var(--info), var(--good)); border-radius: 4px; }
+.hist-bar-fill.miss { background: rgba(255,138,138,0.4); }
+.hist-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
+.hist-edit-btn {
+  background: transparent; border: none; cursor: pointer; color: var(--text-2);
+  font-family: var(--font-mono); font-size: 12px; padding: 2px 6px; border-radius: 4px;
+  font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; transition: background 0.15s;
+}
+.hist-edit-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
+.hist-edit-wrap { display: inline-flex; align-items: center; gap: 4px; }
+.hist-edit-input {
+  width: 40px; padding: 2px 4px; background: rgba(0,0,0,0.4);
+  border: 1px solid rgba(255,255,255,0.14); color: var(--text-1); border-radius: 4px;
+  font-family: var(--font-mono); font-size: 16px; text-align: center; outline: none;
+  -moz-appearance: textfield; font-variant-numeric: tabular-nums; touch-action: manipulation;
+}
+.hist-edit-input::-webkit-outer-spin-button,
+.hist-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+.hist-edit-input:focus { border-color: rgba(110,231,183,0.4); }
+.hist-edit-save {
+  background: rgba(110,231,183,0.16); color: var(--good);
+  border: 1px solid rgba(110,231,183,0.3); border-radius: 4px;
+  font-size: 13px; cursor: pointer; padding: 1px 6px; line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+}
+.spark-wrap { padding: 6px 0; }
+.spark-svg { width: 100%; height: 70px; display: block; }
+.spark-bar { fill: var(--good); }
+.spark-bar.miss { fill: rgba(255,138,138,0.5); }
+.spark-target { stroke: rgba(255,255,255,0.20); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
+/* Water settings modal — uses .modal-bg/.modal so topbar.js mobile rules apply */
+#waterSetModalBg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  padding-top: max(20px, env(safe-area-inset-top));
+}
+#waterSetModalBg.show { display: flex; }
+#waterSetModalBg .modal {
+  width: 100%; max-width: 480px; background: #111113;
+  border: 1px solid rgba(255,255,255,0.14); border-radius: 16px;
+  padding: 22px; max-height: calc(88vh - env(safe-area-inset-bottom)); overflow-y: auto;
+  color: #ffffff;
+}
+#waterSetModalBg .modal h3 { margin: 0 0 14px; font-size: 17px; font-weight: 700; color: #ffffff; }
+.wset-section { margin-bottom: 22px; }
+.wset-section h4 {
+  margin: 0 0 8px; font-size: 11px; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; color: rgba(255,255,255,0.4);
+}
+.wfield { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.wfield label { font-size: 11px; color: rgba(255,255,255,0.4); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+.wfield input[type="number"], .wfield input[type="text"], .wfield select {
+  background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08);
+  color: #ffffff; font-family: inherit; font-size: 16px;
+  padding: 10px 12px; border-radius: 10px; outline: none; -moz-appearance: textfield;
+}
+.wfield input[type="number"]::-webkit-outer-spin-button,
+.wfield input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wfield input:focus, .wfield select:focus { border-color: rgba(110,231,183,0.40); box-shadow: 0 0 0 2px rgba(110,231,183,0.10); }
+.wfield-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.wseg {
+  display: flex; gap: 4px; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 3px;
+}
+.wseg button {
+  flex: 1; padding: 9px; border: none; background: transparent;
+  color: rgba(255,255,255,0.4); border-radius: 7px;
+  font-family: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.wseg button.active { background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%); color: #0a0a0b; }
+.wsearch-wrap { position: relative; }
+.wsearch-input {
+  width: 100%; background: rgba(0,0,0,0.28); border: 1px solid rgba(255,255,255,0.08);
+  color: #ffffff; font-family: inherit; font-size: 16px;
+  padding: 11px 14px; border-radius: 10px; outline: none;
+}
+.wsearch-input:focus { border-color: rgba(110,231,183,0.40); }
+.wsearch-results {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #1a1a1e; border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px; padding: 4px; max-height: 240px; overflow-y: auto;
+  z-index: 110; display: none;
+}
+.wsearch-results.show { display: block; }
+.wsearch-result {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 12px;
+  border-radius: 7px; cursor: pointer; font-size: 13px; -webkit-tap-highlight-color: transparent;
+}
+.wsearch-result:hover { background: rgba(255,255,255,0.05); }
+.wsearch-result-name { color: #ffffff; font-weight: 600; }
+.wsearch-result-meta { font-size: 10.5px; color: rgba(255,255,255,0.4); font-family: var(--font-mono); }
+.wsearch-result-add { color: #6ee7b7; }
+.subs-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.sub-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; flex-wrap: wrap;
+}
+.sub-row-info { flex: 1; min-width: 140px; }
+.sub-row-name { font-size: 13px; font-weight: 600; color: #ffffff; }
+.sub-row-meta { font-size: 11px; color: rgba(255,255,255,0.4); font-variant-numeric: tabular-nums; font-family: var(--font-mono); margin-top: 2px; }
+.sub-row-dose { display: inline-flex; align-items: center; gap: 6px; background: rgba(0,0,0,0.30); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 4px 8px; }
+.sub-row-dose .sub-dose-input { width: 56px; background: transparent; border: none; outline: none; color: #ffffff; font-family: inherit; font-size: 13px; font-weight: 600; text-align: center; font-variant-numeric: tabular-nums; -moz-appearance: textfield; }
+.sub-row-dose .sub-dose-input::-webkit-outer-spin-button,
+.sub-row-dose .sub-dose-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.sub-row-dose .sub-dose-unit { font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--font-mono); white-space: nowrap; }
+.sub-row-del { background: transparent; border: none; color: rgba(255,255,255,0.25); font-size: 16px; cursor: pointer; padding: 4px 8px; -webkit-tap-highlight-color: transparent; }
+.sub-row-del:hover { color: #ff8a8a; }
+.wbtn-primary {
+  width: 100%; padding: 13px; border: none;
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b; border-radius: 12px; font-family: inherit; font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+  -webkit-tap-highlight-color: transparent;
+}
+.wbtn-secondary {
+  padding: 11px 16px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.04); color: #ffffff; border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.wbtn-secondary:hover { background: rgba(255,255,255,0.10); }
+.wmodal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.wmodal-actions .wbtn-primary { flex: 1; }
+@media (max-width: 480px) { .water-num { font-size: 48px; } }
 
 .stack-card {
   background: var(--bg-card);
@@ -515,10 +736,164 @@ main {
     </div>
   </div>
 
-  <section id="water" class="water-embed">
-    <div class="section-title">Water Tracker</div>
-    <iframe src="po-water.html" class="water-iframe" loading="lazy" title="Water Tracker"></iframe>
+  <section id="water" class="water-section">
+    <div class="section-title">
+      Water Tracker
+      <button class="water-icon-btn" id="waterSettingsBtn" title="Water settings" aria-label="Water settings">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <div class="water-card">
+      <div class="water-label" id="waterUnitLabel">BOTTLES DRANK TODAY</div>
+      <div class="water-row">
+        <span class="water-num" id="waterNum">0</span>
+        <span class="water-target" id="waterTarget">/ 9</span>
+      </div>
+
+      <div class="water-bar-wrap">
+        <div class="water-bar-track">
+          <div class="water-bar-fill" id="waterBarFill" style="width:0%"></div>
+          <div class="water-bar-zone" id="waterBarZoneStart" style="left:55%"></div>
+          <div class="water-bar-zone" id="waterBarZoneEnd" style="left:80%"></div>
+        </div>
+        <div class="water-bar-labels">
+          <span id="waterBarMin">0</span>
+          <span class="water-zone-name">healthy zone</span>
+          <span id="waterBarMax">12+</span>
+        </div>
+      </div>
+
+      <div class="water-actions">
+        <button class="water-minus-btn" id="waterMinusBtn" type="button" aria-label="Undo last">−</button>
+        <button class="water-plus-btn" id="waterPlusBtn" type="button">
+          <span id="waterPlusLabel">Drank a bottle</span>
+          <span>↑</span>
+        </button>
+      </div>
+      <div class="water-helper" id="waterHelper">Start the day — first one in.</div>
+
+      <button class="why-toggle" id="whyToggle" type="button" aria-expanded="false">
+        <span>Why this target?</span>
+        <span class="why-arrow">▾</span>
+      </button>
+      <div class="why-body" id="whyBody"></div>
+    </div>
+
+    <div class="water-card">
+      <div class="water-label">LAST 14 DAYS</div>
+      <div class="spark-wrap">
+        <svg class="spark-svg" id="sparkSvg" viewBox="0 0 280 70" preserveAspectRatio="none"></svg>
+      </div>
+      <div id="histList" style="margin-top:14px"></div>
+    </div>
   </section>
+
+  <!-- Water settings modal -->
+  <div id="waterSetModalBg">
+    <div class="modal">
+      <h3>Water Settings</h3>
+
+      <div class="wset-section">
+        <h4>Profile</h4>
+        <div class="wfield-row">
+          <div class="wfield">
+            <label>Weight</label>
+            <input type="number" id="setWeight" step="0.5" min="20" max="300">
+          </div>
+          <div class="wfield">
+            <label>Weight unit</label>
+            <div class="wseg" id="setWeightUnit">
+              <button data-u="kg">kg</button>
+              <button data-u="lb">lb</button>
+            </div>
+          </div>
+        </div>
+        <div class="wfield-row">
+          <div class="wfield">
+            <label>Age</label>
+            <input type="number" id="setAge" min="13" max="100">
+          </div>
+          <div class="wfield">
+            <label>Sex</label>
+            <div class="wseg" id="setSex">
+              <button data-s="m">Male</button>
+              <button data-s="f">Female</button>
+              <button data-s="o">Other</button>
+            </div>
+          </div>
+        </div>
+        <div class="wfield">
+          <label>Activity (training hours per week)</label>
+          <input type="number" id="setActivity" min="0" max="40" step="0.5">
+        </div>
+      </div>
+
+      <div class="wset-section">
+        <h4>Display</h4>
+        <div class="wfield">
+          <label>Show water as</label>
+          <div class="wseg" id="setUnit">
+            <button data-u="bottle">Bottles</button>
+            <button data-u="glass">Glasses</button>
+            <button data-u="oz">oz</button>
+            <button data-u="ml">ml</button>
+          </div>
+        </div>
+        <div class="wfield-row">
+          <div class="wfield">
+            <label>Bottle size (ml)</label>
+            <input type="number" id="setBottleMl" min="100" max="2000" step="50">
+          </div>
+          <div class="wfield">
+            <label>Glass size (ml)</label>
+            <input type="number" id="setGlassMl" min="100" max="500" step="10">
+          </div>
+        </div>
+      </div>
+
+      <div class="wset-section">
+        <h4>Caffeine</h4>
+        <div class="wfield">
+          <label>Average caffeine per day (mg)</label>
+          <input type="number" id="setCaffeine" min="0" max="1000" step="10">
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;line-height:1.4">
+            ~1 cup of coffee = 95mg · espresso shot = 75mg · energy drink = 160mg.
+            Above 200mg/day starts to add a small water requirement.
+          </div>
+        </div>
+      </div>
+
+      <div class="wset-section">
+        <h4>Stimulants &amp; meds</h4>
+        <div class="wfield">
+          <label>Search to add</label>
+          <div class="wsearch-wrap">
+            <input type="text" class="wsearch-input" id="subSearch" placeholder="Type a name (Adderall, Concerta, Lithium…)" autocomplete="off">
+            <div class="wsearch-results" id="subResults"></div>
+          </div>
+          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;line-height:1.4">
+            Each substance bumps your daily water target.
+          </div>
+        </div>
+        <div class="subs-list" id="subsList"></div>
+      </div>
+
+      <div class="wset-section">
+        <h4>Data</h4>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="wbtn-secondary" id="setExport">Export JSON</button>
+          <button class="wbtn-secondary" id="setImport">Import JSON</button>
+          <button class="wbtn-secondary" id="setReset" style="color:#ff8a8a;border-color:rgba(255,138,138,0.3)">Reset all</button>
+        </div>
+        <input type="file" id="setImportFile" accept=".json" style="display:none">
+      </div>
+
+      <div class="wmodal-actions">
+        <button class="wbtn-primary" id="waterSetClose">Done</button>
+      </div>
+    </div>
+  </div>
 
   <div class="attribution">// editable template · all data stays in your browser</div>
 </main>
