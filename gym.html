@@ -3053,7 +3053,10 @@ img, video, canvas, svg { max-width: 100%; }
   localStorage.setItem = function(k, v) {
     _pcOrigSet(k, v);
     try {
-      if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush();
+      if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) {
+        dbgLog('intercepted: ' + k);
+        pcSchedulePush();
+      }
     } catch (e) {}
   };
   localStorage.removeItem = function(k) {
