@@ -1259,7 +1259,7 @@ img, video, canvas, svg { max-width: 100%; }
 
 /* ── Past workout Edit button ── */
 .po-tw-past-edit {
-  flex-shrink: 0; margin-left: auto;
+  flex-shrink: 0;
   background: transparent; border: 1px solid var(--border);
   color: var(--text-3); border-radius: 6px;
   font-family: inherit; font-size: 11px; font-weight: 600;
@@ -1267,6 +1267,14 @@ img, video, canvas, svg { max-width: 100%; }
   -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
 }
 .po-tw-past-edit:hover { background: rgba(255,255,255,0.06); color: var(--text-1); }
+.po-tw-past-del {
+  flex-shrink: 0;
+  background: transparent; border: 1px solid rgba(255,138,138,0.22);
+  color: var(--bad); border-radius: 6px;
+  font-size: 13px; line-height: 1; padding: 3px 7px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s;
+}
+.po-tw-past-del:hover { background: rgba(255,138,138,0.12); }
 
 /* ── Past workout edit modal body ── */
 .pe-ex-block {
@@ -1301,6 +1309,84 @@ img, video, canvas, svg { max-width: 100%; }
   -webkit-tap-highlight-color: transparent; text-align: center;
 }
 .pe-add-set:hover { background: rgba(255,255,255,0.05); }
+
+/* ── Add Exercise to Past Workout ── */
+.pe-add-ex-section {
+  margin-top: 12px; padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.pe-add-ex-title {
+  font-size: 10px; font-weight: 800; letter-spacing: 0.14em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 10px;
+}
+.pe-add-ex-row {
+  display: flex; gap: 8px; align-items: center; margin-bottom: 10px;
+}
+.pe-add-ex-wrap { flex: 1; position: relative; }
+.pe-add-ex-input {
+  width: 100%; padding: 10px 12px;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.28);
+  color: var(--text-1); border-radius: 10px;
+  font-family: inherit; font-size: 14px; outline: none; -webkit-appearance: none;
+}
+.pe-add-ex-input:focus { border-color: rgba(255,255,255,0.4); }
+.pe-add-ex-dropdown {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #1a1a1e; border: 1px solid var(--border-strong);
+  border-radius: 10px; z-index: 200;
+  max-height: 150px; overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.pe-add-ex-dropdown.open { display: block; }
+.pe-add-ex-dd-item {
+  padding: 9px 12px; font-size: 13px; color: var(--text-1); cursor: pointer;
+}
+.pe-add-ex-dd-item:hover { background: rgba(255,255,255,0.07); }
+.pe-add-wr-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+}
+.pe-add-wr-row.bw-mode { grid-template-columns: 1fr; }
+.pe-add-wr-field {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.pe-add-wr-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3);
+}
+.pe-add-wr-inner {
+  display: grid; grid-template-columns: 36px 1fr 36px; gap: 4px; width: 100%;
+}
+.pe-add-wr-btn {
+  height: 42px; border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04); color: var(--text-1);
+  border-radius: 8px; font-size: 18px; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.pe-add-wr-btn:hover { background: rgba(255,255,255,0.10); }
+.pe-add-wr-btn:active { transform: scale(0.92); }
+.pe-add-wr-num {
+  width: 100%; padding: 8px 4px;
+  border: 1px solid var(--border); background: rgba(0,0,0,0.28);
+  color: var(--text-1); border-radius: 8px;
+  font-family: inherit; font-size: 18px; font-weight: 700;
+  text-align: center; font-variant-numeric: tabular-nums;
+  -moz-appearance: textfield; outline: none; -webkit-appearance: none;
+}
+.pe-add-wr-num::-webkit-outer-spin-button,
+.pe-add-wr-num::-webkit-inner-spin-button { -webkit-appearance: none; }
+.pe-add-wr-num:focus { border-color: rgba(255,255,255,0.4); }
+.pe-add-wr-unit { font-size: 10px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-3); }
+.pe-add-set-btn {
+  width: 100%; padding: 11px;
+  border: 1px solid rgba(110,231,183,0.45);
+  background: rgba(110,231,183,0.10);
+  color: var(--good); border-radius: 10px;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  cursor: pointer; transition: background 0.15s, transform 0.1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.pe-add-set-btn:hover { background: rgba(110,231,183,0.18); }
+.pe-add-set-btn:active { transform: scale(0.98); }
 </style>
 <link rel="stylesheet" href="/animations.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1459,8 +1545,46 @@ img, video, canvas, svg { max-width: 100%; }
 <div class="po-modal-bg" id="pastEditBg">
   <div class="po-modal">
     <h3 id="pastEditTitle">Edit Workout</h3>
-    <div id="pastEditBody" style="max-height:55vh;overflow-y:auto;margin-bottom:14px;"></div>
-    <div class="po-modal-actions">
+    <div id="pastEditBody" style="max-height:35vh;overflow-y:auto;margin-bottom:14px;"></div>
+
+    <!-- Add Exercise to this past workout -->
+    <div class="pe-add-ex-section">
+      <div class="pe-add-ex-title">Add Exercise</div>
+      <div class="pe-add-ex-row">
+        <div class="pe-add-ex-wrap">
+          <input type="text" id="peAddExInput" class="pe-add-ex-input"
+            placeholder="Search or type exercise…"
+            autocomplete="off" autocorrect="off" spellcheck="false">
+          <div class="pe-add-ex-dropdown" id="peAddExDropdown"></div>
+        </div>
+        <button class="wl-bw-btn" id="peAddBwBtn" type="button">BW</button>
+      </div>
+      <div class="pe-add-wr-row" id="peAddWrRow">
+        <div class="pe-add-wr-field" id="peAddWeightField">
+          <span class="pe-add-wr-label">Weight</span>
+          <div class="pe-add-wr-inner">
+            <button class="pe-add-wr-btn" id="peAddWtDown" type="button">−</button>
+            <input type="number" id="peAddWeight" class="pe-add-wr-num"
+              placeholder="0" inputmode="decimal" step="2.5">
+            <button class="pe-add-wr-btn" id="peAddWtUp" type="button">+</button>
+          </div>
+          <span class="pe-add-wr-unit" id="peAddWeightLabel">kg</span>
+        </div>
+        <div class="pe-add-wr-field">
+          <span class="pe-add-wr-label">Reps</span>
+          <div class="pe-add-wr-inner">
+            <button class="pe-add-wr-btn" id="peAddRpDown" type="button">−</button>
+            <input type="number" id="peAddReps" class="pe-add-wr-num"
+              value="8" inputmode="numeric">
+            <button class="pe-add-wr-btn" id="peAddRpUp" type="button">+</button>
+          </div>
+          <span class="pe-add-wr-unit">reps</span>
+        </div>
+      </div>
+      <button class="pe-add-set-btn" id="peAddSetBtn" type="button">Add Set</button>
+    </div>
+
+    <div class="po-modal-actions" style="margin-top:14px">
       <button class="po-btn-secondary" id="pastEditClose" style="width:100%;padding:13px">Done</button>
     </div>
   </div>
@@ -1653,7 +1777,10 @@ img, video, canvas, svg { max-width: 100%; }
         +     sum.totalSets + ' sets · ' + Math.round(sum.totalVol).toLocaleString() + ' ' + u
         +     ' <span class="po-tw-past-day-done">DONE</span>'
         +   '</span>'
+        +   '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;margin-left:auto;">'
         +   '<button class="po-tw-past-edit" data-dk="' + key + '">Edit</button>'
+        +   '<button class="po-tw-past-del" data-dk="' + key + '" aria-label="Delete workout">🗑</button>'
+        +   '</div>'
         + '</div>'
         + '<div class="po-tw-past-day-summary" style="margin-top:6px;font-size:11px;color:var(--text-3);">'
         +   escape(exNames)
@@ -1663,15 +1790,50 @@ img, video, canvas, svg { max-width: 100%; }
     body.querySelectorAll('.po-tw-past-edit').forEach(btn => {
       btn.addEventListener('click', () => openPastEdit(btn.dataset.dk));
     });
+    body.querySelectorAll('.po-tw-past-del').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const dk = btn.dataset.dk;
+        if (!confirm('Delete this entire workout? This cannot be undone.')) return;
+        const isSess = dk.length > 10;
+        state.exercises.forEach(ex => {
+          if (!state.logs[ex.id]) return;
+          state.logs[ex.id] = state.logs[ex.id].filter(l =>
+            isSess ? l.sid !== dk : l.date.slice(0, 10) !== dk
+          );
+          if (!state.logs[ex.id].length) delete state.logs[ex.id];
+        });
+        saveState();
+        renderPastWorkouts();
+        wlRenderSets();
+        if (pastEditDayKey === dk) {
+          $('pastEditBg').classList.remove('show');
+          pastEditDayKey = null;
+        }
+      });
+    });
   }
 
   // ── Past Workout Editor ──────────────────────────────────────
   let pastEditDayKey = null;
+  let peAddExIsBW = false;
 
   function openPastEdit(dk) {
     pastEditDayKey = dk;
     $('pastEditTitle').textContent = 'Edit — ' + fmtPastDate(dk);
     renderPastEditBody();
+    // Reset add-exercise form
+    peAddExIsBW = false;
+    $('peAddBwBtn').classList.remove('active');
+    $('peAddExInput').value = '';
+    $('peAddExDropdown').innerHTML = '';
+    $('peAddExDropdown').classList.remove('open');
+    $('peAddWeight').value = '';
+    $('peAddReps').value = 8;
+    $('peAddWrRow').className = 'pe-add-wr-row';
+    $('peAddWeightLabel').textContent = state.units;
+    const addBtn = $('peAddSetBtn');
+    addBtn.textContent = 'Add Set';
+    addBtn.style.cssText = '';
     $('pastEditBg').classList.add('show');
   }
 
@@ -1776,6 +1938,99 @@ img, video, canvas, svg { max-width: 100%; }
   $('pastEditClose').addEventListener('click', () => {
     $('pastEditBg').classList.remove('show');
     pastEditDayKey = null;
+  });
+
+  // ── Add Exercise to Past Workout — event listeners ────────────
+  function peAddRenderDropdown() {
+    const q = $('peAddExInput').value.trim().toLowerCase();
+    const dd = $('peAddExDropdown');
+    if (!q) { dd.innerHTML = ''; dd.classList.remove('open'); return; }
+    const matches = state.exercises.filter(e =>
+      e.name.toLowerCase().includes(q)
+    ).slice(0, 8);
+    if (!matches.length) { dd.innerHTML = ''; dd.classList.remove('open'); return; }
+    dd.innerHTML = matches.map(e =>
+      '<div class="pe-add-ex-dd-item" data-name="' + escape(e.name) + '" data-bw="' + (e.bw ? '1' : '0') + '">'
+      + escape(e.name)
+      + (e.bw ? ' <span style="color:var(--text-3);font-size:11px">BW</span>' : '')
+      + '</div>'
+    ).join('');
+    dd.classList.add('open');
+    dd.querySelectorAll('.pe-add-ex-dd-item').forEach(item => {
+      item.addEventListener('mousedown', (ev) => {
+        ev.preventDefault();
+        $('peAddExInput').value = item.dataset.name;
+        peAddExIsBW = item.dataset.bw === '1';
+        $('peAddBwBtn').classList.toggle('active', peAddExIsBW);
+        $('peAddWrRow').className = 'pe-add-wr-row' + (peAddExIsBW ? ' bw-mode' : '');
+        dd.innerHTML = ''; dd.classList.remove('open');
+      });
+    });
+  }
+
+  $('peAddExInput').addEventListener('input', peAddRenderDropdown);
+  $('peAddExInput').addEventListener('blur', () => {
+    setTimeout(() => {
+      $('peAddExDropdown').innerHTML = '';
+      $('peAddExDropdown').classList.remove('open');
+    }, 150);
+  });
+
+  $('peAddBwBtn').addEventListener('click', () => {
+    peAddExIsBW = !peAddExIsBW;
+    $('peAddBwBtn').classList.toggle('active', peAddExIsBW);
+    $('peAddWrRow').className = 'pe-add-wr-row' + (peAddExIsBW ? ' bw-mode' : '');
+  });
+
+  $('peAddWtDown').addEventListener('click', () => {
+    const inp = $('peAddWeight');
+    inp.value = Math.max(0, (parseFloat(inp.value) || 0) - 2.5);
+  });
+  $('peAddWtUp').addEventListener('click', () => {
+    const inp = $('peAddWeight');
+    inp.value = (parseFloat(inp.value) || 0) + 2.5;
+  });
+  $('peAddRpDown').addEventListener('click', () => {
+    const inp = $('peAddReps');
+    inp.value = Math.max(1, (parseInt(inp.value, 10) || 0) - 1);
+  });
+  $('peAddRpUp').addEventListener('click', () => {
+    const inp = $('peAddReps');
+    inp.value = (parseInt(inp.value, 10) || 0) + 1;
+  });
+
+  $('peAddSetBtn').addEventListener('click', () => {
+    const name = $('peAddExInput').value.trim();
+    if (!name) { $('peAddExInput').focus(); return; }
+    const reps = parseInt($('peAddReps').value, 10) || 0;
+    if (!reps) { $('peAddReps').focus(); return; }
+    const weight = peAddExIsBW ? 0 : (parseFloat($('peAddWeight').value) || 0);
+    const ex = wlGetOrCreateEx(name, peAddExIsBW);
+    const arr = state.logs[ex.id] || [];
+    const dk = pastEditDayKey;
+    const isSess = dk && dk.length > 10;
+    const newEntry = { weight, reps, date: isSess ? dk : dk + 'T12:00:00' };
+    if (isSess) newEntry.sid = dk;
+    arr.push(newEntry);
+    state.logs[ex.id] = arr;
+    saveState();
+    renderPastEditBody();
+    renderPastWorkouts();
+    // Reset weight/reps but keep exercise so user can add another set
+    $('peAddWeight').value = '';
+    $('peAddReps').value = 8;
+    // Flash confirmation
+    const btn = $('peAddSetBtn');
+    btn.textContent = '✓ Added!';
+    btn.style.background = 'linear-gradient(180deg,#6ee7b7 0%,#4ade80 100%)';
+    btn.style.borderColor = '#6ee7b7';
+    btn.style.color = '#000';
+    setTimeout(() => {
+      btn.textContent = 'Add Set';
+      btn.style.background = '';
+      btn.style.borderColor = '';
+      btn.style.color = '';
+    }, 1200);
   });
 
   $('poTwPastToggle').addEventListener('click', () => {
