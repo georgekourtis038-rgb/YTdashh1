@@ -350,12 +350,12 @@ main {
 }
 .stack-add-label { margin-bottom: 10px; }
 .stack-add-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr 110px 90px;
+  display: flex;
+  flex-direction: column;
   gap: 6px;
-  align-items: center;
 }
 .stack-input {
+  width: 100%;
   font-size: 16px;
   padding: 9px 11px;
   border-radius: 10px;
@@ -365,6 +365,7 @@ main {
   font-family: inherit;
   transition: border-color 0.18s, background 0.18s;
   touch-action: manipulation;
+  box-sizing: border-box;
 }
 .stack-input::placeholder { color: var(--text-tertiary); }
 .stack-input:focus {
@@ -374,6 +375,7 @@ main {
 }
 .stack-select { cursor: pointer; }
 .stack-add-btn {
+  width: 100%;
   font-size: 13px;
   padding: 9px 11px;
   border-radius: 10px;
@@ -456,10 +458,6 @@ main {
   .stack-card { padding: 18px 16px 14px; }
   .stack-item { grid-template-columns: 28px 1fr auto; gap: 8px; }
   .stack-item .stack-low-btn { grid-column: 2 / 4; margin-top: 4px; justify-self: start; }
-  .stack-add-row { display: flex; flex-direction: column; gap: 8px; }
-  .stack-add-row .stack-name-wrap,
-  .stack-add-row .stack-input,
-  .stack-add-row .stack-add-btn { width: 100%; }
   .stack-search-results { width: 100%; }
 }
 
