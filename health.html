@@ -1645,6 +1645,32 @@ main {
     wSave(d);
   }
 
+  function wGetTodayLog() {
+    var logs = wLoad().logs || {};
+    return logs[wActiveDate()] || [];
+  }
+
+  function wAddMl(ml) {
+    var d = wLoad();
+    var today = wActiveDate();
+    if (!d.history) d.history = {};
+    if (!d.logs) d.logs = {};
+    if (!d.logs[today]) d.logs[today] = [];
+    d.history[today] = Math.max(0, (d.history[today] || 0) + Math.round(ml));
+    d.logs[today].push(Math.round(ml));
+    wSave(d);
+  }
+
+  function wUndoMl() {
+    var d = wLoad();
+    var today = wActiveDate();
+    if (!d.logs || !d.logs[today] || !d.logs[today].length) return;
+    var amount = d.logs[today].pop();
+    if (!d.history) d.history = {};
+    d.history[today] = Math.max(0, (d.history[today] || 0) - amount);
+    wSave(d);
+  }
+
   function wTarget(s) {
     var base = 2500;
     var kg = wReadDashNum('dash_weight');
@@ -1678,7 +1704,7 @@ main {
       statusEl.className = 'wstatus warn';
     }
 
-    document.getElementById('wUndoBtn').disabled = ml === 0;
+    document.getElementById('wUndoBtn').disabled = wGetTodayLog().length === 0;
     document.getElementById('wBtnBottleLabel').textContent = '+ Bottle (' + s.bottleMl + 'ml)';
     document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + s.glassMl + 'ml)';
 
@@ -1813,18 +1839,18 @@ main {
   });
 
   document.getElementById('wBtnBottle').addEventListener('click', function () {
-    wSetTodayMl(wGetTodayMl() + wGetSettings().bottleMl);
+    wAddMl(wGetSettings().bottleMl);
     wRender();
   });
 
   document.getElementById('wBtnGlass').addEventListener('click', function () {
     var s = wGetSettings();
-    wSetTodayMl(wGetTodayMl() + (s.glassMl || W_DEFAULTS.glassMl));
+    wAddMl(s.glassMl || W_DEFAULTS.glassMl);
     wRender();
   });
 
   document.getElementById('wUndoBtn').addEventListener('click', function () {
-    wSetTodayMl(Math.max(0, wGetTodayMl() - wGetSettings().bottleMl));
+    wUndoMl();
     wRender();
   });
 
