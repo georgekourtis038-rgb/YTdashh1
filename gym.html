@@ -18,6 +18,20 @@
      the browser's local storage on each device.
      ============================================================= -->
 <script>
+// Install localStorage.setItem intercept before any app code runs so no
+// JS anywhere on the page can call the original before the hook is in place.
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig; // expose so the IIFE can use it as _pcOrigSet
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try {
+      if (window.dbg) window.dbg('intercepted: ' + k);
+      if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k);
+    } catch (e) {}
+  };
+})();
+
 const CONFIG = {
   appTitle: "Progressive Overload Coach",
 
@@ -1821,6 +1835,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
   function saveState() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    try { pcSchedulePush(); } catch (e) {}
   }
   let state = loadState();
   document.getElementById('appTitle').textContent = CONFIG.appTitle || 'Progressive Overload Coach';
@@ -1870,6 +1885,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
   function saveDoneDays(d) {
     try { localStorage.setItem(WORKOUT_DONE_KEY, JSON.stringify(d)); } catch (e) {}
+    try { pcSchedulePush(); } catch (e) {}
   }
   let doneDays = loadDoneDays();
 
@@ -2362,6 +2378,7 @@ img, video, canvas, svg { max-width: 100%; }
   }
   function wtSave(arr) {
     try { localStorage.setItem(WT_KEY, JSON.stringify(arr)); } catch (e) {}
+    try { pcSchedulePush(); } catch (e) {}
   }
   function wtDateKey(d) {
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
@@ -2691,6 +2708,7 @@ img, video, canvas, svg { max-width: 100%; }
   function photosSave() {
     try {
       localStorage.setItem(PHOTO_KEY, JSON.stringify(photos));
+      try { pcSchedulePush(); } catch (e2) {}
       return true;
     } catch (e) {
       return false;
@@ -3045,19 +3063,14 @@ img, video, canvas, svg { max-width: 100%; }
   // realtime echoes of our own pushes so we don't infinite-loop.
   let pcLastSyncedJson = null;
 
-  const _pcOrigSet = localStorage.setItem.bind(localStorage);
+  // setItem override is installed at page-top (before CONFIG) so it catches
+  // every write regardless of when code runs. _pcOrigSet uses the pre-override
+  // original so pcApplyRemoteState can write without re-triggering the hook.
+  const _pcOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
-  // Wrap setItem/removeItem so a sync-side error can NEVER prevent the
-  // underlying write from happening. The original call always runs;
-  // any error in the sync scheduling is swallowed.
-  localStorage.setItem = function(k, v) {
-    _pcOrigSet(k, v);
-    try {
-      if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) {
-        dbgLog('intercepted: ' + k);
-        pcSchedulePush();
-      }
-    } catch (e) {}
+  // Wire the sync trigger into the page-top override
+  window._pcTriggerSync = function(k) {
+    if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush();
   };
   localStorage.removeItem = function(k) {
     _pcOrigRemove(k);
