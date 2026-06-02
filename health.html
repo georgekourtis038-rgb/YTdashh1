@@ -1818,7 +1818,8 @@ main {
   });
 
   document.getElementById('wBtnGlass').addEventListener('click', function () {
-    wSetTodayMl(wGetTodayMl() + wGetSettings().glassMl);
+    var s = wGetSettings();
+    wSetTodayMl(wGetTodayMl() + (s.glassMl || W_DEFAULTS.glassMl));
     wRender();
   });
 
