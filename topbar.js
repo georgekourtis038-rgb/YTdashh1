@@ -7,6 +7,15 @@
 // Main/Health/Fitness bottom tabs. Skips chrome on finance.html
 // and inside iframes (so the water tracker can embed cleanly).
 // =============================================================
+(function() {
+  if (window.__lsOrigSet) return;
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
 (function () {
   'use strict';
 
@@ -304,6 +313,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const k = calendarDateKey();
     state.logs[k] = (state.logs[k] || 0) + 1;
     try { localStorage.setItem('po_water_v1', JSON.stringify(state)); } catch (e) {}
+    try { window.dispatchEvent(new StorageEvent('storage', { key: 'po_water_v1' })); } catch(e) {}
     render();
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) { btn.classList.add('flash'); setTimeout(() => btn.classList.remove('flash'), 220); }
