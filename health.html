@@ -526,11 +526,22 @@ main {
 </main>
 
 <script>
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
 (() => {
   'use strict';
 
   const storeGet = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
-  const storeSet = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const storeSet = (k, v) => {
+    localStorage.setItem(k, JSON.stringify(v));
+    try { if (pcKeyInScope(k)) pcSchedulePush(); } catch(e) {}
+  };
 
   function getActiveDate() {
     const now = new Date();
@@ -1073,11 +1084,10 @@ main {
   let pcPendingRemote = null;
   let pcLastSyncedJson = null;
 
-  const _pcOrigSet = localStorage.setItem.bind(localStorage);
+  const _pcOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
-  localStorage.setItem = function(k, v) {
-    _pcOrigSet(k, v);
-    try { if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush(); } catch (e) {}
+  window._pcTriggerSync = function(k) {
+    if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush();
   };
   localStorage.removeItem = function(k) {
     _pcOrigRemove(k);

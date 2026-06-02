@@ -687,6 +687,14 @@ body::after {
 </div>
 
 <script>
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
 (function () {
   'use strict';
 
@@ -717,6 +725,7 @@ body::after {
   }
   function storeSet(key, value) {
     try { localStorage.setItem(key, JSON.stringify(value)); } catch (e) {}
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(key); } catch (e) {}
     if (typeof key === 'string' && key.indexOf('goals:') === 0) {
       window.dispatchEvent(new CustomEvent('goals-changed'));
     }
@@ -1321,11 +1330,10 @@ document.addEventListener('DOMContentLoaded', function () {
   let pcPendingRemote = null;
   let pcLastSyncedJson = null;
 
-  const _pcOrigSet = localStorage.setItem.bind(localStorage);
+  const _pcOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
-  localStorage.setItem = function (k, v) {
-    _pcOrigSet(k, v);
-    try { if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush(); } catch (e) {}
+  window._pcTriggerSync = function(k) {
+    if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush();
   };
   localStorage.removeItem = function (k) {
     _pcOrigRemove(k);

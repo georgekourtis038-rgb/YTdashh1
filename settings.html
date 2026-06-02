@@ -414,13 +414,21 @@ html, body {
 </aside>
 
 <script>
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
 (function () {
   'use strict';
 
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch(e) { return null; } }
   function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} }
   function lsRaw(k) { return localStorage.getItem(k); }
-  function lsRawSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} }
+  function lsRawSet(k, v) { try { localStorage.setItem(k, v); } catch(e) {} try { stSchedulePush(); } catch(e) {} }
 
   function todayKey() {
     const d = new Date();
@@ -566,7 +574,7 @@ html, body {
   const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex'];
 
   let stSupa = null, stPushTimer = null, stLastJson = null, stSuppressSync = false;
-  const _stOrigSet = localStorage.setItem.bind(localStorage);
+  const _stOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
 
   function stCollect() {
     const out = {};
@@ -611,13 +619,8 @@ html, body {
     stPushTimer = setTimeout(stPushNow, 400);
   }
 
-  // Intercept localStorage.setItem so any save of a settings key
-  // (e.g. from saveAll / lsRawSet) automatically schedules a push.
-  localStorage.setItem = function(k, v) {
-    _stOrigSet(k, v);
-    try {
-      if (!stSuppressSync && ST_LS_KEYS.indexOf(k) !== -1) stSchedulePush();
-    } catch (_) {}
+  window._pcTriggerSync = function(k) {
+    if (!stSuppressSync && ST_LS_KEYS.indexOf(k) !== -1) stSchedulePush();
   };
 
   // Push on every input change. Use both 'change' and 'input' because iOS
