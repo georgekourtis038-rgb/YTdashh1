@@ -175,6 +175,35 @@ main {
 .wchart-bar.empty { background: rgba(255,255,255,0.06); }
 .wchart-day { font-size: 9px; color: var(--text-3); font-family: var(--font-mono); height: 13px; line-height: 1; text-align: center; }
 .wchart-day.today { color: var(--text-1); font-weight: 700; }
+.wchart-edit {
+  display: none; align-items: center; gap: 8px; margin-top: 12px;
+}
+.wchart-edit.show { display: flex; }
+.wchart-edit-label {
+  font-size: 12px; color: var(--text-2); font-family: var(--font-mono);
+  min-width: 32px; font-variant-numeric: tabular-nums;
+}
+.wchart-edit-input {
+  flex: 1; padding: 8px 10px; background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.12); color: #fff;
+  border-radius: 8px; font-size: 16px; font-family: inherit; outline: none;
+  -moz-appearance: textfield;
+}
+.wchart-edit-input::-webkit-outer-spin-button,
+.wchart-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wchart-edit-input:focus { border-color: rgba(110,231,183,0.4); }
+.wchart-edit-save {
+  background: rgba(110,231,183,0.16); color: #6ee7b7;
+  border: 1px solid rgba(110,231,183,0.3); border-radius: 8px;
+  font-size: 18px; cursor: pointer; padding: 6px 12px; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.wchart-edit-cancel {
+  background: transparent; border: 1px solid rgba(255,255,255,0.08);
+  color: var(--text-3); border-radius: 8px;
+  font-size: 13px; cursor: pointer; padding: 6px 10px;
+  -webkit-tap-highlight-color: transparent;
+}
 .why-toggle {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   background: transparent; border: 1px solid var(--border); color: var(--text-2);
@@ -755,6 +784,12 @@ main {
     <div class="water-card">
       <div class="water-label">LAST 7 DAYS</div>
       <div class="wchart" id="wChart"></div>
+      <div class="wchart-edit" id="wChartEdit">
+        <span class="wchart-edit-label" id="wChartEditDay">Mon</span>
+        <input type="number" class="wchart-edit-input" id="wChartEditInput" min="0" max="9999" step="50" placeholder="ml">
+        <button class="wchart-edit-save" id="wChartEditSave" type="button">✓</button>
+        <button class="wchart-edit-cancel" id="wChartEditCancel" type="button">✕</button>
+      </div>
     </div>
   </section>
 
@@ -1730,7 +1765,7 @@ main {
       var dayPct = target > 0 ? d.ml / target : 0;
       var barClass = d.ml === 0 ? 'wchart-bar empty' : (dayPct >= 1 ? 'wchart-bar hit' : dayPct >= 0.8 ? 'wchart-bar near' : 'wchart-bar miss');
       var amtLabel = d.ml >= 1000 ? (d.ml / 1000).toFixed(1) + 'L' : (d.ml > 0 ? d.ml + '' : '');
-      return '<div class="wchart-col">' +
+      return '<div class="wchart-col" data-key="' + d.key + '" data-day="' + d.label + '" data-ml="' + d.ml + '" style="cursor:pointer">' +
         '<div class="wchart-amt">' + amtLabel + '</div>' +
         '<div class="wchart-bar-wrap"><div class="' + barClass + '" style="height:' + heightPct.toFixed(1) + '%"></div></div>' +
         '<div class="wchart-day' + (d.isToday ? ' today' : '') + '">' + d.label + '</div>' +
@@ -1838,9 +1873,8 @@ main {
   });
 
   document.getElementById('wUndoBtn').addEventListener('click', function () {
-    var s = wGetSettings();
-    var cur = wGetTodayMl();
-    if (cur > 0) { wSetTodayMl(Math.max(0, cur - s.bottleMl)); wRender(); }
+    wSetTodayMl(Math.max(0, wGetTodayMl() - wGetSettings().bottleMl));
+    wRender();
   });
 
   document.getElementById('setWeightUnit').addEventListener('click', function (e) {
@@ -1935,6 +1969,47 @@ main {
       wOpenSettings();
       wRender();
     }
+  });
+
+  // ===== CHART TAP-TO-EDIT =====
+  var wChartEditKey = null;
+
+  document.getElementById('wChart').addEventListener('click', function (e) {
+    var col = e.target.closest('.wchart-col');
+    if (!col) return;
+    wChartEditKey = col.dataset.key;
+    document.getElementById('wChartEditDay').textContent = col.dataset.day;
+    var inp = document.getElementById('wChartEditInput');
+    inp.value = col.dataset.ml && col.dataset.ml !== '0' ? col.dataset.ml : '';
+    document.getElementById('wChartEdit').classList.add('show');
+    inp.focus();
+    inp.select();
+  });
+
+  function wCommitChartEdit() {
+    if (!wChartEditKey) return;
+    var val = parseInt(document.getElementById('wChartEditInput').value, 10);
+    if (!isNaN(val) && val >= 0) {
+      var d = wLoad();
+      if (!d.history) d.history = {};
+      d.history[wChartEditKey] = val;
+      wSave(d);
+    }
+    document.getElementById('wChartEdit').classList.remove('show');
+    wChartEditKey = null;
+    wRender();
+  }
+
+  document.getElementById('wChartEditSave').addEventListener('click', wCommitChartEdit);
+
+  document.getElementById('wChartEditCancel').addEventListener('click', function () {
+    document.getElementById('wChartEdit').classList.remove('show');
+    wChartEditKey = null;
+  });
+
+  document.getElementById('wChartEditInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); wCommitChartEdit(); }
+    if (e.key === 'Escape') { document.getElementById('wChartEditCancel').click(); }
   });
 
   wRender();
