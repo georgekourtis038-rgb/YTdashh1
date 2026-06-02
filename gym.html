@@ -1892,21 +1892,33 @@ img, video, canvas, svg { max-width: 100%; }
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   function logsByDay() {
-    const byDay = {};
+    const bySess = {};
     state.exercises.forEach(ex => {
       (state.logs[ex.id] || []).forEach(l => {
-        const dk = l.date.slice(0, 10);
-        if (!byDay[dk]) byDay[dk] = [];
-        byDay[dk].push({ ex, log: l });
+        const key = l.sid || l.date.slice(0, 10);
+        if (!bySess[key]) bySess[key] = [];
+        bySess[key].push({ ex, log: l });
       });
     });
-    return byDay;
+    return bySess;
   }
-  function fmtPastDate(dk) {
-    const [y, m, d] = dk.split('-').map(Number);
-    const dt = new Date(y, m - 1, d);
+  function fmtPastDate(key) {
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+    if (key.length > 10) {
+      const dateStr = key.slice(0, 10);
+      const h = parseInt(key.slice(11, 13), 10);
+      const min = key.slice(14, 16);
+      const ampm = h >= 12 ? 'PM' : 'AM';
+      const h12 = h % 12 || 12;
+      const timeLabel = h12 + ':' + min + ' ' + ampm;
+      if (dateStr === wlTodayKey()) return 'Today · ' + timeLabel;
+      const [y, mo, d] = dateStr.split('-').map(Number);
+      const dt = new Date(y, mo - 1, d);
+      return dows[dt.getDay()] + ' ' + mons[dt.getMonth()] + ' ' + d + ' · ' + timeLabel;
+    }
+    const [y, m, d] = key.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
     return dows[dt.getDay()] + ' ' + mons[dt.getMonth()] + ' ' + dt.getDate();
   }
   function summarizeDay(daySets) {
@@ -1929,7 +1941,7 @@ img, video, canvas, svg { max-width: 100%; }
     const today = wlTodayKey();
     const all = logsByDay();
     const past = Object.entries(all)
-      .filter(([dk]) => dk !== today || !!doneDays[dk])
+      .filter(([key]) => key.length > 10 || key !== today)
       .sort((a, b) => b[0].localeCompare(a[0]));
     $('poTwPastCount').textContent = past.length;
     const body = $('poTwPastBody');
@@ -1938,19 +1950,18 @@ img, video, canvas, svg { max-width: 100%; }
       return;
     }
     const u = state.units;
-    body.innerHTML = past.slice(0, 30).map(([dk, sets]) => {
+    body.innerHTML = past.slice(0, 30).map(([key, sets]) => {
       const sum = summarizeDay(sets);
-      const isDone = !!doneDays[dk];
       const exNames = sum.perEx.map(e => e.ex.name).slice(0, 3).join(', ')
         + (sum.perEx.length > 3 ? '…' : '');
       return '<div class="po-tw-past-day">'
         + '<div class="po-tw-past-day-h">'
-        +   '<span class="po-tw-past-day-date">' + fmtPastDate(dk) + '</span>'
+        +   '<span class="po-tw-past-day-date">' + fmtPastDate(key) + '</span>'
         +   '<span class="po-tw-past-day-summary">'
         +     sum.totalSets + ' sets · ' + Math.round(sum.totalVol).toLocaleString() + ' ' + u
-        +     (isDone ? ' <span class="po-tw-past-day-done">DONE</span>' : '')
+        +     ' <span class="po-tw-past-day-done">DONE</span>'
         +   '</span>'
-        +   '<button class="po-tw-past-edit" data-dk="' + dk + '">Edit</button>'
+        +   '<button class="po-tw-past-edit" data-dk="' + key + '">Edit</button>'
         + '</div>'
         + '<div class="po-tw-past-day-summary" style="margin-top:6px;font-size:11px;color:var(--text-3);">'
         +   escape(exNames)
@@ -1978,9 +1989,11 @@ img, video, canvas, svg { max-width: 100%; }
     const u = state.units;
     const groups = {};
     const order = [];
+    const isSess = pastEditDayKey.length > 10;
     state.exercises.forEach(ex => {
       (state.logs[ex.id] || []).forEach((log, logIdx) => {
-        if (log.date.slice(0, 10) === pastEditDayKey) {
+        const match = isSess ? log.sid === pastEditDayKey : log.date.slice(0, 10) === pastEditDayKey;
+        if (match) {
           if (!groups[ex.id]) { groups[ex.id] = { ex, sets: [] }; order.push(ex.id); }
           groups[ex.id].sets.push({ log, logIdx });
         }
@@ -2052,11 +2065,15 @@ img, video, canvas, svg { max-width: 100%; }
         const exId = btn.dataset.exid;
         const isBW = btn.dataset.bw === '1';
         const arr = state.logs[exId] || [];
-        const dayLogs = arr.filter(l => l.date.slice(0, 10) === pastEditDayKey);
-        const lastLog = dayLogs[dayLogs.length - 1];
-        const [yy, mm, dd] = pastEditDayKey.split('-').map(Number);
-        const setDate = pastEditDayKey + 'T12:00:00';
-        arr.push({ weight: isBW ? 0 : (lastLog ? lastLog.weight : 0), reps: lastLog ? lastLog.reps : 8, date: setDate });
+        const isSessEdit = pastEditDayKey.length > 10;
+        const sessLogs = isSessEdit
+          ? arr.filter(l => l.sid === pastEditDayKey)
+          : arr.filter(l => l.date.slice(0, 10) === pastEditDayKey);
+        const lastLog = sessLogs[sessLogs.length - 1];
+        const setDate = isSessEdit ? pastEditDayKey : pastEditDayKey + 'T12:00:00';
+        const newEntry = { weight: isBW ? 0 : (lastLog ? lastLog.weight : 0), reps: lastLog ? lastLog.reps : 8, date: setDate };
+        if (isSessEdit) newEntry.sid = pastEditDayKey;
+        arr.push(newEntry);
         state.logs[exId] = arr;
         saveState();
         renderPastEditBody(); renderPastWorkouts();
@@ -2097,13 +2114,10 @@ img, video, canvas, svg { max-width: 100%; }
 
   function wlTodaySets() {
     const today = wlTodayKey();
-    // When today's workout is marked done, the active logger shows empty
-    // (sets are still in state.logs so they appear in past workouts)
-    if (doneDays[today]) return [];
     const result = [];
     state.exercises.forEach(ex => {
       (state.logs[ex.id] || []).forEach((log, logIdx) => {
-        if (log.date.slice(0, 10) === today) result.push({ ex, log, logIdx });
+        if (!log.sid && log.date.slice(0, 10) === today) result.push({ ex, log, logIdx });
       });
     });
     result.sort((a, b) => a.log.date.localeCompare(b.log.date));
@@ -2199,7 +2213,7 @@ img, video, canvas, svg { max-width: 100%; }
     const seen = new Set(), result = [], all = [];
     state.exercises.forEach(ex => {
       (state.logs[ex.id] || []).forEach(l => {
-        if (l.date.slice(0, 10) !== today) all.push({ name: ex.name, date: l.date });
+        if (l.sid || l.date.slice(0, 10) !== today) all.push({ name: ex.name, date: l.sid || l.date });
       });
     });
     all.sort((a, b) => b.date.localeCompare(a.date));
@@ -2227,13 +2241,11 @@ img, video, canvas, svg { max-width: 100%; }
   function wlRenderDone() {
     const btn = $('wlDoneBtn');
     if (!btn) return;
-    const today = wlTodayKey();
-    const isDone = !!doneDays[today];
     const hasSets = wlTodaySets().length > 0;
-    btn.textContent = isDone ? '✓ Workout Done' : '✓ Mark Workout Done';
-    btn.classList.toggle('is-done', isDone);
-    btn.disabled = !hasSets && !isDone;
-    btn.style.opacity = (!hasSets && !isDone) ? '0.4' : '';
+    btn.textContent = '✓ Mark Workout Done';
+    btn.classList.remove('is-done');
+    btn.disabled = !hasSets;
+    btn.style.opacity = !hasSets ? '0.4' : '';
   }
 
   function renderAll() {
@@ -2342,9 +2354,16 @@ img, video, canvas, svg { max-width: 100%; }
 
   $('wlDoneBtn').addEventListener('click', () => {
     const today = wlTodayKey();
-    doneDays[today] ? delete doneDays[today] : (doneDays[today] = new Date().toISOString());
-    saveDoneDays(doneDays);
-    wlRenderDone(); wlRenderSets(); renderPastWorkouts();
+    const now = new Date();
+    const sid = today + 'T' + String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0') + ':' + String(now.getSeconds()).padStart(2,'0');
+    // Stamp all active (unsaved) today's sets with this session ID — moves them to past workouts
+    state.exercises.forEach(ex => {
+      (state.logs[ex.id] || []).forEach(log => {
+        if (!log.sid && log.date.slice(0, 10) === today) log.sid = sid;
+      });
+    });
+    saveState();
+    wlRenderSets(); wlRenderDone(); renderPastWorkouts();
     const pastBody = $('poTwPastBody');
     const pastToggle = $('poTwPastToggle');
     if (pastBody && pastBody.style.display === 'none') {
