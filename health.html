@@ -118,50 +118,63 @@ main {
   font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
   color: var(--text-3); margin-bottom: 8px; text-transform: uppercase;
 }
-.water-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
-.water-num {
+.wml-display { display: flex; flex-direction: column; gap: 2px; margin-bottom: 16px; }
+.wml-big {
   font-size: 56px; font-weight: 700; letter-spacing: -0.03em;
   line-height: 1; font-variant-numeric: tabular-nums; color: var(--text-1);
 }
-.water-target { font-size: 18px; color: var(--text-3); font-weight: 500; }
-.water-bar-wrap { position: relative; margin: 14px 0 22px; }
-.water-bar-track {
-  position: relative; height: 28px; border-radius: 14px;
-  background: rgba(255,255,255,0.04); overflow: hidden;
-}
-.water-bar-fill {
-  position: absolute; top: 0; bottom: 0; left: 0; border-radius: 14px;
-  background: linear-gradient(90deg, var(--info), var(--good));
-  transition: width 0.4s ease;
-  box-shadow: 0 0 18px rgba(110,231,183,0.18);
-}
-.water-bar-fill.over { background: linear-gradient(90deg, var(--good), var(--warn)); }
-.water-bar-zone { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.18); }
-.water-bar-labels {
-  display: flex; justify-content: space-between; margin-top: 6px;
-  font-size: 10px; color: var(--text-3); font-family: var(--font-mono);
-}
-.water-bar-labels .water-zone-name { color: var(--good); font-weight: 700; letter-spacing: 0.10em; text-transform: lowercase; }
-.water-actions { display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: stretch; }
-.water-minus-btn {
-  background: rgba(255,255,255,0.06); border: none; border-radius: 16px;
-  color: var(--text-1); font-size: 22px; font-weight: 700; cursor: pointer;
+.wml-target { font-size: 15px; color: var(--text-3); font-weight: 500; margin-top: 4px; }
+.wpbar-wrap { margin: 0 0 12px; }
+.wpbar-track { height: 10px; border-radius: 5px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.wpbar-fill { height: 100%; border-radius: 5px; transition: width 0.4s ease, background 0.3s; min-width: 0; }
+.wpbar-fill.red { background: #ff4444; }
+.wpbar-fill.orange { background: #fbbf24; }
+.wpbar-fill.green { background: #6ee7b7; }
+.wpbar-fill.green-bright { background: linear-gradient(90deg, #6ee7b7, #34d399); box-shadow: 0 0 14px rgba(110,231,183,0.35); }
+.wstatus { font-size: 13px; font-weight: 600; margin-bottom: 18px; padding: 0 2px; }
+.wstatus.ok { color: var(--text-2); }
+.wstatus.warn { color: #fbbf24; }
+.wstatus.good { color: #6ee7b7; }
+.wbtn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+.wbtn-add {
+  padding: 14px 10px; border: none; border-radius: 14px;
+  font-family: inherit; font-size: 15px; font-weight: 700; cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.15s;
 }
-.water-minus-btn:hover { background: rgba(255,255,255,0.10); }
-.water-minus-btn:disabled { opacity: 0.3; cursor: not-allowed; }
-.water-plus-btn {
-  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
-  color: #0a0a0b; border: none; border-radius: 16px;
-  font-family: inherit; font-size: 16px; font-weight: 700; cursor: pointer; padding: 16px;
-  display: flex; align-items: center; justify-content: center; gap: 8px;
-  -webkit-tap-highlight-color: transparent;
+.wbtn-add.bottle {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%); color: #0a0a0b;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
 }
-.water-plus-btn:hover { transform: translateY(-1px); }
-.water-plus-btn:active { transform: scale(0.98); }
-.water-helper { text-align: center; font-size: 12px; color: var(--text-3); margin-top: 12px; font-style: italic; }
-.water-helper.good { color: var(--good); font-style: normal; }
+.wbtn-add.glass { background: rgba(255,255,255,0.08); color: var(--text-1); border: 1px solid rgba(255,255,255,0.12); }
+.wbtn-add:hover { transform: translateY(-1px); }
+.wbtn-add:active { transform: scale(0.97); }
+.wundo-btn {
+  width: 100%; padding: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: transparent; color: var(--text-3); border-radius: 10px;
+  font-family: inherit; font-size: 13px; cursor: pointer; margin-bottom: 4px;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+}
+.wundo-btn:hover:not(:disabled) { background: rgba(255,255,255,0.04); color: var(--text-1); }
+.wundo-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+.wchart {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px;
+  height: 120px; padding: 4px 0 0;
+}
+.wchart-col { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.wchart-amt {
+  font-size: 9px; font-family: var(--font-mono); color: var(--text-3);
+  font-variant-numeric: tabular-nums; height: 13px; text-align: center; line-height: 1;
+}
+.wchart-bar-wrap { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.wchart-bar { width: 100%; border-radius: 3px 3px 0 0; min-height: 2px; }
+.wchart-bar.hit { background: #6ee7b7; }
+.wchart-bar.near { background: #fbbf24; }
+.wchart-bar.miss { background: rgba(255,68,68,0.55); }
+.wchart-bar.empty { background: rgba(255,255,255,0.06); }
+.wchart-day { font-size: 9px; color: var(--text-3); font-family: var(--font-mono); height: 13px; line-height: 1; text-align: center; }
+.wchart-day.today { color: var(--text-1); font-weight: 700; }
 .why-toggle {
   width: 100%; display: flex; align-items: center; justify-content: space-between;
   background: transparent; border: 1px solid var(--border); color: var(--text-2);
@@ -184,43 +197,6 @@ main {
 .why-row.total { border-top: 1px solid var(--border); margin-top: 8px; padding-top: 10px; }
 .why-row.total .why-label { color: var(--good); font-weight: 700; }
 .why-row.total .why-val { color: var(--good); }
-.hist-row {
-  display: grid; grid-template-columns: 70px 1fr auto; gap: 10px;
-  padding: 10px 0; align-items: center; border-bottom: 1px solid var(--border); font-size: 13px;
-}
-.hist-row:last-child { border-bottom: none; }
-.hist-date { font-size: 11px; color: var(--text-3); font-family: var(--font-mono); }
-.hist-bar-wrap { height: 8px; background: rgba(255,255,255,0.04); border-radius: 4px; overflow: hidden; }
-.hist-bar-fill { height: 100%; background: linear-gradient(90deg, var(--info), var(--good)); border-radius: 4px; }
-.hist-bar-fill.miss { background: rgba(255,138,138,0.4); }
-.hist-count { font-family: var(--font-mono); font-size: 12px; color: var(--text-2); font-variant-numeric: tabular-nums; }
-.hist-edit-btn {
-  background: transparent; border: none; cursor: pointer; color: var(--text-2);
-  font-family: var(--font-mono); font-size: 12px; padding: 2px 6px; border-radius: 4px;
-  font-variant-numeric: tabular-nums; -webkit-tap-highlight-color: transparent; transition: background 0.15s;
-}
-.hist-edit-btn:hover { background: rgba(255,255,255,0.08); color: var(--text-1); }
-.hist-edit-wrap { display: inline-flex; align-items: center; gap: 4px; }
-.hist-edit-input {
-  width: 40px; padding: 2px 4px; background: rgba(0,0,0,0.4);
-  border: 1px solid rgba(255,255,255,0.14); color: var(--text-1); border-radius: 4px;
-  font-family: var(--font-mono); font-size: 16px; text-align: center; outline: none;
-  -moz-appearance: textfield; font-variant-numeric: tabular-nums; touch-action: manipulation;
-}
-.hist-edit-input::-webkit-outer-spin-button,
-.hist-edit-input::-webkit-inner-spin-button { -webkit-appearance: none; }
-.hist-edit-input:focus { border-color: rgba(110,231,183,0.4); }
-.hist-edit-save {
-  background: rgba(110,231,183,0.16); color: var(--good);
-  border: 1px solid rgba(110,231,183,0.3); border-radius: 4px;
-  font-size: 13px; cursor: pointer; padding: 1px 6px; line-height: 1.5;
-  -webkit-tap-highlight-color: transparent;
-}
-.spark-wrap { padding: 6px 0; }
-.spark-svg { width: 100%; height: 70px; display: block; }
-.spark-bar { fill: var(--good); }
-.spark-bar.miss { fill: rgba(255,138,138,0.5); }
-.spark-target { stroke: rgba(255,255,255,0.20); stroke-width: 1; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
 /* Water settings modal — uses .modal-bg/.modal so topbar.js mobile rules apply */
 #waterSetModalBg {
   display: none; position: fixed; inset: 0;
@@ -319,7 +295,7 @@ main {
 .wbtn-secondary:hover { background: rgba(255,255,255,0.10); }
 .wmodal-actions { display: flex; gap: 8px; margin-top: 16px; }
 .wmodal-actions .wbtn-primary { flex: 1; }
-@media (max-width: 480px) { .water-num { font-size: 48px; } }
+@media (max-width: 480px) { .wml-big { font-size: 44px; } }
 
 .stack-card {
   background: var(--bg-card);
@@ -745,33 +721,29 @@ main {
     </div>
 
     <div class="water-card">
-      <div class="water-label" id="waterUnitLabel">BOTTLES DRANK TODAY</div>
-      <div class="water-row">
-        <span class="water-num" id="waterNum">0</span>
-        <span class="water-target" id="waterTarget">/ 9</span>
+      <div class="water-label">TODAY'S WATER</div>
+      <div class="wml-display">
+        <span class="wml-big" id="wMlBig">0 ml</span>
+        <span class="wml-target" id="wMlTarget">/ 2500 ml target</span>
       </div>
 
-      <div class="water-bar-wrap">
-        <div class="water-bar-track">
-          <div class="water-bar-fill" id="waterBarFill" style="width:0%"></div>
-          <div class="water-bar-zone" id="waterBarZoneStart" style="left:55%"></div>
-          <div class="water-bar-zone" id="waterBarZoneEnd" style="left:80%"></div>
-        </div>
-        <div class="water-bar-labels">
-          <span id="waterBarMin">0</span>
-          <span class="water-zone-name">healthy zone</span>
-          <span id="waterBarMax">12+</span>
+      <div class="wpbar-wrap">
+        <div class="wpbar-track">
+          <div class="wpbar-fill red" id="wProgBar" style="width:0%"></div>
         </div>
       </div>
 
-      <div class="water-actions">
-        <button class="water-minus-btn" id="waterMinusBtn" type="button" aria-label="Undo last">−</button>
-        <button class="water-plus-btn" id="waterPlusBtn" type="button">
-          <span id="waterPlusLabel">Drank a bottle</span>
-          <span>↑</span>
+      <div class="wstatus warn" id="wStatus">Start the day — first one in.</div>
+
+      <div class="wbtn-row">
+        <button class="wbtn-add bottle" id="wBtnBottle" type="button">
+          <span id="wBtnBottleLabel">+ Bottle (500ml)</span>
+        </button>
+        <button class="wbtn-add glass" id="wBtnGlass" type="button">
+          <span id="wBtnGlassLabel">+ Glass (355ml)</span>
         </button>
       </div>
-      <div class="water-helper" id="waterHelper">Start the day — first one in.</div>
+      <button class="wundo-btn" id="wUndoBtn" type="button" disabled>Undo last</button>
 
       <button class="why-toggle" id="whyToggle" type="button" aria-expanded="false">
         <span>Why this target?</span>
@@ -781,11 +753,8 @@ main {
     </div>
 
     <div class="water-card">
-      <div class="water-label">LAST 14 DAYS</div>
-      <div class="spark-wrap">
-        <svg class="spark-svg" id="sparkSvg" viewBox="0 0 280 70" preserveAspectRatio="none"></svg>
-      </div>
-      <div id="histList" style="margin-top:14px"></div>
+      <div class="water-label">LAST 7 DAYS</div>
+      <div class="wchart" id="wChart"></div>
     </div>
   </section>
 
@@ -1429,7 +1398,7 @@ main {
   const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'health-stack';
-  function pcKeyInScope(k) { return typeof k === 'string' && k.indexOf('stack:') === 0; }
+  function pcKeyInScope(k) { return typeof k === 'string' && (k.indexOf('stack:') === 0 || k === 'po_water_v1'); }
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -1625,6 +1594,350 @@ main {
       pcFlushPushOnUnload();
     }
   });
+})();
+
+// ============================================================
+// WATER TRACKER
+// ============================================================
+(function () {
+  'use strict';
+
+  var LS_KEY = 'po_water_v1';
+
+  function wLoad() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function wSave(data) { localStorage.setItem(LS_KEY, JSON.stringify(data)); }
+
+  function wDateStr(date) {
+    var y = date.getFullYear();
+    var m = String(date.getMonth() + 1).padStart(2, '0');
+    var d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+  function wActiveDate() {
+    var now = new Date();
+    if (now.getHours() < 6) now.setDate(now.getDate() - 1);
+    return wDateStr(now);
+  }
+
+  var W_DEFAULTS = { bottleMl: 500, glassMl: 355, weightKg: null, weightUnit: 'kg', age: null, sex: 'm', activityHours: 0, caffeinePerDay: 0, subs: [] };
+
+  function wGetSettings() { return Object.assign({}, W_DEFAULTS, wLoad().settings || {}); }
+  function wSaveSettings(s) { var d = wLoad(); d.settings = s; wSave(d); }
+  function wGetHistory() { return wLoad().history || {}; }
+  function wGetTodayMl() { return wGetHistory()[wActiveDate()] || 0; }
+  function wSetTodayMl(ml) {
+    var d = wLoad();
+    if (!d.history) d.history = {};
+    d.history[wActiveDate()] = Math.max(0, Math.round(ml));
+    wSave(d);
+  }
+
+  function wTarget(s) {
+    var base = 2500;
+    if (s.weightKg && s.weightKg > 0) {
+      var kg = s.weightUnit === 'lb' ? s.weightKg * 0.453592 : s.weightKg;
+      base = kg * 35;
+    }
+    if (s.activityHours > 0) base += (s.activityHours / 7) * 500;
+    if (s.caffeinePerDay > 200) base += (s.caffeinePerDay - 200) * 1.5;
+    (s.subs || []).forEach(function (sub) { if (sub.extraMl) base += sub.extraMl; });
+    return Math.round(base / 50) * 50;
+  }
+
+  function wRender() {
+    var s = wGetSettings();
+    var target = wTarget(s);
+    var ml = wGetTodayMl();
+    var pct = target > 0 ? Math.min(100, Math.round((ml / target) * 100)) : 0;
+
+    document.getElementById('wMlBig').textContent = ml.toLocaleString() + ' ml';
+    document.getElementById('wMlTarget').textContent = '/ ' + target.toLocaleString() + ' ml target';
+
+    var bar = document.getElementById('wProgBar');
+    bar.style.width = pct + '%';
+    bar.className = 'wpbar-fill ' + (pct >= 100 ? 'green-bright' : pct >= 80 ? 'green' : pct >= 40 ? 'orange' : 'red');
+
+    var statusEl = document.getElementById('wStatus');
+    if (pct >= 100) {
+      statusEl.textContent = 'Goal reached! 💧';
+      statusEl.className = 'wstatus good';
+    } else if (pct >= 60) {
+      statusEl.textContent = 'On track';
+      statusEl.className = 'wstatus ok';
+    } else {
+      statusEl.textContent = 'Behind — drink one in the next hour';
+      statusEl.className = 'wstatus warn';
+    }
+
+    document.getElementById('wUndoBtn').disabled = ml === 0;
+    document.getElementById('wBtnBottleLabel').textContent = '+ Bottle (' + s.bottleMl + 'ml)';
+    document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + s.glassMl + 'ml)';
+
+    wRenderWhyBody(s, target);
+    wRenderChart(target);
+  }
+
+  function wRenderWhyBody(s, target) {
+    var rows = [];
+    if (s.weightKg && s.weightKg > 0) {
+      var kg = s.weightUnit === 'lb' ? s.weightKg * 0.453592 : s.weightKg;
+      var label = s.weightUnit === 'lb' ? Math.round(s.weightKg) + ' lb' : Math.round(kg) + ' kg';
+      rows.push({ label: 'Base (' + label + ' \xD7 35ml/kg)', val: Math.round(kg * 35) + ' ml' });
+    } else {
+      rows.push({ label: 'Base (default, no weight set)', val: '2500 ml' });
+    }
+    if (s.activityHours > 0) {
+      rows.push({ label: 'Activity (' + s.activityHours + 'h/week)', val: '+' + Math.round((s.activityHours / 7) * 500) + ' ml' });
+    }
+    if (s.caffeinePerDay > 200) {
+      rows.push({ label: 'Caffeine offset (' + s.caffeinePerDay + 'mg/day)', val: '+' + Math.round((s.caffeinePerDay - 200) * 1.5) + ' ml' });
+    }
+    (s.subs || []).forEach(function (sub) {
+      if (sub.extraMl) rows.push({ label: sub.name, val: '+' + sub.extraMl + ' ml' });
+    });
+    var body = document.getElementById('whyBody');
+    body.innerHTML = rows.map(function (r) {
+      return '<div class="why-row"><span class="why-label">' + r.label + '</span><span class="why-val">' + r.val + '</span></div>';
+    }).join('') +
+      '<div class="why-row total"><span class="why-label">Daily target</span><span class="why-val">' + target.toLocaleString() + ' ml</span></div>';
+  }
+
+  function wRenderChart(target) {
+    var hist = wGetHistory();
+    var today = wActiveDate();
+    var base = new Date();
+    if (base.getHours() < 6) base.setDate(base.getDate() - 1);
+    var days = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(base);
+      d.setDate(base.getDate() - i);
+      var key = wDateStr(d);
+      days.push({
+        key: key,
+        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        ml: hist[key] || 0,
+        isToday: key === today
+      });
+    }
+    var maxMl = Math.max(target * 1.1, 100);
+    days.forEach(function (d) { if (d.ml > maxMl) maxMl = d.ml; });
+
+    var chart = document.getElementById('wChart');
+    chart.innerHTML = days.map(function (d) {
+      var heightPct = maxMl > 0 ? Math.min(100, (d.ml / maxMl) * 100) : 0;
+      var dayPct = target > 0 ? d.ml / target : 0;
+      var barClass = d.ml === 0 ? 'wchart-bar empty' : (dayPct >= 1 ? 'wchart-bar hit' : dayPct >= 0.8 ? 'wchart-bar near' : 'wchart-bar miss');
+      var amtLabel = d.ml >= 1000 ? (d.ml / 1000).toFixed(1) + 'L' : (d.ml > 0 ? d.ml + '' : '');
+      return '<div class="wchart-col">' +
+        '<div class="wchart-amt">' + amtLabel + '</div>' +
+        '<div class="wchart-bar-wrap"><div class="' + barClass + '" style="height:' + heightPct.toFixed(1) + '%"></div></div>' +
+        '<div class="wchart-day' + (d.isToday ? ' today' : '') + '">' + d.label + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ===== SETTINGS MODAL =====
+  var SUBS_DB = [
+    { name: 'Adderall', extraMl: 400 },
+    { name: 'Vyvanse', extraMl: 400 },
+    { name: 'Ritalin', extraMl: 300 },
+    { name: 'Concerta', extraMl: 300 },
+    { name: 'Modafinil', extraMl: 350 },
+    { name: 'Armodafinil', extraMl: 350 },
+    { name: 'Strattera', extraMl: 200 },
+    { name: 'Lithium', extraMl: 500 },
+    { name: 'Alcohol', extraMl: 300 }
+  ];
+
+  function wOpenSettings() {
+    var s = wGetSettings();
+    document.getElementById('setWeight').value = s.weightKg != null ? s.weightKg : '';
+    document.getElementById('setAge').value = s.age != null ? s.age : '';
+    document.getElementById('setActivity').value = s.activityHours || '';
+    document.getElementById('setCaffeine').value = s.caffeinePerDay || '';
+    document.getElementById('setBottleMl').value = s.bottleMl;
+    document.getElementById('setGlassMl').value = s.glassMl;
+    wSegActivate('setWeightUnit', 'data-u', s.weightUnit);
+    wSegActivate('setSex', 'data-s', s.sex);
+    wRenderSubsList(s.subs || []);
+    document.getElementById('waterSetModalBg').classList.add('show');
+  }
+
+  function wCloseSettings() {
+    var s = wGetSettings();
+    var wv = parseFloat(document.getElementById('setWeight').value);
+    s.weightKg = isNaN(wv) ? null : wv;
+    var av = parseInt(document.getElementById('setAge').value);
+    s.age = isNaN(av) ? null : av;
+    var actv = parseFloat(document.getElementById('setActivity').value);
+    s.activityHours = isNaN(actv) ? 0 : actv;
+    var cafv = parseInt(document.getElementById('setCaffeine').value);
+    s.caffeinePerDay = isNaN(cafv) ? 0 : cafv;
+    var bv = parseInt(document.getElementById('setBottleMl').value);
+    s.bottleMl = isNaN(bv) || bv < 100 ? 500 : bv;
+    var gv = parseInt(document.getElementById('setGlassMl').value);
+    s.glassMl = isNaN(gv) || gv < 50 ? 355 : gv;
+    var wuActive = document.querySelector('#setWeightUnit button.active');
+    if (wuActive) s.weightUnit = wuActive.dataset.u;
+    var sexActive = document.querySelector('#setSex button.active');
+    if (sexActive) s.sex = sexActive.dataset.s;
+    wSaveSettings(s);
+    document.getElementById('waterSetModalBg').classList.remove('show');
+    wRender();
+  }
+
+  function wSegActivate(containerId, attr, val) {
+    var el = document.getElementById(containerId);
+    if (!el) return;
+    el.querySelectorAll('button').forEach(function (btn) {
+      btn.classList.toggle('active', btn.getAttribute(attr) === String(val));
+    });
+  }
+
+  function wRenderSubsList(subs) {
+    var el = document.getElementById('subsList');
+    if (!el) return;
+    if (!subs.length) {
+      el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 0">None added</div>';
+      return;
+    }
+    el.innerHTML = subs.map(function (sub, i) {
+      return '<div class="sub-row">' +
+        '<div class="sub-row-info">' +
+          '<div class="sub-row-name">' + sub.name + '</div>' +
+          '<div class="sub-row-meta">+' + sub.extraMl + ' ml/day</div>' +
+        '</div>' +
+        '<button class="sub-row-del" data-si="' + i + '" type="button">\xD7</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ===== EVENT WIRING =====
+  document.getElementById('waterSettingsBtn').addEventListener('click', wOpenSettings);
+  document.getElementById('waterSetClose').addEventListener('click', wCloseSettings);
+  document.getElementById('waterSetModalBg').addEventListener('click', function (e) {
+    if (e.target === this) wCloseSettings();
+  });
+
+  document.getElementById('whyToggle').addEventListener('click', function () {
+    var expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    document.getElementById('whyBody').classList.toggle('show', !expanded);
+  });
+
+  document.getElementById('wBtnBottle').addEventListener('click', function () {
+    wSetTodayMl(wGetTodayMl() + wGetSettings().bottleMl);
+    wRender();
+  });
+
+  document.getElementById('wBtnGlass').addEventListener('click', function () {
+    wSetTodayMl(wGetTodayMl() + wGetSettings().glassMl);
+    wRender();
+  });
+
+  document.getElementById('wUndoBtn').addEventListener('click', function () {
+    var s = wGetSettings();
+    var cur = wGetTodayMl();
+    if (cur > 0) { wSetTodayMl(Math.max(0, cur - s.bottleMl)); wRender(); }
+  });
+
+  document.getElementById('setWeightUnit').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-u]');
+    if (!btn) return;
+    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+
+  document.getElementById('setSex').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-s]');
+    if (!btn) return;
+    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+
+  document.getElementById('setUnit').addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-u]');
+    if (!btn) return;
+    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
+    btn.classList.add('active');
+  });
+
+  document.getElementById('subSearch').addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+    var resultsEl = document.getElementById('subResults');
+    if (!q) { resultsEl.classList.remove('show'); resultsEl.innerHTML = ''; return; }
+    var matches = SUBS_DB.filter(function (s) { return s.name.toLowerCase().includes(q); }).slice(0, 5);
+    if (!matches.length) { resultsEl.classList.remove('show'); return; }
+    resultsEl.innerHTML = matches.map(function (s) {
+      return '<div class="wsearch-result" data-name="' + s.name + '" data-extra="' + s.extraMl + '">' +
+        '<span class="wsearch-result-name">' + s.name + '</span>' +
+        '<span class="wsearch-result-meta">+' + s.extraMl + ' ml/day water requirement</span>' +
+        '</div>';
+    }).join('');
+    resultsEl.classList.add('show');
+  });
+
+  document.getElementById('subResults').addEventListener('click', function (e) {
+    var row = e.target.closest('.wsearch-result');
+    if (!row) return;
+    var s = wGetSettings();
+    var subs = s.subs || [];
+    if (!subs.find(function (x) { return x.name === row.dataset.name; })) {
+      subs.push({ name: row.dataset.name, extraMl: parseInt(row.dataset.extra) });
+      s.subs = subs;
+      wSaveSettings(s);
+      wRenderSubsList(subs);
+    }
+    document.getElementById('subSearch').value = '';
+    this.classList.remove('show');
+  });
+
+  document.getElementById('subsList').addEventListener('click', function (e) {
+    var btn = e.target.closest('.sub-row-del');
+    if (!btn) return;
+    var s = wGetSettings();
+    s.subs = (s.subs || []).filter(function (_, i) { return i !== parseInt(btn.dataset.si); });
+    wSaveSettings(s);
+    wRenderSubsList(s.subs);
+  });
+
+  document.getElementById('setExport').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(wLoad(), null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'water-data.json';
+    a.click();
+  });
+
+  document.getElementById('setImport').addEventListener('click', function () {
+    document.getElementById('setImportFile').click();
+  });
+
+  document.getElementById('setImportFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        wSave(JSON.parse(e.target.result));
+        wOpenSettings();
+        wRender();
+      } catch (err) { alert('Invalid JSON file'); }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('setReset').addEventListener('click', function () {
+    if (confirm('Reset all water tracker data? This cannot be undone.')) {
+      wSave({});
+      wOpenSettings();
+      wRender();
+    }
+  });
+
+  wRender();
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
