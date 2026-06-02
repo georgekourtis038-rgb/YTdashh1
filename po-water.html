@@ -28,6 +28,14 @@ Contact: rowan.wisere@gmail.com
      Most settings are also editable in-app via the gear icon.
      ============================================================= -->
 <script>
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
 const CONFIG = {
   appTitle: "Water Coach",
 
@@ -736,6 +744,7 @@ html, body {
   }
   function saveState() {
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
+    try { pcSchedulePush(); } catch (e) {}
   }
   let state = loadState();
   $('appTitle').textContent = CONFIG.appTitle || 'Water Coach';
@@ -1181,11 +1190,10 @@ html, body {
   let pcPendingRemote = null;
   let pcLastSyncedJson = null;
 
-  const _pcOrigSet = localStorage.setItem.bind(localStorage);
+  const _pcOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
   const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
-  localStorage.setItem = function(k, v) {
-    _pcOrigSet(k, v);
-    try { if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush(); } catch (e) {}
+  window._pcTriggerSync = function(k) {
+    if (!pcSuppressSync && PC_SYNCED_KEYS.indexOf(k) !== -1) pcSchedulePush();
   };
   localStorage.removeItem = function(k) {
     _pcOrigRemove(k);
