@@ -852,6 +852,7 @@ main {
       </div>
 
       <div class="wmodal-actions">
+        <button class="wbtn-secondary" id="waterSetResetData" style="color:#ff8a8a;border-color:rgba(255,138,138,0.3)">Reset water data</button>
         <button class="wbtn-primary" id="waterSetClose">Done</button>
       </div>
     </div>
@@ -1603,17 +1604,24 @@ main {
   }
   function wSafeLoad() {
     var d = wLoad();
-    var bad = false;
-    if (d.history !== undefined && (typeof d.history !== 'object' || d.history === null || Array.isArray(d.history))) bad = true;
-    if (!bad && d.logs !== undefined && (typeof d.logs !== 'object' || d.logs === null || Array.isArray(d.logs))) bad = true;
-    if (!bad && d.settings !== undefined && (typeof d.settings !== 'object' || d.settings === null || Array.isArray(d.settings))) bad = true;
-    if (!bad && d.history) {
-      var histVals = Object.values(d.history);
-      for (var i = 0; i < histVals.length; i++) {
-        if (typeof histVals[i] !== 'number' || isNaN(histVals[i]) || histVals[i] > 99999) { bad = true; break; }
+    var repaired = false;
+    if (d.history !== undefined) {
+      if (typeof d.history !== 'object' || d.history === null || Array.isArray(d.history)) {
+        d.history = {}; repaired = true;
+      } else {
+        Object.keys(d.history).forEach(function(k) {
+          var v = d.history[k];
+          if (typeof v !== 'number' || isNaN(v) || v > 99999) { delete d.history[k]; repaired = true; }
+        });
       }
     }
-    if (bad) { wSave({}); return {}; }
+    if (d.logs !== undefined && (typeof d.logs !== 'object' || d.logs === null || Array.isArray(d.logs))) {
+      d.logs = {}; repaired = true;
+    }
+    if (d.settings !== undefined && (typeof d.settings !== 'object' || d.settings === null || Array.isArray(d.settings))) {
+      d.settings = {}; repaired = true;
+    }
+    if (repaired) { wSave(d); }
     return d;
   }
   function wSave(data) {
@@ -1793,7 +1801,8 @@ main {
   ];
 
   function wOpenSettings() {
-    var s = wGetSettings();
+    var saved = wLoad().settings || {};
+    var s = Object.assign({}, W_DEFAULTS, saved);
     document.getElementById('setBottleMl').value = s.bottleMl;
     document.getElementById('setGlassMl').value = s.glassMl;
     wSegActivate('setSex', 'data-s', s.sex);
@@ -1802,14 +1811,16 @@ main {
   }
 
   function wCloseSettings() {
-    var s = wGetSettings();
-    var bv = parseInt(document.getElementById('setBottleMl').value);
-    s.bottleMl = isNaN(bv) || bv < 100 ? 500 : bv;
-    var gv = parseInt(document.getElementById('setGlassMl').value);
-    s.glassMl = isNaN(gv) || gv < 50 ? 355 : gv;
+    var d = wLoad();
+    var s = Object.assign({}, W_DEFAULTS, d.settings || {});
+    var bv = parseInt(document.getElementById('setBottleMl').value, 10);
+    s.bottleMl = (!isNaN(bv) && bv >= 100) ? bv : W_DEFAULTS.bottleMl;
+    var gv = parseInt(document.getElementById('setGlassMl').value, 10);
+    s.glassMl = (!isNaN(gv) && gv >= 50) ? gv : W_DEFAULTS.glassMl;
     var sexActive = document.querySelector('#setSex button.active');
     if (sexActive) s.sex = sexActive.dataset.s;
-    wSaveSettings(s);
+    d.settings = s;
+    wSave(d);
     document.getElementById('waterSetModalBg').classList.remove('show');
     wRender();
   }
@@ -1963,6 +1974,14 @@ main {
     if (confirm('Reset all water tracker data? This cannot be undone.')) {
       wSave({});
       wOpenSettings();
+      wRender();
+    }
+  });
+
+  document.getElementById('waterSetResetData').addEventListener('click', function () {
+    if (confirm('Reset all water data? This cannot be undone.')) {
+      wSave({});
+      document.getElementById('waterSetModalBg').classList.remove('show');
       wRender();
     }
   });

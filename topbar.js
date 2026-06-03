@@ -315,7 +315,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     if (!state || typeof state !== 'object') state = defaultWaterState();
     state.logs = state.logs || {};
     const k = calendarDateKey();
-    state.logs[k] = (state.logs[k] || 0) + 1;
+    state.logs[k] = (parseInt(state.logs[k]) || 0) + 1;
     try { localStorage.setItem('po_water_v1', JSON.stringify(state)); } catch (e) {}
     try { window.dispatchEvent(new StorageEvent('storage', { key: 'po_water_v1' })); } catch(e) {}
     render();
