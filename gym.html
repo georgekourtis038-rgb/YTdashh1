@@ -503,8 +503,11 @@ img, video, canvas, svg { max-width: 100%; }
 .po-modal-bg.show { display: flex; }
 .po-modal {
   width: 100%; max-width: 420px;
-  background: var(--bg-card);
-  border: 1px solid var(--border-strong);
+  background: rgba(18, 18, 20, 0.85);
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
   border-radius: 16px;
   padding: 22px; max-height: 88vh; overflow-y: auto;
 }
@@ -1408,9 +1411,12 @@ img, video, canvas, svg { max-width: 100%; }
 .split-bg.open { opacity: 1; pointer-events: all; }
 .split-sheet {
   width: 100%;
-  background: #111114;
+  background: rgba(18, 18, 20, 0.85);
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
   border-radius: 20px 20px 0 0;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
   border-bottom: none;
   padding-bottom: calc(20px + env(safe-area-inset-bottom));
   max-height: 82vh;

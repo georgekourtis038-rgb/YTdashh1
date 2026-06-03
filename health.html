@@ -236,8 +236,13 @@ main {
 }
 #waterSetModalBg.show { display: flex; }
 #waterSetModalBg .modal {
-  width: 100%; max-width: 480px; background: #111113;
-  border: 1px solid rgba(255,255,255,0.14); border-radius: 16px;
+  width: 100%; max-width: 480px;
+  background: rgba(18, 18, 20, 0.85);
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
+  border-radius: 16px;
   padding: 22px; max-height: calc(88vh - env(safe-area-inset-bottom)); overflow-y: auto;
   color: #ffffff;
 }
