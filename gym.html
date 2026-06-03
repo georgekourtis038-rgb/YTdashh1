@@ -1488,6 +1488,85 @@ img, video, canvas, svg { max-width: 100%; }
   transition: transform 0.10s;
 }
 .split-save-btn:active { transform: scale(0.98); }
+
+/* Mode toggle */
+.split-mode-toggle {
+  display: flex; gap: 3px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 3px; margin-bottom: 14px;
+}
+.split-mode-btn {
+  flex: 1; padding: 8px 4px;
+  border: none; background: transparent;
+  color: var(--text-3); border-radius: 7px;
+  font-family: var(--font); font-size: 13px; font-weight: 600;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  white-space: nowrap; overflow: hidden;
+  transition: background 0.13s, color 0.13s;
+}
+.split-mode-btn.active {
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.28);
+}
+/* Repeating cycle */
+.split-cycle-row {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 10px; margin-bottom: 4px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.05);
+}
+.split-cycle-day-num {
+  font-size: 12px; font-weight: 600; color: var(--text-3);
+  min-width: 44px; flex-shrink: 0;
+}
+.split-cycle-del {
+  background: transparent; border: none;
+  color: var(--text-4); font-size: 18px; line-height: 1;
+  cursor: pointer; padding: 0 2px; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.12s;
+}
+.split-cycle-del:hover { color: var(--bad); }
+.split-add-day-btn {
+  width: 100%; padding: 10px;
+  background: rgba(255,255,255,0.025);
+  border: 1px dashed rgba(255,255,255,0.12);
+  color: var(--text-2); border-radius: 9px;
+  font-family: var(--font); font-size: 13px;
+  cursor: pointer; margin: 4px 0 14px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.13s, color 0.13s;
+}
+.split-add-day-btn:hover { background: rgba(255,255,255,0.05); color: var(--text-1); }
+.split-start-date-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 10px 12px;
+  background: rgba(255,255,255,0.025);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; margin-bottom: 4px;
+}
+.split-start-date-label { font-size: 13px; font-weight: 500; color: var(--text-2); }
+.split-start-date-input {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px; color: var(--text-1);
+  font-family: var(--font); font-size: 16px;
+  padding: 6px 9px; outline: none;
+}
+.split-start-date-input:focus { border-color: rgba(255,255,255,0.28); }
+/* Custom name text input */
+.split-custom-input {
+  flex: 1; min-width: 0;
+  padding: 10px 11px;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(110,231,183,0.35);
+  border-radius: 9px; color: var(--text-1);
+  font-family: var(--font); font-size: 16px; outline: none;
+}
+.split-custom-input::placeholder { color: var(--text-4); }
+.split-custom-input:focus { border-color: rgba(110,231,183,0.6); }
 </style>
 <link rel="stylesheet" href="/animations.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1844,8 +1923,7 @@ img, video, canvas, svg { max-width: 100%; }
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     $('dayPillDate').textContent = dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
-    const weeklySplit = loadWeeklySplit();
-    const splitName = weeklySplit[todayWeekdayName()] || '';
+    const splitName = getTodaySplitName();
     const sepEl = $('dayPillSep');
     const splitEl = $('dayPillSplit');
     if (splitName) {
@@ -1875,26 +1953,77 @@ img, video, canvas, svg { max-width: 100%; }
   function saveWeeklySplit(obj) {
     try { localStorage.setItem(SPLIT_LS_KEY, JSON.stringify(obj)); } catch (e) {}
   }
+  const CYCLE_LS_KEY = 'dash_gym_cycle';
+  function loadGymCycle() {
+    try { const r = localStorage.getItem(CYCLE_LS_KEY); return r ? JSON.parse(r) : null; }
+    catch (e) { return null; }
+  }
+  function saveGymCycle(obj) {
+    try { localStorage.setItem(CYCLE_LS_KEY, JSON.stringify(obj)); } catch (e) {}
+  }
+  function getTodaySplitName() {
+    const c = loadGymCycle();
+    if (c && c.type === 'cycle' && Array.isArray(c.days) && c.days.length && c.startDate) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const start = new Date(c.startDate + 'T00:00:00'); start.setHours(0,0,0,0);
+      const diff = Math.round((today - start) / 86400000);
+      if (diff >= 0) return c.days[diff % c.days.length] || '';
+    }
+    return loadWeeklySplit()[todayWeekdayName()] || '';
+  }
+  function splitSelectOpts(val) {
+    return `<option value="">— not set —</option>` +
+      SPLIT_OPTIONS.map(o => `<option value="${o}"${val === o ? ' selected' : ''}>${o}</option>`).join('') +
+      `<option value="__custom__">Custom…</option>`;
+  }
+  function splitDaySelectHtml(val, dataAttr) {
+    if (val && !SPLIT_OPTIONS.includes(val)) {
+      return `<input class="split-custom-input" type="text" value="${val.replace(/"/g,'&quot;')}" ${dataAttr} placeholder="Custom name…" style="font-size:16px">`;
+    }
+    return `<select class="split-day-select" ${dataAttr}>${splitSelectOpts(val)}</select>`;
+  }
+  function splitWeeklyRowHtml(day, val, isToday) {
+    return `<div class="split-day-row${isToday ? ' is-today' : ''}">
+      <div class="split-day-info">
+        <span class="split-day-name">${day}</span>
+        ${isToday ? '<span class="split-today-badge">TODAY</span>' : ''}
+      </div>
+      ${splitDaySelectHtml(val, `data-day="${day}"`)}
+    </div>`;
+  }
+  function splitCycleRowHtml(idx, val) {
+    return `<div class="split-cycle-row">
+      <span class="split-cycle-day-num">Day ${idx + 1}</span>
+      ${splitDaySelectHtml(val, `data-idx="${idx}"`)}
+      <button class="split-cycle-del" type="button" aria-label="Remove">✕</button>
+    </div>`;
+  }
   function renderSplitPanel() {
-    const current = loadWeeklySplit();
-    const todayName = todayWeekdayName();
-    $('splitSheetBody').innerHTML = WEEK_DAYS.map(day => {
-      const isToday = day === todayName;
-      const val = current[day] || '';
-      const opts = SPLIT_OPTIONS.map(o =>
-        `<option value="${o}"${val === o ? ' selected' : ''}>${o}</option>`
-      ).join('');
-      return `<div class="split-day-row${isToday ? ' is-today' : ''}">
-        <div class="split-day-info">
-          <span class="split-day-name">${day}</span>
-          ${isToday ? '<span class="split-today-badge">TODAY</span>' : ''}
+    const weeklySplit = loadWeeklySplit();
+    const cycleData  = loadGymCycle();
+    const mode       = (cycleData && cycleData.type === 'cycle') ? 'cycle' : 'weekly';
+    const todayName  = todayWeekdayName();
+    const cycleDays  = (cycleData && Array.isArray(cycleData.days) && cycleData.days.length)
+      ? cycleData.days : [''];
+    const startDate  = (cycleData && cycleData.startDate) || wlTodayKey();
+    $('splitSheetBody').innerHTML = `
+      <div class="split-mode-toggle">
+        <button class="split-mode-btn${mode === 'weekly' ? ' active' : ''}" data-mode="weekly">Weekly</button>
+        <button class="split-mode-btn${mode === 'cycle'  ? ' active' : ''}" data-mode="cycle">Repeating Cycle</button>
+      </div>
+      <div id="splitWeeklySection"${mode !== 'weekly' ? ' class="hidden"' : ''}>
+        ${WEEK_DAYS.map(day => splitWeeklyRowHtml(day, weeklySplit[day] || '', day === todayName)).join('')}
+      </div>
+      <div id="splitCycleSection"${mode !== 'cycle' ? ' class="hidden"' : ''}>
+        <div id="splitCycleList">
+          ${cycleDays.map((v, i) => splitCycleRowHtml(i, v)).join('')}
         </div>
-        <select class="split-day-select" data-day="${day}">
-          <option value="">— not set —</option>
-          ${opts}
-        </select>
+        <button class="split-add-day-btn" id="splitAddDayBtn">+ Add Day</button>
+        <div class="split-start-date-row">
+          <span class="split-start-date-label">Cycle starts</span>
+          <input type="date" class="split-start-date-input" id="splitStartDate" value="${startDate}">
+        </div>
       </div>`;
-    }).join('');
   }
   function openSplitPanel() {
     renderSplitPanel();
@@ -2599,14 +2728,75 @@ img, video, canvas, svg { max-width: 100%; }
     if (e.target === $('splitBg')) closeSplitPanel();
   });
 
-  $('splitSaveBtn').addEventListener('click', () => {
-    const obj = {};
-    $('splitSheetBody').querySelectorAll('.split-day-select').forEach(sel => {
-      if (sel.value) obj[sel.dataset.day] = sel.value;
+  // Clone save button to clear the old listener, then attach the new one
+  (function() {
+    const old = $('splitSaveBtn');
+    const btn = old.cloneNode(true);
+    old.parentNode.replaceChild(btn, old);
+    btn.addEventListener('click', () => {
+      const modeEl = $('splitSheetBody').querySelector('.split-mode-btn.active');
+      const mode = modeEl ? modeEl.dataset.mode : 'weekly';
+      if (mode === 'weekly') {
+        const obj = {};
+        $('splitWeeklySection').querySelectorAll('.split-day-select, .split-custom-input').forEach(el => {
+          const day = el.dataset.day; if (!day) return;
+          const val = el.tagName === 'INPUT' ? el.value.trim()
+            : (el.value !== '__custom__' ? el.value : '');
+          if (val) obj[day] = val;
+        });
+        saveWeeklySplit(obj);
+        saveGymCycle({ type: 'weekly' });
+      } else {
+        const days = [];
+        $('splitCycleList').querySelectorAll('.split-cycle-row').forEach(row => {
+          const inp = row.querySelector('.split-custom-input');
+          const sel = row.querySelector('.split-day-select');
+          days.push(inp ? inp.value.trim() : (sel && sel.value !== '__custom__' ? sel.value : ''));
+        });
+        const sd = $('splitStartDate');
+        saveGymCycle({ type: 'cycle', days, startDate: sd ? sd.value : wlTodayKey() });
+      }
+      closeSplitPanel();
+      renderDayPill();
     });
-    saveWeeklySplit(obj);
-    closeSplitPanel();
-    renderDayPill();
+  })();
+
+  // Event delegation for split panel body (mode toggle, add/remove cycle days, custom input)
+  $('splitSheetBody').addEventListener('click', e => {
+    const modeBtn = e.target.closest('.split-mode-btn');
+    if (modeBtn) {
+      $('splitSheetBody').querySelectorAll('.split-mode-btn').forEach(b => b.classList.remove('active'));
+      modeBtn.classList.add('active');
+      const isWeekly = modeBtn.dataset.mode === 'weekly';
+      $('splitWeeklySection').classList.toggle('hidden', !isWeekly);
+      $('splitCycleSection').classList.toggle('hidden', isWeekly);
+      return;
+    }
+    if (e.target.closest('#splitAddDayBtn')) {
+      const list = $('splitCycleList');
+      list.insertAdjacentHTML('beforeend', splitCycleRowHtml(list.querySelectorAll('.split-cycle-row').length, ''));
+      return;
+    }
+    const del = e.target.closest('.split-cycle-del');
+    if (del) {
+      del.closest('.split-cycle-row').remove();
+      $('splitCycleList').querySelectorAll('.split-cycle-day-num').forEach((el, i) => {
+        el.textContent = 'Day ' + (i + 1);
+      });
+    }
+  });
+
+  $('splitSheetBody').addEventListener('change', e => {
+    const sel = e.target.closest('.split-day-select');
+    if (!sel || sel.value !== '__custom__') return;
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.className = 'split-custom-input';
+    inp.placeholder = 'e.g. Arms, Chest & Back…'; inp.style.fontSize = '16px';
+    if (sel.dataset.day) inp.dataset.day = sel.dataset.day;
+    if (sel.dataset.idx !== undefined) inp.dataset.idx = sel.dataset.idx;
+    sel.parentNode.replaceChild(inp, sel);
+    inp.focus();
+    inp.addEventListener('keydown', ev => { if (ev.key === 'Enter') { ev.preventDefault(); inp.blur(); } });
   });
 
   $('setUnitsCtrl').addEventListener('click', (e) => {
