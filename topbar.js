@@ -243,18 +243,20 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       const todayKey = calendarDateKey();
       const doneMl = ((state.history || {})[todayKey]) || 0;
 
-      // Same formula as health.html wTarget()
+      // Identical to wTarget() in health.html
       let targetMl = 2500;
       try {
         const raw = localStorage.getItem('dash_weight');
         if (raw !== null) {
-          const kg = parseFloat(JSON.parse(raw));
-          if (!isNaN(kg) && kg > 0) targetMl = kg * 35;
+          const lbs = parseFloat(JSON.parse(raw));
+          if (!isNaN(lbs) && lbs > 0) {
+            const weightKg = lbs / 2.205;
+            const sex = ((state.settings || {}).sex) || 'm';
+            targetMl = Math.round(((weightKg * 35) + (sex === 'm' ? 200 : 0)) / 50) * 50;
+            targetMl = Math.max(2000, Math.min(6000, targetMl));
+          }
         }
       } catch (e) {}
-      const subs = ((state.settings || {}).subs) || [];
-      subs.forEach(function(sub) { if (sub && sub.extraMl) targetMl += sub.extraMl; });
-      targetMl = Math.round(targetMl / 50) * 50;
 
       return { doneMl, targetMl };
     } catch (e) {
