@@ -2687,16 +2687,15 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   function wtRenderDelta() {
-    const last = wtEntries[wtEntries.length - 1];
-    const lastDate = wtParseKey(last.dateKey);
-    const cutoff = new Date(lastDate); cutoff.setDate(cutoff.getDate() - 7);
-    const baseline = wtEntries.find(e => wtParseKey(e.dateKey) >= cutoff) || wtEntries[0];
-    const diff = last.weight - baseline.weight;
     const el = $('wtDelta');
+    const rangeEntries = wtGetRangeEntries();
+    if (rangeEntries.length < 2) { el.classList.add('hidden'); return; }
+    const diff = rangeEntries[rangeEntries.length - 1].weight - rangeEntries[0].weight;
     if (Math.abs(diff) < 0.05) { el.classList.add('hidden'); return; }
     const arrow = diff > 0 ? '↑' : '↓';
-    const sign = diff > 0 ? '+' : '−';
-    el.textContent = arrow + ' ' + sign + Math.abs(diff).toFixed(1) + ' ' + state.units + ' · last 7d';
+    const sign  = diff > 0 ? '+' : '−';
+    const label = { '7D': 'last 7d', '1M': 'last month', '6M': 'last 6mo', '1Y': 'last year', 'ALL': 'all time' };
+    el.textContent = arrow + ' ' + sign + Math.abs(diff).toFixed(1) + ' ' + state.units + ' · ' + (label[wtRange] || wtRange);
     el.classList.toggle('up',   diff > 0);
     el.classList.toggle('down', diff < 0);
     el.classList.remove('hidden');
@@ -2891,7 +2890,7 @@ img, video, canvas, svg { max-width: 100%; }
     $('wtRangeLabel').textContent = wtRange;
     $('wtRangeDropdown').classList.add('hidden');
     $('wtRangeBtn').classList.remove('open');
-    if (wtEntries.length >= 2) { wtRenderChart(); wtRenderRangeSummary(); }
+    if (wtEntries.length >= 2) { wtRenderChart(); wtRenderRangeSummary(); wtRenderDelta(); }
   });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#wtRangeRow')) {
