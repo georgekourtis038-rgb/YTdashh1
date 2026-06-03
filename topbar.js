@@ -113,7 +113,8 @@ body { background: transparent; }
   filter: grayscale(100%) brightness(1.4); opacity: 0.85;
 }
 .bottombar {
-  position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 16px; left: 0; right: 0;
+  margin: 0 auto;
   width: calc(100% - 32px); max-width: 420px; z-index: 40;
   display: flex; justify-content: space-around; align-items: center;
   border-radius: 999px;
@@ -124,7 +125,7 @@ body { background: transparent; }
   box-shadow: 0 18px 50px rgba(0,0,0,0.35),
               inset 0 1px 1px rgba(255,255,255,0.55),
               inset 0 -1px 1px rgba(255,255,255,0.12);
-  padding: 8px 16px calc(8px + env(safe-area-inset-bottom));
+  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 .bottombar::before {
@@ -136,7 +137,7 @@ body { background: transparent; }
 .bottombar-tab {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 6px 8px; text-decoration: none;
+  gap: 3px; padding: 6px 4px; text-decoration: none;
   color: rgba(255, 255, 255, 0.45); border-radius: 999px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
   -webkit-tap-highlight-color: transparent;
