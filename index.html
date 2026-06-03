@@ -703,22 +703,23 @@ body::after {
   // Paste your Anthropic key here to enable ✨ Polish. Empty = falls back to plain add.
   const ANTHROPIC_API_KEY = '';
 
-  function getWakeSleepHours() {
-    function parseTimeStr(str, def) {
-      if (!str) return def;
+  function getWakeSleepMins() {
+    function parseToMins(str, defHour) {
+      if (!str) return defHour * 60;
       const parts = str.split(':');
-      return Number(parts[0]) + (Number(parts[1]) || 0) / 60;
+      return (parseInt(parts[0], 10) || 0) * 60 + (parseInt(parts[1], 10) || 0);
     }
-    return {
-      wake:  parseTimeStr(localStorage.getItem('dash_wake_time'), 8),
-      sleep: parseTimeStr(localStorage.getItem('dash_sleep_time'), 24)
-    };
+    const wake  = parseToMins(localStorage.getItem('dash_wake_time'),  8);
+    let   sleep = parseToMins(localStorage.getItem('dash_sleep_time'), 24);
+    if (sleep <= wake) sleep += 1440; // handles sleep time after midnight
+    return { wake, sleep };
   }
-  function formatHour(h) {
-    const hNorm = Math.floor(h % 24);
-    const ampm  = hNorm >= 12 ? 'PM' : 'AM';
-    const h12   = hNorm % 12 || 12;
-    return h12 + ':00 ' + ampm;
+  function formatTimeMins(totalMins) {
+    const h    = Math.floor(totalMins / 60) % 24;
+    const m    = totalMins % 60;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    const h12  = h % 12 || 12;
+    return h12 + ':' + String(m).padStart(2, '0') + ' ' + ampm;
   }
 
   // ---------- storage helpers ----------
@@ -923,31 +924,30 @@ body::after {
   fillEl.setAttribute('stroke-dashoffset', C);
 
   function updateDayRing() {
-    const { wake: WAKE_HOUR, sleep: SLEEP_HOUR } = getWakeSleepHours();
-    const now = new Date();
-    const hours = now.getHours() + now.getMinutes() / 60 + now.getSeconds() / 3600;
+    const { wake: WAKE_MIN, sleep: SLEEP_MIN } = getWakeSleepMins();
+    const now     = new Date();
+    const nowMins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
     const percentEl   = document.getElementById('dayRingPercent');
     const phaseEl     = document.getElementById('dayRingPhase');
     const clockEl     = document.getElementById('dayRingClock');
     const statusEl    = document.getElementById('dayRingStatus');
     const remainingEl = document.getElementById('dayRingRemaining');
     const hoursEl     = document.getElementById('dayRingHours');
-    if (hoursEl) hoursEl.textContent = formatHour(WAKE_HOUR) + ' – ' + formatHour(SLEEP_HOUR);
+    if (hoursEl) hoursEl.textContent = formatTimeMins(WAKE_MIN) + ' – ' + formatTimeMins(SLEEP_MIN);
 
     clockEl.textContent = formatClock(now);
 
-    if (hours < WAKE_HOUR) {
+    if (nowMins < WAKE_MIN) {
       fillEl.setAttribute('stroke-dashoffset', C);
       fillEl.style.stroke = '#4D4B47';
       percentEl.textContent = '—';
       phaseEl.textContent   = 'SLEEPING';
       statusEl.textContent  = '😴 Still sleeping';
-      const minsUntil = (WAKE_HOUR - hours) * 60;
-      remainingEl.textContent = formatRemaining(minsUntil) + ' until wake-up';
+      remainingEl.textContent = formatRemaining(WAKE_MIN - nowMins) + ' until wake-up';
       return;
     }
 
-    if (hours >= SLEEP_HOUR) {
+    if (nowMins >= SLEEP_MIN) {
       fillEl.setAttribute('stroke-dashoffset', 0);
       fillEl.style.stroke = '#E25D7A';
       percentEl.textContent = '100%';
@@ -957,8 +957,8 @@ body::after {
       return;
     }
 
-    const span = SLEEP_HOUR - WAKE_HOUR;
-    const percent = (hours - WAKE_HOUR) / span * 100;
+    const span    = SLEEP_MIN - WAKE_MIN;
+    const percent = (nowMins - WAKE_MIN) / span * 100;
     fillEl.setAttribute('stroke-dashoffset', C * (1 - percent / 100));
     fillEl.style.stroke = rgb(paletteAt(percent));
     percentEl.textContent = Math.floor(percent) + '%';
@@ -972,8 +972,7 @@ body::after {
     phaseEl.textContent  = phase;
     statusEl.textContent = status;
 
-    const minsLeft = (SLEEP_HOUR - hours) * 60;
-    remainingEl.textContent = formatRemaining(minsLeft) + ' awake time left';
+    remainingEl.textContent = formatRemaining(SLEEP_MIN - nowMins) + ' awake time left';
   }
 
   // ---------- Row building ----------
