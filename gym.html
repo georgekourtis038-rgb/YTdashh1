@@ -2746,6 +2746,7 @@ img, video, canvas, svg { max-width: 100%; }
         });
         saveWeeklySplit(obj);
         saveGymCycle({ type: 'weekly' });
+        try { pcSchedulePush(); } catch (e) {}
       } else {
         const days = [];
         $('splitCycleList').querySelectorAll('.split-cycle-row').forEach(row => {
@@ -2755,6 +2756,7 @@ img, video, canvas, svg { max-width: 100%; }
         });
         const sd = $('splitStartDate');
         saveGymCycle({ type: 'cycle', days, startDate: sd ? sd.value : wlTodayKey() });
+        try { pcSchedulePush(); } catch (e) {}
       }
       closeSplitPanel();
       renderDayPill();
@@ -3300,7 +3302,7 @@ img, video, canvas, svg { max-width: 100%; }
   const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'po-coach';
-  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights'];
+  const PC_SYNCED_KEYS = ['po_coach_v1', 'po_coach_workout_done', 'po_coach_weights', 'dash_gym_split', 'dash_gym_cycle'];
 
   let pcSupa = null;
   let pcPushTimer = null;
