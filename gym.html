@@ -1394,6 +1394,100 @@ img, video, canvas, svg { max-width: 100%; }
 }
 .pe-add-set-btn:hover { background: rgba(110,231,183,0.18); }
 .pe-add-set-btn:active { transform: scale(0.98); }
+
+/* ── Weekly split config panel ── */
+.split-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.60);
+  backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+  z-index: 300;
+  display: flex; align-items: flex-end;
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.26s ease;
+}
+.split-bg.open { opacity: 1; pointer-events: all; }
+.split-sheet {
+  width: 100%;
+  background: #111114;
+  border-radius: 20px 20px 0 0;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-bottom: none;
+  padding-bottom: calc(20px + env(safe-area-inset-bottom));
+  max-height: 82vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateY(100%);
+  transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.split-bg.open .split-sheet { transform: translateY(0); }
+.split-handle {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.14);
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+.split-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.split-head-title { font-size: 16px; font-weight: 700; color: var(--text-1); }
+.split-head-close {
+  width: 30px; height: 30px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  border-radius: 8px; color: var(--text-2); font-size: 13px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.split-body { padding: 10px 14px 0; }
+.split-day-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 10px; border-radius: 10px; margin-bottom: 4px;
+  border: 1px solid transparent;
+}
+.split-day-row.is-today {
+  background: rgba(110,231,183,0.05);
+  border-color: rgba(110,231,183,0.20);
+}
+.split-day-info {
+  display: flex; align-items: center; gap: 7px;
+  min-width: 108px; flex-shrink: 0;
+}
+.split-day-name {
+  font-size: 13px; font-weight: 600; color: var(--text-2);
+}
+.split-day-row.is-today .split-day-name { color: var(--good); }
+.split-today-badge {
+  font-size: 9px; font-weight: 800; letter-spacing: 0.08em;
+  color: var(--good); background: rgba(110,231,183,0.16);
+  padding: 2px 6px; border-radius: 999px; text-transform: uppercase;
+}
+.split-day-select {
+  flex: 1; min-width: 0;
+  padding: 10px 30px 10px 11px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 9px;
+  color: var(--text-1); font-family: var(--font);
+  font-size: 16px; font-weight: 500;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M2 4l4 4 4-4' stroke='%2387847B' stroke-width='1.5' fill='none' stroke-linecap='round'/></svg>");
+  background-repeat: no-repeat; background-position: right 10px center;
+  cursor: pointer; outline: none;
+}
+.split-day-select:focus { border-color: rgba(255,255,255,0.28); }
+.split-foot { padding: 14px 14px 0; }
+.split-save-btn {
+  width: 100%; height: 52px;
+  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
+  color: #0a0a0b; border: none; border-radius: 12px;
+  font-family: var(--font); font-size: 15px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.35);
+  transition: transform 0.10s;
+}
+.split-save-btn:active { transform: scale(0.98); }
 </style>
 <link rel="stylesheet" href="/animations.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1401,10 +1495,10 @@ img, video, canvas, svg { max-width: 100%; }
 <body>
 
 <div class="po-shell">
-  <button class="po-day-pill" type="button" id="dayPill" title="Tap to switch the day filter to today's split">
+  <button class="po-day-pill" type="button" id="dayPill" aria-label="Configure gym split">
     <span class="po-day-date" id="dayPillDate">—</span>
-    <span class="po-day-sep">·</span>
-    <span class="po-day-split" id="dayPillSplit">—</span>
+    <span class="po-day-sep" id="dayPillSep">·</span>
+    <span class="po-day-split" id="dayPillSplit"></span>
   </button>
 
   <!-- WEIGHT + PROGRESS PHOTOS -->
@@ -1641,6 +1735,21 @@ img, video, canvas, svg { max-width: 100%; }
   </div>
 </div>
 
+<!-- Weekly split config panel -->
+<div class="split-bg" id="splitBg">
+  <div class="split-sheet">
+    <div class="split-handle"></div>
+    <div class="split-head">
+      <span class="split-head-title">Weekly Split</span>
+      <button class="split-head-close" id="splitSheetClose">✕</button>
+    </div>
+    <div class="split-body" id="splitSheetBody"></div>
+    <div class="split-foot">
+      <button class="split-save-btn" id="splitSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function() {
   // ============================================================
@@ -1735,10 +1844,66 @@ img, video, canvas, svg { max-width: 100%; }
     const dows = ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const mons = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
     $('dayPillDate').textContent = dows[d.getDay()] + ', ' + mons[d.getMonth()] + ' ' + d.getDate();
-    const sp = todaySplit();
-    const el = $('dayPillSplit');
-    el.textContent = (isRestName(sp.name) ? 'REST DAY' : (sp.name + ' DAY')).toUpperCase();
-    el.classList.toggle('is-rest', isRestName(sp.name));
+    const weeklySplit = loadWeeklySplit();
+    const splitName = weeklySplit[todayWeekdayName()] || '';
+    const sepEl = $('dayPillSep');
+    const splitEl = $('dayPillSplit');
+    if (splitName) {
+      const isOff  = /^off$/i.test(splitName);
+      const isRest = /^rest$/i.test(splitName) || isOff;
+      splitEl.textContent = isOff ? 'OFF' : (splitName.toUpperCase() + ' DAY');
+      splitEl.classList.toggle('is-rest', isRest);
+      sepEl.classList.remove('hidden');
+      splitEl.classList.remove('hidden');
+    } else {
+      sepEl.classList.add('hidden');
+      splitEl.classList.add('hidden');
+    }
+  }
+
+  // ── Weekly split config ───────────────────────────────────────
+  const SPLIT_LS_KEY = 'dash_gym_split';
+  const SPLIT_OPTIONS = ['Push','Pull','Legs','Rest','Cardio','Upper','Lower','Full Body','Off'];
+  const WEEK_DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+  function todayWeekdayName() {
+    return ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()];
+  }
+  function loadWeeklySplit() {
+    try { const r = localStorage.getItem(SPLIT_LS_KEY); return r ? JSON.parse(r) : {}; }
+    catch (e) { return {}; }
+  }
+  function saveWeeklySplit(obj) {
+    try { localStorage.setItem(SPLIT_LS_KEY, JSON.stringify(obj)); } catch (e) {}
+  }
+  function renderSplitPanel() {
+    const current = loadWeeklySplit();
+    const todayName = todayWeekdayName();
+    $('splitSheetBody').innerHTML = WEEK_DAYS.map(day => {
+      const isToday = day === todayName;
+      const val = current[day] || '';
+      const opts = SPLIT_OPTIONS.map(o =>
+        `<option value="${o}"${val === o ? ' selected' : ''}>${o}</option>`
+      ).join('');
+      return `<div class="split-day-row${isToday ? ' is-today' : ''}">
+        <div class="split-day-info">
+          <span class="split-day-name">${day}</span>
+          ${isToday ? '<span class="split-today-badge">TODAY</span>' : ''}
+        </div>
+        <select class="split-day-select" data-day="${day}">
+          <option value="">— not set —</option>
+          ${opts}
+        </select>
+      </div>`;
+    }).join('');
+  }
+  function openSplitPanel() {
+    renderSplitPanel();
+    $('splitBg').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeSplitPanel() {
+    $('splitBg').classList.remove('open');
+    document.body.style.overflow = '';
   }
 
   // ── Workout done tracking ─────────────────────────────────────
@@ -2423,6 +2588,25 @@ img, video, canvas, svg { max-width: 100%; }
 
   $('settingsBg').addEventListener('click', (e) => {
     if (e.target === $('settingsBg')) $('settingsBg').classList.remove('show');
+  });
+
+  // ── Split panel listeners ─────────────────────────────────────
+  $('dayPill').addEventListener('click', openSplitPanel);
+
+  $('splitSheetClose').addEventListener('click', closeSplitPanel);
+
+  $('splitBg').addEventListener('click', (e) => {
+    if (e.target === $('splitBg')) closeSplitPanel();
+  });
+
+  $('splitSaveBtn').addEventListener('click', () => {
+    const obj = {};
+    $('splitSheetBody').querySelectorAll('.split-day-select').forEach(sel => {
+      if (sel.value) obj[sel.dataset.day] = sel.value;
+    });
+    saveWeeklySplit(obj);
+    closeSplitPanel();
+    renderDayPill();
   });
 
   $('setUnitsCtrl').addEventListener('click', (e) => {
