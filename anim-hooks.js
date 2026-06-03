@@ -242,33 +242,30 @@
     const el = document.getElementById('wMlBig');
     if (!el) return;
 
-    let ownWrite = false;
-    let animFrame = null;
+    let isAnimating = false;   // true while rAF loop is running
+    let animFrame = null;      // current rAF handle
+    let debounceTimer = null;  // 150ms settle timer
+    let lastWrittenByUs = null; // last numeric value our animation wrote
 
     function parseNum(text) {
-      const m = text.replace(/,/g, '').match(/(\d+)/);
+      const m = (text || '').replace(/,/g, '').match(/(\d+)/);
       return m ? parseInt(m[1], 10) : null;
     }
 
     function getSuffix(text) {
-      return text.replace(/[\d,]+/, '').trim();
+      return (text || '').replace(/[\d,]+/, '').trim();
     }
 
     let currentVal = parseNum(el.textContent) || 0;
 
-    const obs = new MutationObserver(function () {
-      if (ownWrite) return;
+    function animate(from, target, suffix) {
+      // Always cancel any in-progress animation before starting a new one
+      if (animFrame) {
+        cancelAnimationFrame(animFrame);
+        animFrame = null;
+      }
 
-      const text = el.textContent.trim();
-      const target = parseNum(text);
-      if (target === null || target === currentVal) return;
-
-      const suffix = getSuffix(text);
-      const from = currentVal;
-      currentVal = target;
-
-      if (animFrame) cancelAnimationFrame(animFrame);
-
+      isAnimating = true;
       let start = null;
       const duration = 420;
 
@@ -278,18 +275,54 @@
         const eased = 1 - (1 - p) * (1 - p); // ease-out quad
         const cur = Math.round(from + (target - from) * eased);
 
-        ownWrite = true;
+        lastWrittenByUs = cur; // record so observer can skip this write
         el.textContent = cur.toLocaleString() + (suffix ? ' ' + suffix : '');
-        ownWrite = false;
 
         if (p < 1) {
           animFrame = requestAnimationFrame(step);
         } else {
           animFrame = null;
+          isAnimating = false;
         }
       }
 
       animFrame = requestAnimationFrame(step);
+    }
+
+    const obs = new MutationObserver(function () {
+      const text = el.textContent.trim();
+      const incoming = parseNum(text);
+      if (incoming === null) return;
+
+      // Skip values our own animation wrote — MutationObserver fires as a
+      // microtask so the ownWrite flag approach is unreliable; tracking the
+      // last numeric value we wrote is the correct guard.
+      if (incoming === lastWrittenByUs) return;
+
+      // While an animation is running, ignore all external changes.
+      // The debounce below will catch the final settled value once we're done.
+      if (isAnimating) return;
+
+      if (incoming === currentVal) return;
+
+      const suffix = getSuffix(text);
+
+      // Debounce: rapid re-renders (e.g. Supabase sync writing localStorage
+      // multiple times) reset this timer so we only animate once the value
+      // has stopped changing for 150 ms.
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(function () {
+        debounceTimer = null;
+        // Re-read the element — the value may have changed again during the wait
+        const finalText = el.textContent.trim();
+        const finalVal = parseNum(finalText);
+        const finalSuffix = getSuffix(finalText);
+        if (finalVal === null || finalVal === currentVal) return;
+
+        const from = currentVal;
+        currentVal = finalVal;
+        animate(from, finalVal, finalSuffix);
+      }, 150);
     });
 
     obs.observe(el, { childList: true, characterData: true, subtree: true });

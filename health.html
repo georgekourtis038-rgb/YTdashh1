@@ -1744,6 +1744,18 @@ main {
     wRenderChart(target);
   }
 
+  // Debounce wRender: if called multiple times within 100ms (e.g. from
+  // Supabase sync writing localStorage repeatedly) only execute the last call.
+  var _wRenderFn = wRender;
+  var _wRenderTimer = null;
+  wRender = function () {
+    if (_wRenderTimer) clearTimeout(_wRenderTimer);
+    _wRenderTimer = setTimeout(function () {
+      _wRenderTimer = null;
+      _wRenderFn();
+    }, 100);
+  };
+
   function wRenderWhyBody(s, target) {
     var rows = [];
     var lbs = wReadDashNum('dash_weight');
