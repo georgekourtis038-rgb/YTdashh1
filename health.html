@@ -1618,6 +1618,11 @@ main {
     if (d.logs !== undefined && (typeof d.logs !== 'object' || d.logs === null || Array.isArray(d.logs))) {
       d.logs = {}; repaired = true;
     }
+    if (typeof d.logs === 'object' && d.logs !== null && !Array.isArray(d.logs)) {
+      Object.keys(d.logs).forEach(function(k) {
+        if (!Array.isArray(d.logs[k])) { d.logs[k] = []; repaired = true; }
+      });
+    }
     if (d.settings !== undefined && (typeof d.settings !== 'object' || d.settings === null || Array.isArray(d.settings))) {
       d.settings = {}; repaired = true;
     }
@@ -1670,7 +1675,8 @@ main {
 
   function wGetTodayLog() {
     var logs = wLoad().logs || {};
-    return logs[wActiveDate()] || [];
+    var entry = logs[wActiveDate()];
+    return Array.isArray(entry) ? entry : [];
   }
 
   function wAddMl(ml) {
@@ -1678,7 +1684,7 @@ main {
     var today = wActiveDate();
     if (!d.history) d.history = {};
     if (!d.logs) d.logs = {};
-    if (!d.logs[today]) d.logs[today] = [];
+    if (!Array.isArray(d.logs[today])) d.logs[today] = [];
     d.history[today] = Math.max(0, (d.history[today] || 0) + Math.round(ml));
     d.logs[today].push(Math.round(ml));
     wSave(d);
@@ -1687,7 +1693,7 @@ main {
   function wUndoMl() {
     var d = wLoad();
     var today = wActiveDate();
-    if (!d.logs || !d.logs[today] || !d.logs[today].length) return;
+    if (!d.logs || !Array.isArray(d.logs[today]) || !d.logs[today].length) return;
     var amount = d.logs[today].pop();
     if (!d.history) d.history = {};
     d.history[today] = Math.max(0, (d.history[today] || 0) - amount);
@@ -2025,6 +2031,10 @@ main {
   document.getElementById('wChartEditInput').addEventListener('keydown', function (e) {
     if (e.key === 'Enter') { e.preventDefault(); wCommitChartEdit(); }
     if (e.key === 'Escape') { document.getElementById('wChartEditCancel').click(); }
+  });
+
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'dash_weight') wRender();
   });
 
   wSafeLoad();

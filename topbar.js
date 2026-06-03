@@ -316,10 +316,14 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   function addWater() {
     let state = null;
     try { state = JSON.parse(localStorage.getItem('po_water_v1')); } catch (e) {}
-    if (!state || typeof state !== 'object') state = defaultWaterState();
-    state.logs = state.logs || {};
+    if (!state || typeof state !== 'object') state = {};
     const k = calendarDateKey();
-    state.logs[k] = (parseInt(state.logs[k]) || 0) + 1;
+    const bottleMl = ((state.settings || {}).bottleMl) || 500;
+    if (!state.history) state.history = {};
+    state.history[k] = (typeof state.history[k] === 'number' ? state.history[k] : 0) + bottleMl;
+    if (!state.logs) state.logs = {};
+    if (!Array.isArray(state.logs[k])) state.logs[k] = [];
+    state.logs[k].push(bottleMl);
     try { localStorage.setItem('po_water_v1', JSON.stringify(state)); } catch (e) {}
     try { window.dispatchEvent(new StorageEvent('storage', { key: 'po_water_v1' })); } catch(e) {}
     render();
