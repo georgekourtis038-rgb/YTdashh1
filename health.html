@@ -1700,29 +1700,53 @@ main {
     wSave(d);
   }
 
+  function wSyncGymWeight() {
+    try {
+      var raw = localStorage.getItem('po_coach_weights');
+      if (!raw) return;
+      var entries = JSON.parse(raw);
+      if (!Array.isArray(entries) || !entries.length) return;
+      entries.sort(function(a, b) { return a.dateKey.localeCompare(b.dateKey); });
+      var latest = entries[entries.length - 1];
+      if (!latest || typeof latest.weight !== 'number' || latest.weight <= 0) return;
+      var gymUnit = 'kg';
+      try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch(e) {}
+      var lbs = gymUnit === 'lb' ? latest.weight : latest.weight * 2.20462;
+      localStorage.setItem('dash_weight', JSON.stringify(Math.round(lbs * 10) / 10));
+    } catch (e) {}
+  }
+
   function wTarget(s) {
-    var base = 2500;
-    var kg = wReadDashNum('dash_weight');
-    if (kg && kg > 0) base = kg * 35;
-    (s.subs || []).forEach(function (sub) { if (sub.extraMl) base += sub.extraMl; });
-    return Math.round(base / 50) * 50;
+    var lbs = wReadDashNum('dash_weight');
+    if (!lbs || lbs <= 0) return null;
+    var kg = lbs / 2.205;
+    var base = kg * 35;
+    if ((s.sex || 'm') === 'm') base += 200;
+    (s.subs || []).forEach(function(sub) { if (sub.extraMl) base += sub.extraMl; });
+    base = Math.round(base / 50) * 50;
+    return Math.max(2000, Math.min(6000, base));
   }
 
   function wRender() {
     var s = wGetSettings();
     var target = wTarget(s);
     var ml = wGetTodayMl();
-    var pct = target > 0 ? Math.min(100, Math.round((ml / target) * 100)) : 0;
+    var pct = (target !== null && target > 0) ? Math.min(100, Math.round((ml / target) * 100)) : 0;
 
     document.getElementById('wMlBig').textContent = ml.toLocaleString() + ' ml';
-    document.getElementById('wMlTarget').textContent = '/ ' + target.toLocaleString() + ' ml target';
+    document.getElementById('wMlTarget').textContent = target !== null
+      ? '/ ' + target.toLocaleString() + ' ml target'
+      : 'Set your weight in Settings to get a personalized target';
 
     var bar = document.getElementById('wProgBar');
     bar.style.width = pct + '%';
     bar.className = 'wpbar-fill ' + (pct >= 100 ? 'green-bright' : pct >= 80 ? 'green' : pct >= 40 ? 'orange' : 'red');
 
     var statusEl = document.getElementById('wStatus');
-    if (pct >= 100) {
+    if (target === null) {
+      statusEl.textContent = 'Log your weight in the Fitness tab to set a target';
+      statusEl.className = 'wstatus warn';
+    } else if (pct >= 100) {
       statusEl.textContent = 'Goal reached! 💧';
       statusEl.className = 'wstatus good';
     } else if (pct >= 60) {
@@ -1743,11 +1767,13 @@ main {
 
   function wRenderWhyBody(s, target) {
     var rows = [];
-    var kg = wReadDashNum('dash_weight');
-    if (kg && kg > 0) {
-      rows.push({ label: 'Base (' + Math.round(kg) + 'kg \xD7 35ml/kg)', val: Math.round(kg * 35) + ' ml' });
+    var lbs = wReadDashNum('dash_weight');
+    if (lbs && lbs > 0) {
+      var kg = lbs / 2.205;
+      rows.push({ label: 'Base (' + Math.round(lbs) + ' lbs / ' + Math.round(kg) + ' kg \xD7 35 ml/kg)', val: Math.round(kg * 35) + ' ml' });
+      if ((s.sex || 'm') === 'm') rows.push({ label: 'Male adjustment', val: '+200 ml' });
     } else {
-      rows.push({ label: 'Base (set weight in Settings to personalise)', val: '2500 ml' });
+      rows.push({ label: 'Log weight in Fitness tab to personalise', val: '—' });
     }
     (s.subs || []).forEach(function (sub) {
       if (sub.extraMl) rows.push({ label: sub.name, val: '+' + sub.extraMl + ' ml' });
@@ -1755,8 +1781,10 @@ main {
     var body = document.getElementById('whyBody');
     body.innerHTML = rows.map(function (r) {
       return '<div class="why-row"><span class="why-label">' + r.label + '</span><span class="why-val">' + r.val + '</span></div>';
-    }).join('') +
-      '<div class="why-row total"><span class="why-label">Daily target</span><span class="why-val">' + target.toLocaleString() + ' ml</span></div>';
+    }).join('');
+    if (target !== null) {
+      body.innerHTML += '<div class="why-row total"><span class="why-label">Daily target</span><span class="why-val">' + target.toLocaleString() + ' ml</span></div>';
+    }
   }
 
   function wRenderChart(target) {
@@ -1776,13 +1804,14 @@ main {
         isToday: key === today
       });
     }
-    var maxMl = Math.max(target * 1.1, 100);
+    var chartTarget = target !== null ? target : 2500;
+    var maxMl = Math.max(chartTarget * 1.1, 100);
     days.forEach(function (d) { if (d.ml > maxMl) maxMl = d.ml; });
 
     var chart = document.getElementById('wChart');
     chart.innerHTML = days.map(function (d) {
       var heightPct = maxMl > 0 ? Math.min(100, (d.ml / maxMl) * 100) : 0;
-      var dayPct = target > 0 ? d.ml / target : 0;
+      var dayPct = chartTarget > 0 ? d.ml / chartTarget : 0;
       var barClass = d.ml === 0 ? 'wchart-bar empty' : (dayPct >= 1 ? 'wchart-bar hit' : dayPct >= 0.8 ? 'wchart-bar near' : 'wchart-bar miss');
       var amtLabel = d.ml >= 1000 ? (d.ml / 1000).toFixed(1) + 'L' : (d.ml > 0 ? d.ml + '' : '');
       return '<div class="wchart-col" data-key="' + d.key + '" data-day="' + d.label + '" data-ml="' + d.ml + '" style="cursor:pointer">' +
@@ -1899,6 +1928,7 @@ main {
     var s = wGetSettings();
     s.bottleMl = bv;
     wSaveSettings(s);
+    document.getElementById('wBtnBottleLabel').textContent = '+ Bottle (' + bv + 'ml)';
     wRender();
   });
 
@@ -1908,6 +1938,7 @@ main {
     var s = wGetSettings();
     s.glassMl = gv;
     wSaveSettings(s);
+    document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + gv + 'ml)';
     wRender();
   });
 
@@ -2034,10 +2065,12 @@ main {
   });
 
   window.addEventListener('storage', function(e) {
-    if (e.key === 'dash_weight') wRender();
+    if (e.key === 'po_coach_weights') { wSyncGymWeight(); wRender(); }
+    else if (e.key === 'dash_weight') wRender();
   });
 
   wSafeLoad();
+  wSyncGymWeight();
   wRender();
 })();
 </script>
