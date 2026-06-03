@@ -49,6 +49,7 @@
   width: 8px; height: 8px; border-radius: 50%;
   background: #7DD3FC; flex-shrink: 0;
 }
+.topbar-water-pill.good .topbar-pill-dot { background: #6ee7b7; }
 .topbar-water-pill.warn .topbar-pill-dot { background: #fbbf24; }
 .topbar-water-pill.miss .topbar-pill-dot {
   background: #ff8a8a;
@@ -237,52 +238,55 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     try {
       let state = null;
       try { state = JSON.parse(localStorage.getItem('po_water_v1')); } catch (e) {}
-      if (!state) return { done: 0, total: 0 };
+      if (!state) return { doneMl: 0, targetMl: 0 };
+
       const todayKey = calendarDateKey();
-      const done = (state.logs || {})[todayKey] || 0;
-      const p = state.profile || { weightKg: 75 };
-      const wKg = state.weightUnit === 'lb' ? (p.weightKg || 0) / 2.20462 : (p.weightKg || 0);
-      const base = wKg * 35;
-      const exercise = (p.activityHrsPerWeek || 0) / 7 * 500;
-      const caffeine = Math.max(0, (state.caffeineMgPerDay || 0) - 200) * 1.5;
-      const subs = (state.substances || []).reduce((s, x) => {
-        const dose = (x && x.dose != null ? x.dose : (x && x.defaultDose)) || 0;
-        return s + Math.max(0, dose * ((x && x.mlPerUnit) || 0));
-      }, 0);
-      let adjust = 0;
-      if (p.sex === 'm') adjust += 200;
-      if ((p.age || 0) >= 50) adjust += 100;
-      const totalMl = base + exercise + caffeine + subs + adjust;
-      let unitVol;
-      if (state.unit === 'glass') unitVol = state.glassMl || 250;
-      else if (state.unit === 'oz') unitVol = 30;
-      else if (state.unit === 'ml') unitVol = 1;
-      else unitVol = state.bottleMl || 500;
-      const total = Math.max(1, Math.ceil(totalMl / unitVol));
-      return { done, total };
+      const doneMl = ((state.history || {})[todayKey]) || 0;
+
+      // Same formula as health.html wTarget()
+      let targetMl = 2500;
+      try {
+        const raw = localStorage.getItem('dash_weight');
+        if (raw !== null) {
+          const kg = parseFloat(JSON.parse(raw));
+          if (!isNaN(kg) && kg > 0) targetMl = kg * 35;
+        }
+      } catch (e) {}
+      const subs = ((state.settings || {}).subs) || [];
+      subs.forEach(function(sub) { if (sub && sub.extraMl) targetMl += sub.extraMl; });
+      targetMl = Math.round(targetMl / 50) * 50;
+
+      return { doneMl, targetMl };
     } catch (e) {
-      return { done: 0, total: 0 };
+      return { doneMl: 0, targetMl: 0 };
     }
   }
-  function classifyStatus(done, total) {
-    if (total === 0) return 'idle';
-    if (done >= total) return 'good';
-    if (done >= total * 0.5) return 'warn';
-    const h = new Date().getHours();
-    if (h >= 18 && done < total * 0.5) return 'miss';
-    return 'warn';
+  function fmtL(ml) {
+    if (ml >= 1000) return (ml / 1000).toFixed(1) + 'L';
+    return ml + 'ml';
+  }
+  function classifyStatus(doneMl, targetMl) {
+    if (targetMl === 0) return 'idle';
+    const pct = doneMl / targetMl;
+    if (pct >= 0.8) return 'good';
+    if (pct >= 0.4) return 'warn';
+    return 'miss';
   }
   function setPillStatus(pillEl, status) {
     pillEl.classList.remove('good', 'warn', 'miss');
-    if (status === 'warn' || status === 'miss') pillEl.classList.add(status);
+    if (status === 'good' || status === 'warn' || status === 'miss') pillEl.classList.add(status);
   }
   function render() {
     const waterEl = document.getElementById('topbarWater');
     if (!waterEl) return;
     const w = getWaterProgress();
     const countEl = document.getElementById('topbarWaterCount');
-    if (countEl) countEl.textContent = w.total ? w.done + '/' + w.total : '0/0';
-    setPillStatus(waterEl, classifyStatus(w.done, w.total));
+    if (countEl) {
+      countEl.textContent = w.targetMl > 0
+        ? fmtL(w.doneMl) + ' / ' + fmtL(w.targetMl)
+        : '0ml / 0ml';
+    }
+    setPillStatus(waterEl, classifyStatus(w.doneMl, w.targetMl));
   }
 
   function defaultWaterState() {
