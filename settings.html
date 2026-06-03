@@ -292,7 +292,7 @@ html, body {
     <button class="hamburger-btn" id="openDrawer" aria-label="Open settings">☰</button>
     <h1 class="settings-title">Settings</h1>
   </div>
-  <p class="settings-hint">Tap ☰ to configure your personal info, water settings, and data tools.</p>
+  <p class="settings-hint">Tap ☰ to configure your personal info and data tools.</p>
   <div class="summary-grid">
     <div class="summary-card">
       <div class="summary-card-label">Wake time</div>
@@ -303,16 +303,6 @@ html, body {
       <div class="summary-card-label">Sleep time</div>
       <div class="summary-card-value" id="summarySleep">—</div>
       <div class="summary-card-sub">end of day ring</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-card-label">Bottle size</div>
-      <div class="summary-card-value" id="summaryBottle">—</div>
-      <div class="summary-card-sub">water tracker</div>
-    </div>
-    <div class="summary-card">
-      <div class="summary-card-label">Caffeine</div>
-      <div class="summary-card-value" id="summaryCaffeine">—</div>
-      <div class="summary-card-sub">per day</div>
     </div>
   </div>
 </div>
@@ -375,27 +365,6 @@ html, body {
           <div class="setting-row-label">Sleep time</div>
         </div>
         <input class="setting-input setting-input-time" id="settingSleep" type="time" value="23:00">
-      </div>
-    </div>
-  </div>
-
-  <!-- WATER SETTINGS -->
-  <div class="setting-section">
-    <div class="setting-section-label">Water Settings</div>
-    <div class="setting-card">
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Bottle size</div>
-          <div class="setting-row-sub">ml per drink</div>
-        </div>
-        <input class="setting-input" id="settingBottle" type="number" min="50" max="2000" value="500" inputmode="numeric">
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Caffeine / day</div>
-          <div class="setting-row-sub">mg</div>
-        </div>
-        <input class="setting-input" id="settingCaffeine" type="number" min="0" max="2000" value="200" inputmode="numeric">
       </div>
     </div>
   </div>
@@ -483,10 +452,6 @@ html, body {
       document.getElementById('weightSub').textContent = 'no gym entry yet';
     }
 
-    // Water settings (po_water_v1)
-    const water = lsGet('po_water_v1') || {};
-    document.getElementById('settingBottle').value   = water.bottleMl != null         ? water.bottleMl         : 500;
-    document.getElementById('settingCaffeine').value = water.caffeineMgPerDay != null ? water.caffeineMgPerDay : 200;
   }
 
   // ── Save all ─────────────────────────────────────────────────
@@ -510,13 +475,6 @@ html, body {
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
 
-    // Water settings — merge into existing po_water_v1 object
-    const water = lsGet('po_water_v1') || {};
-    const bottle   = parseInt(document.getElementById('settingBottle').value, 10);
-    const caffeine = parseInt(document.getElementById('settingCaffeine').value, 10);
-    if (!isNaN(bottle)   && bottle   > 0)  water.bottleMl          = bottle;
-    if (!isNaN(caffeine) && caffeine >= 0) water.caffeineMgPerDay  = caffeine;
-    lsSet('po_water_v1', water);
   }
 
   // ── Sex toggle ───────────────────────────────────────────────
@@ -531,9 +489,6 @@ html, body {
   function refreshSummary() {
     document.getElementById('summaryWake').textContent    = lsRaw('dash_wake_time')  || '08:00';
     document.getElementById('summarySleep').textContent   = lsRaw('dash_sleep_time') || '23:00';
-    const water = lsGet('po_water_v1') || {};
-    document.getElementById('summaryBottle').textContent   = (water.bottleMl != null         ? water.bottleMl         : 500) + ' ml';
-    document.getElementById('summaryCaffeine').textContent = (water.caffeineMgPerDay != null ? water.caffeineMgPerDay : 200) + ' mg';
   }
 
   // ── Export ───────────────────────────────────────────────────
