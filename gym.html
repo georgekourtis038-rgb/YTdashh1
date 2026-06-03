@@ -897,6 +897,17 @@ img, video, canvas, svg { max-width: 100%; }
   height: 2px;
 }
 
+.wt-range-summary {
+  font-size: 13px; font-weight: 500;
+  text-align: center;
+  margin: 10px 0 2px;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.wt-range-summary.gain    { color: var(--bad); }
+.wt-range-summary.loss    { color: var(--good); }
+.wt-range-summary.neutral { color: var(--text-3); }
+
 /* Composition estimate */
 .wt-comp {
   margin-top: 18px; padding: 14px 16px;
@@ -1447,6 +1458,8 @@ img, video, canvas, svg { max-width: 100%; }
         <span class="wt-legend-item"><span class="wt-legend-dot"></span>DAILY</span>
         <span class="wt-legend-item"><span class="wt-legend-dot wt-legend-dot-avg"></span>7-DAY AVG</span>
       </div>
+
+      <div class="wt-range-summary hidden" id="wtRangeSummary"></div>
 
       <!-- Composition estimate — uses strength trend + weight trend to guess
            how much of recent weight change was muscle vs fat. -->
@@ -2569,12 +2582,15 @@ img, video, canvas, svg { max-width: 100%; }
     if (wtEntries.length >= 2) {
       $('wtChartWrap').classList.remove('hidden');
       $('wtLegend').classList.remove('hidden');
+      $('wtRangeSummary').classList.remove('hidden');
       wtRenderChart();
+      wtRenderRangeSummary();
       wtRenderDelta();
       wtRenderComposition();
     } else {
       $('wtChartWrap').classList.add('hidden');
       $('wtLegend').classList.add('hidden');
+      $('wtRangeSummary').classList.add('hidden');
       $('wtDelta').classList.add('hidden');
       $('wtComp').classList.add('hidden');
     }
@@ -2652,6 +2668,22 @@ img, video, canvas, svg { max-width: 100%; }
     $('wtYAxisMax').textContent = yMax.toFixed(1);
     $('wtYAxisMin').textContent = yMin.toFixed(1);
     $('wtMeta').textContent = recent.length + ' ' + (recent.length === 1 ? 'entry' : 'entries') + ' · ' + (rangeMeta[wtRange] || wtRange);
+  }
+
+  function wtRenderRangeSummary() {
+    const el = $('wtRangeSummary');
+    const recent = wtGetRangeEntries();
+    if (recent.length < 2) {
+      el.textContent = 'Not enough data';
+      el.className = 'wt-range-summary neutral';
+      return;
+    }
+    const diff = recent[recent.length - 1].weight - recent[0].weight;
+    const u = state.units;
+    const rangeText = { '7D': 'in the last 7 days', '1M': 'in the last month', '6M': 'in the last 6 months', '1Y': 'in the last year', 'ALL': 'all time' };
+    const sign = diff > 0.05 ? '+' : diff < -0.05 ? '−' : '';
+    el.textContent = sign + Math.abs(diff).toFixed(1) + ' ' + u + ' ' + (rangeText[wtRange] || wtRange);
+    el.className = 'wt-range-summary ' + (diff > 0.05 ? 'gain' : diff < -0.05 ? 'loss' : 'neutral');
   }
 
   function wtRenderDelta() {
@@ -2859,7 +2891,7 @@ img, video, canvas, svg { max-width: 100%; }
     $('wtRangeLabel').textContent = wtRange;
     $('wtRangeDropdown').classList.add('hidden');
     $('wtRangeBtn').classList.remove('open');
-    if (wtEntries.length >= 2) wtRenderChart();
+    if (wtEntries.length >= 2) { wtRenderChart(); wtRenderRangeSummary(); }
   });
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#wtRangeRow')) {
