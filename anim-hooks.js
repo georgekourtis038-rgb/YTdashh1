@@ -239,99 +239,58 @@
 
   /* ── 9. WATER ML COUNT-UP ────────────────────────────────────── */
   function bindWaterCountUp() {
-    const el = document.getElementById('wMlBig');
-    if (!el) return;
+    window.wAnimating = false;
 
-    let isAnimating = false;    // true while rAF loop is running
-    let animFrame = null;       // current rAF handle
-    let debounceTimer = null;   // 150ms settle timer
-    let lastWrittenByUs = null; // last intermediate value our animation wrote
-    let lastTargetValue = null; // last TARGET the animation ran toward
+    function getWaterSettings() {
+      try {
+        const raw = localStorage.getItem('po_water_v1');
+        const s = raw ? JSON.parse(raw) : {};
+        return { bottleMl: s.bottleMl || 500, glassMl: s.glassMl || 355 };
+      } catch (e) {
+        return { bottleMl: 500, glassMl: 355 };
+      }
+    }
 
     function parseNum(text) {
       const m = (text || '').replace(/,/g, '').match(/(\d+)/);
-      return m ? parseInt(m[1], 10) : null;
+      return m ? parseInt(m[1], 10) : 0;
     }
 
-    function getSuffix(text) {
-      return (text || '').replace(/[\d,]+/, '').trim();
-    }
-
-    let currentVal = parseNum(el.textContent) || 0;
-
-    function animate(from, target, suffix) {
-      // Always cancel any in-progress animation before starting a new one
-      if (animFrame) {
-        cancelAnimationFrame(animFrame);
-        animFrame = null;
-      }
-
-      lastTargetValue = target; // record before starting so echo-writes are ignored
-      isAnimating = true;
+    function animateCountUp(el, from, to) {
+      window.wAnimating = true;
+      const duration = 400;
       let start = null;
-      const duration = 420;
 
       function step(ts) {
         if (!start) start = ts;
         const p = Math.min((ts - start) / duration, 1);
-        const eased = 1 - (1 - p) * (1 - p); // ease-out quad
-        const cur = Math.round(from + (target - from) * eased);
-
-        lastWrittenByUs = cur; // record so observer can skip this write
-        el.textContent = cur.toLocaleString() + (suffix ? ' ' + suffix : '');
-
+        const eased = 1 - (1 - p) * (1 - p);
+        const cur = Math.round(from + (to - from) * eased);
+        el.textContent = cur + 'ml';
         if (p < 1) {
-          animFrame = requestAnimationFrame(step);
+          requestAnimationFrame(step);
         } else {
-          animFrame = null;
-          isAnimating = false;
+          window.wAnimating = false;
         }
       }
 
-      animFrame = requestAnimationFrame(step);
+      requestAnimationFrame(step);
     }
 
-    const obs = new MutationObserver(function () {
-      const text = el.textContent.trim();
-      const incoming = parseNum(text);
-      if (incoming === null) return;
+    document.addEventListener('click', function (e) {
+      if (window.wAnimating) return;
+      const bottleBtn = e.target.closest('#wBtnBottle');
+      const glassBtn = e.target.closest('#wBtnGlass');
+      if (!bottleBtn && !glassBtn) return;
 
-      // Skip values our own animation wrote (intermediate frames).
-      if (incoming === lastWrittenByUs) return;
+      const el = document.getElementById('wMlBig');
+      if (!el) return;
 
-      // Skip the Supabase echo: after animating 0→500 Supabase writes 500
-      // back to localStorage which re-renders the element with the same value.
-      // If it matches the target we already animated to, there's nothing to do.
-      if (incoming === lastTargetValue) return;
-
-      // While an animation is running, ignore all external changes.
-      // The debounce below will catch the final settled value once we're done.
-      if (isAnimating) return;
-
-      if (incoming === currentVal) return;
-
-      const suffix = getSuffix(text);
-
-      // Debounce: rapid re-renders (e.g. Supabase sync writing localStorage
-      // multiple times) reset this timer so we only animate once the value
-      // has stopped changing for 150 ms.
-      if (debounceTimer) clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(function () {
-        debounceTimer = null;
-        // Re-read the element — the value may have changed again during the wait
-        const finalText = el.textContent.trim();
-        const finalVal = parseNum(finalText);
-        const finalSuffix = getSuffix(finalText);
-        if (finalVal === null || finalVal === currentVal) return;
-        if (finalVal === lastTargetValue) return;
-
-        const from = currentVal;
-        currentVal = finalVal;
-        animate(from, finalVal, finalSuffix);
-      }, 150);
-    });
-
-    obs.observe(el, { childList: true, characterData: true, subtree: true });
+      const settings = getWaterSettings();
+      const addMl = bottleBtn ? settings.bottleMl : settings.glassMl;
+      const current = parseNum(el.textContent);
+      animateCountUp(el, current, current + addMl);
+    }, { passive: true });
   }
 
   /* ── 10. DAY RING PERCENT COUNT-UP on load ───────────────────── */
