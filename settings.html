@@ -73,49 +73,6 @@ html, body {
   margin: 0;
 }
 
-.settings-hint {
-  font-size: 13px;
-  color: var(--text-tertiary);
-  padding: 18px 20px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  text-align: center;
-  line-height: 1.6;
-  margin-bottom: 18px;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.summary-card {
-  background: rgba(255,255,255,0.04);
-  border-radius: 14px;
-  padding: 16px;
-  border: 1px solid rgba(255,255,255,0.06);
-}
-.summary-card-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 6px;
-}
-.summary-card-value {
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
-}
-.summary-card-sub {
-  font-size: 11px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-
 /* ── Sidebar overlay ── */
 .sidebar-overlay {
   position: fixed; inset: 0;
@@ -132,12 +89,12 @@ html, body {
 .sidebar {
   position: fixed;
   top: 0; bottom: 0; left: 0;
-  width: min(320px, 88vw);
+  width: min(280px, 85vw);
   background: #111114;
   z-index: 201;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: max(24px, env(safe-area-inset-top)) 18px calc(36px + env(safe-area-inset-bottom)) calc(18px + env(safe-area-inset-left));
+  padding: max(24px, env(safe-area-inset-top)) 14px calc(36px + env(safe-area-inset-bottom)) calc(14px + env(safe-area-inset-left));
   transform: translateX(-100%);
   transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
   border-right: 1px solid rgba(255,255,255,0.07);
@@ -148,12 +105,16 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 22px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .sidebar-heading {
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--text-primary);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
 .sidebar-close-btn {
   width: 32px; height: 32px;
@@ -168,6 +129,48 @@ html, body {
   transition: background 0.15s;
 }
 .sidebar-close-btn:active { background: rgba(255,255,255,0.10); }
+
+/* ── Sidebar nav list ── */
+.nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 13px;
+  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.nav-item:active { background: rgba(255,255,255,0.08); }
+.nav-item.active {
+  background: rgba(255,255,255,0.08);
+  color: var(--text-primary);
+}
+.nav-item-icon {
+  font-size: 17px;
+  width: 22px;
+  text-align: center;
+  flex-shrink: 0;
+  opacity: 0.75;
+}
+.nav-item.active .nav-item-icon { opacity: 1; }
+
+/* ── Section panels ── */
+.section-panel { display: none; }
+.section-panel.active { display: block; }
 
 /* ── Setting sections ── */
 .setting-section { margin-bottom: 22px; }
@@ -290,96 +293,86 @@ html, body {
 <div class="settings-page">
   <div class="settings-header">
     <button class="hamburger-btn" id="openDrawer" aria-label="Open settings">☰</button>
-    <h1 class="settings-title">Settings</h1>
+    <h1 class="settings-title" id="pageTitle">Personal Info</h1>
   </div>
-  <p class="settings-hint">Tap ☰ to configure your personal info and data tools.</p>
-  <div class="summary-grid">
-    <div class="summary-card">
-      <div class="summary-card-label">Wake time</div>
-      <div class="summary-card-value" id="summaryWake">—</div>
-      <div class="summary-card-sub">start of day ring</div>
+
+  <!-- PERSONAL INFO PANEL -->
+  <div class="section-panel active" id="panel-personal">
+    <div class="setting-section">
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Name</div>
+          </div>
+          <input class="setting-input setting-input-name" id="settingName" type="text" value="George Kourtis" autocomplete="off">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Weight</div>
+            <div class="setting-row-sub" id="weightSub">logged from gym</div>
+          </div>
+          <input class="setting-input" id="settingWeight" type="text" readonly>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Age</div>
+          </div>
+          <input class="setting-input" id="settingAge" type="number" min="1" max="120" value="17" inputmode="numeric">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Height (cm)</div>
+          </div>
+          <input class="setting-input" id="settingHeight" type="number" min="50" max="250" value="175" inputmode="numeric">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Sex</div>
+          </div>
+          <div class="sex-toggle" id="sexToggle">
+            <button class="sex-btn active" data-sex="male">M</button>
+            <button class="sex-btn" data-sex="female">F</button>
+            <button class="sex-btn" data-sex="other">—</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Wake time</div>
+          </div>
+          <input class="setting-input setting-input-time" id="settingWake" type="time" value="08:00">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Sleep time</div>
+          </div>
+          <input class="setting-input setting-input-time" id="settingSleep" type="time" value="23:00">
+        </div>
+      </div>
     </div>
-    <div class="summary-card">
-      <div class="summary-card-label">Sleep time</div>
-      <div class="summary-card-value" id="summarySleep">—</div>
-      <div class="summary-card-sub">end of day ring</div>
+
+    <div class="setting-section">
+      <div class="setting-section-label">Data</div>
+      <button class="action-btn sync" id="btnSyncNow">↑ Sync to cloud now</button>
+      <button class="action-btn export" id="btnExport">Export all data as JSON</button>
+      <button class="action-btn danger" id="btnReset">Reset today's data</button>
     </div>
   </div>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-<aside class="sidebar" id="sidebar" aria-label="Settings drawer">
+<aside class="sidebar" id="sidebar" aria-label="Settings navigation">
   <div class="sidebar-top">
     <span class="sidebar-heading">Settings</span>
     <button class="sidebar-close-btn" id="closeDrawer" aria-label="Close">✕</button>
   </div>
-
-  <!-- PERSONAL INFO -->
-  <div class="setting-section">
-    <div class="setting-section-label">Personal Info</div>
-    <div class="setting-card">
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Name</div>
-        </div>
-        <input class="setting-input setting-input-name" id="settingName" type="text" value="George Kourtis" autocomplete="off">
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Weight</div>
-          <div class="setting-row-sub" id="weightSub">logged from gym</div>
-        </div>
-        <input class="setting-input" id="settingWeight" type="text" readonly>
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Age</div>
-        </div>
-        <input class="setting-input" id="settingAge" type="number" min="1" max="120" value="17" inputmode="numeric">
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Height (cm)</div>
-        </div>
-        <input class="setting-input" id="settingHeight" type="number" min="50" max="250" value="175" inputmode="numeric">
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Sex</div>
-        </div>
-        <div class="sex-toggle" id="sexToggle">
-          <button class="sex-btn active" data-sex="male">M</button>
-          <button class="sex-btn" data-sex="female">F</button>
-          <button class="sex-btn" data-sex="other">—</button>
-        </div>
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Wake time</div>
-        </div>
-        <input class="setting-input setting-input-time" id="settingWake" type="time" value="08:00">
-      </div>
-      <div class="setting-row">
-        <div class="setting-row-left">
-          <div class="setting-row-label">Sleep time</div>
-        </div>
-        <input class="setting-input setting-input-time" id="settingSleep" type="time" value="23:00">
-      </div>
-    </div>
-  </div>
-
-  <!-- APP SETTINGS -->
-  <div class="setting-section">
-    <div class="setting-section-label">App Settings</div>
-    <button class="action-btn export" id="btnExport">Export all data as JSON</button>
-    <button class="action-btn danger" id="btnReset">Reset today's data</button>
-  </div>
-
-  <!-- MANUAL SYNC -->
-  <div class="setting-section">
-    <button class="action-btn sync" id="btnSyncNow">↑ Sync to cloud now</button>
-  </div>
+  <nav class="nav-list" id="navList">
+    <button class="nav-item active" data-panel="personal" data-title="Personal Info">
+      <span class="nav-item-icon">👤</span>
+      Personal Info
+    </button>
+    <!-- Add more nav items here -->
+  </nav>
 </aside>
 
 <script>
@@ -405,28 +398,44 @@ html, body {
   }
 
   // ── Sidebar ──────────────────────────────────────────────────
-  const overlay   = document.getElementById('sidebarOverlay');
-  const sidebar   = document.getElementById('sidebar');
-  const openBtn   = document.getElementById('openDrawer');
-  const closeBtn  = document.getElementById('closeDrawer');
+  const overlay  = document.getElementById('sidebarOverlay');
+  const sidebar  = document.getElementById('sidebar');
+  const openBtn  = document.getElementById('openDrawer');
+  const closeBtn = document.getElementById('closeDrawer');
 
-  function openSidebar()  {
-    loadSettings();
+  function openSidebar() {
     overlay.classList.add('open');
     sidebar.classList.add('open');
     document.body.style.overflow = 'hidden';
   }
   function closeSidebar() {
-    saveAll();
     overlay.classList.remove('open');
     sidebar.classList.remove('open');
     document.body.style.overflow = '';
-    refreshSummary();
   }
 
   openBtn.addEventListener('click', openSidebar);
   closeBtn.addEventListener('click', closeSidebar);
   overlay.addEventListener('click', closeSidebar);
+
+  // ── Nav list ─────────────────────────────────────────────────
+  document.getElementById('navList').addEventListener('click', function(e) {
+    const item = e.target.closest('.nav-item');
+    if (!item) return;
+    const panelId = item.dataset.panel;
+    const title   = item.dataset.title;
+
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    item.classList.add('active');
+
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+    const panel = document.getElementById('panel-' + panelId);
+    if (panel) panel.classList.add('active');
+
+    if (title) document.getElementById('pageTitle').textContent = title;
+
+    closeSidebar();
+  });
 
   // ── Load from localStorage ───────────────────────────────────
   function loadSettings() {
@@ -451,7 +460,6 @@ html, body {
       document.getElementById('settingWeight').value = '—';
       document.getElementById('weightSub').textContent = 'no gym entry yet';
     }
-
   }
 
   // ── Save all ─────────────────────────────────────────────────
@@ -471,10 +479,8 @@ html, body {
     lsRawSet('dash_wake_time',  wake);
     lsRawSet('dash_sleep_time', sleep);
 
-    // Dispatch so any other open tab reacts immediately
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
-
   }
 
   // ── Sex toggle ───────────────────────────────────────────────
@@ -484,12 +490,6 @@ html, body {
     document.querySelectorAll('.sex-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
   });
-
-  // ── Summary cards ────────────────────────────────────────────
-  function refreshSummary() {
-    document.getElementById('summaryWake').textContent    = lsRaw('dash_wake_time')  || '08:00';
-    document.getElementById('summarySleep').textContent   = lsRaw('dash_sleep_time') || '23:00';
-  }
 
   // ── Export ───────────────────────────────────────────────────
   document.getElementById('btnExport').addEventListener('click', () => {
@@ -519,7 +519,7 @@ html, body {
   });
 
   // ── Boot ─────────────────────────────────────────────────────
-  refreshSummary();
+  loadSettings();
 
   // ============================================================
   // SUPABASE SYNC — personal settings keys
@@ -555,7 +555,7 @@ html, body {
         }
       }
     } finally { stSuppressSync = false; }
-    if (changed) { loadSettings(); refreshSummary(); }
+    if (changed) loadSettings();
   }
 
   async function stPushNow() {
@@ -586,10 +586,6 @@ html, body {
   // after the picker is dismissed — if the user never taps outside, the
   // change event never fires. All other inputs get 'change' only (avoids
   // a push on every keystroke for text/number fields).
-  var ST_KEY_MAP = {
-    settingName: 'dash_name', settingAge: 'dash_age', settingHeight: 'dash_height',
-    settingWake: 'dash_wake_time', settingSleep: 'dash_sleep_time'
-  };
   ['settingName', 'settingAge', 'settingHeight', 'settingWake', 'settingSleep'].forEach(function(id) {
     var el = document.getElementById(id);
     if (!el) return;
@@ -602,6 +598,7 @@ html, body {
       el.addEventListener('input', onChanged);
     }
   });
+
   // Sex toggle: active class is set by the earlier listener, then we save.
   // Use setTimeout(0) so the active class is applied before saveAll reads it.
   document.getElementById('sexToggle').addEventListener('click', function(e) {
