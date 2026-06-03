@@ -251,7 +251,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
           const lbs = parseFloat(JSON.parse(raw));
           if (!isNaN(lbs) && lbs > 0) {
             const weightKg = lbs / 2.205;
-            const sex = ((state.settings || {}).sex) || 'm';
+            let sex = 'm'; try { sex = JSON.parse(localStorage.getItem('dash_sex')) || 'm'; } catch(e) {}
             targetMl = Math.round(((weightKg * 35) + (sex === 'm' ? 200 : 0)) / 50) * 50;
             targetMl = Math.max(2000, Math.min(6000, targetMl));
           }

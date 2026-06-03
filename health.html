@@ -816,32 +816,6 @@ main {
       </div>
 
       <div class="wset-section">
-        <h4>Sex</h4>
-        <div class="wfield">
-          <div class="wseg" id="setSex">
-            <button data-s="m">Male</button>
-            <button data-s="f">Female</button>
-            <button data-s="o">Other</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="wset-section">
-        <h4>Stimulants &amp; meds</h4>
-        <div class="wfield">
-          <label>Search to add</label>
-          <div class="wsearch-wrap">
-            <input type="text" class="wsearch-input" id="subSearch" placeholder="Type a name (Adderall, Concerta, Lithium…)" autocomplete="off">
-            <div class="wsearch-results" id="subResults"></div>
-          </div>
-          <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:4px;line-height:1.4">
-            Each substance bumps your daily water target.
-          </div>
-        </div>
-        <div class="subs-list" id="subsList"></div>
-      </div>
-
-      <div class="wset-section">
         <h4>Data</h4>
         <div style="display:flex;gap:8px;flex-wrap:wrap;">
           <button class="wbtn-secondary" id="setExport">Export JSON</button>
@@ -1646,7 +1620,11 @@ main {
     return wDateStr(now);
   }
 
-  var W_DEFAULTS = { bottleMl: 500, glassMl: 355, sex: 'm', subs: [] };
+  var W_DEFAULTS = { bottleMl: 500, glassMl: 355 };
+
+  function wReadDashSex() {
+    try { var v = JSON.parse(localStorage.getItem('dash_sex')); return (v === 'f') ? 'f' : 'm'; } catch(e) { return 'm'; }
+  }
 
   function wReadDashNum(key) {
     try {
@@ -1716,20 +1694,19 @@ main {
     } catch (e) {}
   }
 
-  function wTarget(s) {
+  function wTarget() {
     var lbs = wReadDashNum('dash_weight');
     if (!lbs || lbs <= 0) return null;
     var kg = lbs / 2.205;
     var base = kg * 35;
-    if ((s.sex || 'm') === 'm') base += 200;
-    (s.subs || []).forEach(function(sub) { if (sub.extraMl) base += sub.extraMl; });
+    if (wReadDashSex() === 'm') base += 200;
     base = Math.round(base / 50) * 50;
     return Math.max(2000, Math.min(6000, base));
   }
 
   function wRender() {
     var s = wGetSettings();
-    var target = wTarget(s);
+    var target = wTarget();
     var ml = wGetTodayMl();
     var pct = (target !== null && target > 0) ? Math.min(100, Math.round((ml / target) * 100)) : 0;
 
@@ -1771,13 +1748,10 @@ main {
     if (lbs && lbs > 0) {
       var kg = lbs / 2.205;
       rows.push({ label: 'Base (' + Math.round(lbs) + ' lbs / ' + Math.round(kg) + ' kg \xD7 35 ml/kg)', val: Math.round(kg * 35) + ' ml' });
-      if ((s.sex || 'm') === 'm') rows.push({ label: 'Male adjustment', val: '+200 ml' });
+      if (wReadDashSex() === 'm') rows.push({ label: 'Male adjustment', val: '+200 ml' });
     } else {
       rows.push({ label: 'Log weight in Fitness tab to personalise', val: '—' });
     }
-    (s.subs || []).forEach(function (sub) {
-      if (sub.extraMl) rows.push({ label: sub.name, val: '+' + sub.extraMl + ' ml' });
-    });
     var body = document.getElementById('whyBody');
     body.innerHTML = rows.map(function (r) {
       return '<div class="why-row"><span class="why-label">' + r.label + '</span><span class="why-val">' + r.val + '</span></div>';
@@ -1823,25 +1797,11 @@ main {
   }
 
   // ===== SETTINGS MODAL =====
-  var SUBS_DB = [
-    { name: 'Adderall', extraMl: 400 },
-    { name: 'Vyvanse', extraMl: 400 },
-    { name: 'Ritalin', extraMl: 300 },
-    { name: 'Concerta', extraMl: 300 },
-    { name: 'Modafinil', extraMl: 350 },
-    { name: 'Armodafinil', extraMl: 350 },
-    { name: 'Strattera', extraMl: 200 },
-    { name: 'Lithium', extraMl: 500 },
-    { name: 'Alcohol', extraMl: 300 }
-  ];
-
   function wOpenSettings() {
     var saved = wLoad().settings || {};
     var s = Object.assign({}, W_DEFAULTS, saved);
     document.getElementById('setBottleMl').value = s.bottleMl;
     document.getElementById('setGlassMl').value = s.glassMl;
-    wSegActivate('setSex', 'data-s', s.sex);
-    wRenderSubsList(s.subs || []);
     document.getElementById('waterSetModalBg').classList.add('show');
   }
 
@@ -1852,38 +1812,10 @@ main {
     s.bottleMl = (!isNaN(bv) && bv >= 100) ? bv : W_DEFAULTS.bottleMl;
     var gv = parseInt(document.getElementById('setGlassMl').value, 10);
     s.glassMl = (!isNaN(gv) && gv >= 50) ? gv : W_DEFAULTS.glassMl;
-    var sexActive = document.querySelector('#setSex button.active');
-    if (sexActive) s.sex = sexActive.dataset.s;
     d.settings = s;
     wSave(d);
     document.getElementById('waterSetModalBg').classList.remove('show');
     wRender();
-  }
-
-  function wSegActivate(containerId, attr, val) {
-    var el = document.getElementById(containerId);
-    if (!el) return;
-    el.querySelectorAll('button').forEach(function (btn) {
-      btn.classList.toggle('active', btn.getAttribute(attr) === String(val));
-    });
-  }
-
-  function wRenderSubsList(subs) {
-    var el = document.getElementById('subsList');
-    if (!el) return;
-    if (!subs.length) {
-      el.innerHTML = '<div style="font-size:12px;color:rgba(255,255,255,0.3);padding:8px 0">None added</div>';
-      return;
-    }
-    el.innerHTML = subs.map(function (sub, i) {
-      return '<div class="sub-row">' +
-        '<div class="sub-row-info">' +
-          '<div class="sub-row-name">' + sub.name + '</div>' +
-          '<div class="sub-row-meta">+' + sub.extraMl + ' ml/day</div>' +
-        '</div>' +
-        '<button class="sub-row-del" data-si="' + i + '" type="button">\xD7</button>' +
-        '</div>';
-    }).join('');
   }
 
   // ===== EVENT WIRING =====
@@ -1915,13 +1847,6 @@ main {
     wRender();
   });
 
-  document.getElementById('setSex').addEventListener('click', function (e) {
-    var btn = e.target.closest('button[data-s]');
-    if (!btn) return;
-    this.querySelectorAll('button').forEach(function (b) { b.classList.remove('active'); });
-    btn.classList.add('active');
-  });
-
   document.getElementById('setBottleMl').addEventListener('input', function () {
     var bv = parseInt(this.value);
     if (isNaN(bv) || bv < 100) return;
@@ -1940,45 +1865,6 @@ main {
     wSaveSettings(s);
     document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + gv + 'ml)';
     wRender();
-  });
-
-  document.getElementById('subSearch').addEventListener('input', function () {
-    var q = this.value.trim().toLowerCase();
-    var resultsEl = document.getElementById('subResults');
-    if (!q) { resultsEl.classList.remove('show'); resultsEl.innerHTML = ''; return; }
-    var matches = SUBS_DB.filter(function (s) { return s.name.toLowerCase().includes(q); }).slice(0, 5);
-    if (!matches.length) { resultsEl.classList.remove('show'); return; }
-    resultsEl.innerHTML = matches.map(function (s) {
-      return '<div class="wsearch-result" data-name="' + s.name + '" data-extra="' + s.extraMl + '">' +
-        '<span class="wsearch-result-name">' + s.name + '</span>' +
-        '<span class="wsearch-result-meta">+' + s.extraMl + ' ml/day water requirement</span>' +
-        '</div>';
-    }).join('');
-    resultsEl.classList.add('show');
-  });
-
-  document.getElementById('subResults').addEventListener('click', function (e) {
-    var row = e.target.closest('.wsearch-result');
-    if (!row) return;
-    var s = wGetSettings();
-    var subs = s.subs || [];
-    if (!subs.find(function (x) { return x.name === row.dataset.name; })) {
-      subs.push({ name: row.dataset.name, extraMl: parseInt(row.dataset.extra) });
-      s.subs = subs;
-      wSaveSettings(s);
-      wRenderSubsList(subs);
-    }
-    document.getElementById('subSearch').value = '';
-    this.classList.remove('show');
-  });
-
-  document.getElementById('subsList').addEventListener('click', function (e) {
-    var btn = e.target.closest('.sub-row-del');
-    if (!btn) return;
-    var s = wGetSettings();
-    s.subs = (s.subs || []).filter(function (_, i) { return i !== parseInt(btn.dataset.si); });
-    wSaveSettings(s);
-    wRenderSubsList(s.subs);
   });
 
   document.getElementById('setExport').addEventListener('click', function () {
@@ -2066,7 +1952,7 @@ main {
 
   window.addEventListener('storage', function(e) {
     if (e.key === 'po_coach_weights') { wSyncGymWeight(); wRender(); }
-    else if (e.key === 'dash_weight') wRender();
+    else if (e.key === 'dash_weight' || e.key === 'dash_sex') wRender();
   });
 
   wSafeLoad();
