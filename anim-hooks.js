@@ -242,10 +242,11 @@
     const el = document.getElementById('wMlBig');
     if (!el) return;
 
-    let isAnimating = false;   // true while rAF loop is running
-    let animFrame = null;      // current rAF handle
-    let debounceTimer = null;  // 150ms settle timer
-    let lastWrittenByUs = null; // last numeric value our animation wrote
+    let isAnimating = false;    // true while rAF loop is running
+    let animFrame = null;       // current rAF handle
+    let debounceTimer = null;   // 150ms settle timer
+    let lastWrittenByUs = null; // last intermediate value our animation wrote
+    let lastTargetValue = null; // last TARGET the animation ran toward
 
     function parseNum(text) {
       const m = (text || '').replace(/,/g, '').match(/(\d+)/);
@@ -265,6 +266,7 @@
         animFrame = null;
       }
 
+      lastTargetValue = target; // record before starting so echo-writes are ignored
       isAnimating = true;
       let start = null;
       const duration = 420;
@@ -294,10 +296,13 @@
       const incoming = parseNum(text);
       if (incoming === null) return;
 
-      // Skip values our own animation wrote — MutationObserver fires as a
-      // microtask so the ownWrite flag approach is unreliable; tracking the
-      // last numeric value we wrote is the correct guard.
+      // Skip values our own animation wrote (intermediate frames).
       if (incoming === lastWrittenByUs) return;
+
+      // Skip the Supabase echo: after animating 0→500 Supabase writes 500
+      // back to localStorage which re-renders the element with the same value.
+      // If it matches the target we already animated to, there's nothing to do.
+      if (incoming === lastTargetValue) return;
 
       // While an animation is running, ignore all external changes.
       // The debounce below will catch the final settled value once we're done.
@@ -318,6 +323,7 @@
         const finalVal = parseNum(finalText);
         const finalSuffix = getSuffix(finalText);
         if (finalVal === null || finalVal === currentVal) return;
+        if (finalVal === lastTargetValue) return;
 
         const from = currentVal;
         currentVal = finalVal;
