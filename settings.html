@@ -496,14 +496,17 @@ html, body {
     lsRawSet('dash_height', document.getElementById('settingHeight').value);
 
     const activeSex = document.querySelector('.sex-btn.active');
-    if (activeSex) lsRawSet('dash_sex', activeSex.dataset.sex);
+    if (activeSex) {
+      lsRawSet('dash_sex', activeSex.dataset.sex);
+      window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sex', newValue: activeSex.dataset.sex }));
+    }
 
     const wake  = document.getElementById('settingWake').value;
     const sleep = document.getElementById('settingSleep').value;
     lsRawSet('dash_wake_time',  wake);
     lsRawSet('dash_sleep_time', sleep);
 
-    // Dispatch so any other open tab running index.html updates the day ring
+    // Dispatch so any other open tab reacts immediately
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
 

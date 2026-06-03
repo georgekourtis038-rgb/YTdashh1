@@ -1623,7 +1623,7 @@ main {
   var W_DEFAULTS = { bottleMl: 500, glassMl: 355 };
 
   function wReadDashSex() {
-    try { var v = JSON.parse(localStorage.getItem('dash_sex')); return (v === 'f') ? 'f' : 'm'; } catch(e) { return 'm'; }
+    try { var v = localStorage.getItem('dash_sex') || ''; return (v === 'female' || v === 'f') ? 'f' : 'm'; } catch(e) { return 'm'; }
   }
 
   function wReadDashNum(key) {
@@ -1690,7 +1690,9 @@ main {
       var gymUnit = 'kg';
       try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch(e) {}
       var lbs = gymUnit === 'lb' ? latest.weight : latest.weight * 2.20462;
-      localStorage.setItem('dash_weight', JSON.stringify(Math.round(lbs * 10) / 10));
+      var wVal = JSON.stringify(Math.round(lbs * 10) / 10);
+      localStorage.setItem('dash_weight', wVal);
+      window.dispatchEvent(new StorageEvent('storage', { key: 'dash_weight', newValue: wVal }));
     } catch (e) {}
   }
 
