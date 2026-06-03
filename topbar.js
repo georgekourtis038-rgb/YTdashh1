@@ -234,31 +234,35 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       String(d.getDate()).padStart(2, '0');
   }
   function getWaterProgress() {
-    let state = null;
-    try { state = JSON.parse(localStorage.getItem('po_water_v1')); } catch (e) {}
-    if (!state) return { done: 0, total: 0 };
-    const todayKey = calendarDateKey();
-    const done = (state.logs || {})[todayKey] || 0;
-    const p = state.profile || { weightKg: 75 };
-    const wKg = state.weightUnit === 'lb' ? (p.weightKg || 0) / 2.20462 : (p.weightKg || 0);
-    const base = wKg * 35;
-    const exercise = (p.activityHrsPerWeek || 0) / 7 * 500;
-    const caffeine = Math.max(0, (state.caffeineMgPerDay || 0) - 200) * 1.5;
-    const subs = (state.substances || []).reduce((s, x) => {
-      const dose = (x && x.dose != null ? x.dose : (x && x.defaultDose)) || 0;
-      return s + Math.max(0, dose * ((x && x.mlPerUnit) || 0));
-    }, 0);
-    let adjust = 0;
-    if (p.sex === 'm') adjust += 200;
-    if ((p.age || 0) >= 50) adjust += 100;
-    const totalMl = base + exercise + caffeine + subs + adjust;
-    let unitVol;
-    if (state.unit === 'glass') unitVol = state.glassMl || 250;
-    else if (state.unit === 'oz') unitVol = 30;
-    else if (state.unit === 'ml') unitVol = 1;
-    else unitVol = state.bottleMl || 500;
-    const total = Math.max(1, Math.ceil(totalMl / unitVol));
-    return { done, total };
+    try {
+      let state = null;
+      try { state = JSON.parse(localStorage.getItem('po_water_v1')); } catch (e) {}
+      if (!state) return { done: 0, total: 0 };
+      const todayKey = calendarDateKey();
+      const done = (state.logs || {})[todayKey] || 0;
+      const p = state.profile || { weightKg: 75 };
+      const wKg = state.weightUnit === 'lb' ? (p.weightKg || 0) / 2.20462 : (p.weightKg || 0);
+      const base = wKg * 35;
+      const exercise = (p.activityHrsPerWeek || 0) / 7 * 500;
+      const caffeine = Math.max(0, (state.caffeineMgPerDay || 0) - 200) * 1.5;
+      const subs = (state.substances || []).reduce((s, x) => {
+        const dose = (x && x.dose != null ? x.dose : (x && x.defaultDose)) || 0;
+        return s + Math.max(0, dose * ((x && x.mlPerUnit) || 0));
+      }, 0);
+      let adjust = 0;
+      if (p.sex === 'm') adjust += 200;
+      if ((p.age || 0) >= 50) adjust += 100;
+      const totalMl = base + exercise + caffeine + subs + adjust;
+      let unitVol;
+      if (state.unit === 'glass') unitVol = state.glassMl || 250;
+      else if (state.unit === 'oz') unitVol = 30;
+      else if (state.unit === 'ml') unitVol = 1;
+      else unitVol = state.bottleMl || 500;
+      const total = Math.max(1, Math.ceil(totalMl / unitVol));
+      return { done, total };
+    } catch (e) {
+      return { done: 0, total: 0 };
+    }
   }
   function classifyStatus(done, total) {
     if (total === 0) return 'idle';
