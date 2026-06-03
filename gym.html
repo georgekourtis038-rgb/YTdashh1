@@ -966,6 +966,63 @@ img, video, canvas, svg { max-width: 100%; }
   -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Weight chart range selector ── */
+.wt-range-row {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  margin-left: 36px;
+  margin-bottom: 4px;
+}
+.wt-range-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 999px;
+  color: rgba(255,255,255,0.75);
+  font-family: var(--font-mono);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  padding: 5px 11px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.wt-range-btn:hover, .wt-range-btn.open {
+  background: rgba(255,255,255,0.10);
+  border-color: rgba(255,255,255,0.22);
+  color: var(--text-1);
+}
+.wt-range-arrow { font-size: 9px; opacity: 0.7; }
+.wt-range-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 50;
+  background: #1a1a1e;
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 12px;
+  padding: 4px;
+  min-width: 72px;
+  box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+  display: flex; flex-direction: column; gap: 1px;
+}
+.wt-range-dropdown.hidden { display: none; }
+.wt-range-option {
+  padding: 9px 14px;
+  border: none; background: transparent;
+  color: rgba(255,255,255,0.55);
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 700; letter-spacing: 0.06em;
+  cursor: pointer; border-radius: 8px; text-align: left; width: 100%;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, color 0.12s;
+}
+.wt-range-option:hover { background: rgba(255,255,255,0.07); color: var(--text-1); }
+.wt-range-option.active {
+  background: rgba(110,231,183,0.14);
+  color: var(--good);
+}
+
 /* Input row */
 .wt-input-row { margin-top: 14px; }
 .wt-input-top {
@@ -1357,6 +1414,18 @@ img, video, canvas, svg { max-width: 100%; }
         <div class="wt-chart-yaxis">
           <span id="wtYAxisMax">—</span>
           <span id="wtYAxisMin">—</span>
+        </div>
+        <div class="wt-range-row" id="wtRangeRow">
+          <button class="wt-range-btn" id="wtRangeBtn">
+            <span id="wtRangeLabel">7D</span><span class="wt-range-arrow">▾</span>
+          </button>
+          <div class="wt-range-dropdown hidden" id="wtRangeDropdown">
+            <button class="wt-range-option active" data-range="7D">7D</button>
+            <button class="wt-range-option" data-range="1M">1M</button>
+            <button class="wt-range-option" data-range="6M">6M</button>
+            <button class="wt-range-option" data-range="1Y">1Y</button>
+            <button class="wt-range-option" data-range="ALL">ALL</button>
+          </div>
         </div>
         <svg class="wt-chart" viewBox="0 0 320 130" preserveAspectRatio="none">
           <defs>
@@ -2416,6 +2485,51 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   let wtEntries = wtLoad();
+  let wtRange = '7D';
+
+  function wtGetRangeEntries() {
+    if (wtRange === 'ALL') return wtEntries.slice();
+    const now = new Date();
+    const cutoff = new Date(now);
+    if      (wtRange === '7D') cutoff.setDate(cutoff.getDate() - 7);
+    else if (wtRange === '1M') cutoff.setMonth(cutoff.getMonth() - 1);
+    else if (wtRange === '6M') cutoff.setMonth(cutoff.getMonth() - 6);
+    else if (wtRange === '1Y') cutoff.setFullYear(cutoff.getFullYear() - 1);
+    return wtEntries.filter(e => wtParseKey(e.dateKey) >= cutoff);
+  }
+
+  function wtXAxisLabels(entries, xFor) {
+    if (entries.length < 2) return '';
+    const longRange = (wtRange === '6M' || wtRange === '1Y' || wtRange === 'ALL');
+    const yLbl = 125;
+    let html = '';
+    if (longRange) {
+      let lastMonth = -1, lastYear = -1;
+      const quarterly = wtRange === 'ALL' && entries.length > 200;
+      entries.forEach((e, i) => {
+        const d = wtParseKey(e.dateKey);
+        const m = d.getMonth(), y = d.getFullYear();
+        if (m === lastMonth && y === lastYear) return;
+        if (quarterly && m % 3 !== 0) return;
+        lastMonth = m; lastYear = y;
+        const label = quarterly
+          ? d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+          : d.toLocaleDateString('en-US', { month: 'short' });
+        const x = xFor(i);
+        html += `<text x="${x.toFixed(1)}" y="${yLbl}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)" font-family="ui-monospace,monospace">${label}</text>`;
+      });
+    } else {
+      const maxLbls = wtRange === '1M' ? 5 : 4;
+      const step = Math.max(1, Math.ceil(entries.length / maxLbls));
+      for (let i = 0; i < entries.length; i += step) {
+        const d = wtParseKey(entries[i].dateKey);
+        const label = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        const x = xFor(i);
+        html += `<text x="${x.toFixed(1)}" y="${yLbl}" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.35)" font-family="ui-monospace,monospace">${label}</text>`;
+      }
+    }
+    return html;
+  }
 
   function wtSaveEntry(weight) {
     const key = wtDateKey(new Date());
@@ -2489,7 +2603,15 @@ img, video, canvas, svg { max-width: 100%; }
   }
 
   function wtRenderChart() {
-    const recent = wtEntries.slice(-30);
+    const recent = wtGetRangeEntries();
+    const rangeMeta = { '7D': 'last 7 days', '1M': 'last month', '6M': 'last 6 months', '1Y': 'last year', 'ALL': 'all time' };
+    if (recent.length < 2) {
+      $('wtChartContent').innerHTML = '';
+      $('wtYAxisMax').textContent = '—';
+      $('wtYAxisMin').textContent = '—';
+      $('wtMeta').textContent = 'No data for this range';
+      return;
+    }
     const weights = recent.map(e => e.weight);
     const min = Math.min.apply(null, weights);
     const max = Math.max.apply(null, weights);
@@ -2513,15 +2635,23 @@ img, video, canvas, svg { max-width: 100%; }
     let html = '<path class="wt-avg-line" d="' + avgPath + '"></path>'
              + '<path class="wt-area" d="' + areaPath + '"></path>'
              + '<path class="wt-line" filter="url(#wtGlow)" d="' + linePath + '"></path>';
-    points.forEach((p, i) => {
-      const cls = (i === points.length - 1) ? 'wt-dot-today' : 'wt-dot';
-      const r = (i === points.length - 1) ? 5 : 3;
-      html += '<circle class="' + cls + '" cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) + '" r="' + r + '"/>';
-    });
+    // Dots — hide individual dots for dense datasets; always show the last one
+    const showAllDots = recent.length <= 60;
+    if (showAllDots) {
+      points.forEach((p, i) => {
+        const cls = (i === points.length - 1) ? 'wt-dot-today' : 'wt-dot';
+        const r = (i === points.length - 1) ? 5 : 3;
+        html += '<circle class="' + cls + '" cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) + '" r="' + r + '"/>';
+      });
+    } else {
+      const p = points[points.length - 1];
+      html += '<circle class="wt-dot-today" cx="' + p.x.toFixed(2) + '" cy="' + p.y.toFixed(2) + '" r="5"/>';
+    }
+    html += wtXAxisLabels(recent, xFor);
     $('wtChartContent').innerHTML = html;
     $('wtYAxisMax').textContent = yMax.toFixed(1);
     $('wtYAxisMin').textContent = yMin.toFixed(1);
-    $('wtMeta').textContent = wtEntries.length + ' ' + (wtEntries.length === 1 ? 'entry' : 'entries') + ' · last ' + recent.length + ' days';
+    $('wtMeta').textContent = recent.length + ' ' + (recent.length === 1 ? 'entry' : 'entries') + ' · ' + (rangeMeta[wtRange] || wtRange);
   }
 
   function wtRenderDelta() {
@@ -2709,6 +2839,33 @@ img, video, canvas, svg { max-width: 100%; }
     const todayEntry = wtEntries.find(e => e.dateKey === wtDateKey(new Date()));
     if (todayEntry) $('wtInput').value = todayEntry.weight.toFixed(1);
     $('wtInput').focus(); $('wtInput').select();
+  });
+
+  // Range selector
+  $('wtRangeBtn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const dd = $('wtRangeDropdown');
+    const opening = dd.classList.contains('hidden');
+    dd.classList.toggle('hidden', !opening);
+    $('wtRangeBtn').classList.toggle('open', opening);
+  });
+  $('wtRangeDropdown').addEventListener('click', (e) => {
+    const opt = e.target.closest('.wt-range-option');
+    if (!opt) return;
+    wtRange = opt.dataset.range;
+    $('wtRangeDropdown').querySelectorAll('.wt-range-option').forEach(b => {
+      b.classList.toggle('active', b.dataset.range === wtRange);
+    });
+    $('wtRangeLabel').textContent = wtRange;
+    $('wtRangeDropdown').classList.add('hidden');
+    $('wtRangeBtn').classList.remove('open');
+    if (wtEntries.length >= 2) wtRenderChart();
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#wtRangeRow')) {
+      $('wtRangeDropdown').classList.add('hidden');
+      $('wtRangeBtn').classList.remove('open');
+    }
   });
 
   // ============================================================
