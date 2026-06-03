@@ -277,19 +277,39 @@
       requestAnimationFrame(step);
     }
 
+    function getLastLoggedMl() {
+      try {
+        const raw = localStorage.getItem('po_water_v1');
+        const s = raw ? JSON.parse(raw) : {};
+        const today = new Date().toISOString().slice(0, 10);
+        const logs = (s.logs && s.logs[today]) || [];
+        return logs.length ? logs[logs.length - 1] : 0;
+      } catch (e) {
+        return 0;
+      }
+    }
+
     document.addEventListener('click', function (e) {
       if (window.wAnimating) return;
       const bottleBtn = e.target.closest('#wBtnBottle');
       const glassBtn = e.target.closest('#wBtnGlass');
-      if (!bottleBtn && !glassBtn) return;
+      const undoBtn = e.target.closest('#wUndoBtn');
+      if (!bottleBtn && !glassBtn && !undoBtn) return;
 
       const el = document.getElementById('wMlBig');
       if (!el) return;
 
-      const settings = getWaterSettings();
-      const addMl = bottleBtn ? settings.bottleMl : settings.glassMl;
       const current = parseNum(el.textContent);
-      animateCountUp(el, current, current + addMl);
+
+      if (undoBtn) {
+        const last = getLastLoggedMl();
+        if (!last) return;
+        animateCountUp(el, current, Math.max(0, current - last));
+      } else {
+        const settings = getWaterSettings();
+        const addMl = bottleBtn ? settings.bottleMl : settings.glassMl;
+        animateCountUp(el, current, current + addMl);
+      }
     }, { passive: true });
   }
 
