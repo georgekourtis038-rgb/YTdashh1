@@ -122,8 +122,8 @@ body { background: transparent; }
   max-width: 420px !important;
   border-radius: 999px !important;
   background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
-  backdrop-filter: blur(60px) saturate(320%) brightness(1.25) contrast(1.05) !important;
-  -webkit-backdrop-filter: blur(60px) saturate(320%) brightness(1.25) contrast(1.05) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.15) !important;
+  backdrop-filter: blur(32px) saturate(220%) brightness(1.15) !important;
   border: 1px solid rgba(255,255,255,0.18) !important;
   box-shadow: 0 20px 60px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.30), inset 0 -1px 1px rgba(255,255,255,0.06) !important;
   display: flex !important;
