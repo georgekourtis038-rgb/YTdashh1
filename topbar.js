@@ -121,16 +121,17 @@ body { background: transparent; }
   width: calc(100% - 32px) !important;
   max-width: 420px !important;
   border-radius: 999px !important;
-  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)) !important;
   backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
   -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
-  border: 1px solid rgba(255,255,255,0.20) !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 1px rgba(255,255,255,0.12) !important;
+  border: 1px solid rgba(255,255,255,0.15) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -1px 1px rgba(255,255,255,0.08) !important;
   display: flex !important;
   justify-content: space-around !important;
   align-items: stretch !important;
   padding: 4px 12px !important;
-  padding-bottom: max(4px, env(safe-area-inset-bottom)) !important;
+  padding-bottom: 4px !important;
+  margin-bottom: env(safe-area-inset-bottom) !important;
   z-index: 40 !important;
   overflow: hidden !important;
 }
