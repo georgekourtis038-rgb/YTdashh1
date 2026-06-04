@@ -496,7 +496,7 @@ img, video, canvas, svg { max-width: 100%; }
 /* ----- Modals ----- */
 .po-modal-bg {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   z-index: 100; align-items: center; justify-content: center;
   padding: 24px;
 }
@@ -504,8 +504,8 @@ img, video, canvas, svg { max-width: 100%; }
 .po-modal {
   width: 100%; max-width: 420px;
   background: rgba(18, 18, 20, 0.85);
-  backdrop-filter: blur(32px) saturate(150%);
   -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
   border-radius: 16px;
@@ -1402,7 +1402,7 @@ img, video, canvas, svg { max-width: 100%; }
 .split-bg {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.60);
-  backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
   z-index: 300;
   display: flex; align-items: flex-end;
   opacity: 0; pointer-events: none;
@@ -1412,8 +1412,8 @@ img, video, canvas, svg { max-width: 100%; }
 .split-sheet {
   width: 100%;
   background: rgba(18, 18, 20, 0.85);
-  backdrop-filter: blur(32px) saturate(150%);
   -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
   border-radius: 20px 20px 0 0;
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);

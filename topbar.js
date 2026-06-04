@@ -38,8 +38,8 @@ body { background: transparent; }
   gap: 8px;
   padding: max(12px, env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left));
   background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-  backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
-  -webkit-backdrop-filter: blur(28px) saturate(180%) brightness(1.05);
+  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.06);
+  backdrop-filter: blur(20px) saturate(160%) brightness(1.06);
   border-bottom: 1px solid rgba(255,255,255,0.20);
   box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.45);
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
@@ -114,26 +114,23 @@ body { background: transparent; }
 }
 .bottombar {
   position: fixed !important;
-  bottom: 12px !important;
+  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
   left: 0 !important;
   right: 0 !important;
   margin: 0 auto !important;
   width: calc(100% - 32px) !important;
   max-width: 420px !important;
   border-radius: 999px !important;
-  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
-  -webkit-backdrop-filter: blur(32px) saturate(220%) brightness(1.15) !important;
-  backdrop-filter: blur(32px) saturate(220%) brightness(1.15) !important;
-  border: 1px solid rgba(255,255,255,0.18) !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.30), inset 0 -1px 1px rgba(255,255,255,0.06) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.08) !important;
+  backdrop-filter: blur(20px) saturate(160%) brightness(1.08) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(255,255,255,0.08) !important;
   display: flex !important;
   justify-content: space-around !important;
   align-items: stretch !important;
   padding: 4px 12px !important;
-  padding-bottom: 4px !important;
-  margin-bottom: env(safe-area-inset-bottom) !important;
   z-index: 40 !important;
-  overflow: hidden !important;
 }
 .bottombar::before {
   content: '' !important;

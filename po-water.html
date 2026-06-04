@@ -326,15 +326,15 @@ html, body {
 /* ----- Modal ----- */
 .modal-bg {
   display: none; position: fixed; inset: 0;
-  background: rgba(0,0,0,0.65); backdrop-filter: blur(6px);
+  background: rgba(0,0,0,0.65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
   z-index: 100; align-items: center; justify-content: center; padding: 20px;
 }
 .modal-bg.show { display: flex; }
 .modal {
   width: 100%; max-width: 480px;
   background: rgba(18, 18, 20, 0.85);
-  backdrop-filter: blur(32px) saturate(150%);
   -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
   border: 1px solid rgba(255, 255, 255, 0.12);
   box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
   border-radius: 16px;
