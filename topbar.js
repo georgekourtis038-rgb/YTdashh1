@@ -121,11 +121,11 @@ body { background: transparent; }
   width: calc(100% - 32px) !important;
   max-width: 420px !important;
   border-radius: 999px !important;
-  background: linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)) !important;
-  backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
-  -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
-  border: 1px solid rgba(255,255,255,0.15) !important;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.3), inset 0 1px 1px rgba(255,255,255,0.35), inset 0 -1px 1px rgba(255,255,255,0.08) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)) !important;
+  backdrop-filter: blur(60px) saturate(320%) brightness(1.25) contrast(1.05) !important;
+  -webkit-backdrop-filter: blur(60px) saturate(320%) brightness(1.25) contrast(1.05) !important;
+  border: 1px solid rgba(255,255,255,0.18) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.25), inset 0 1px 1px rgba(255,255,255,0.30), inset 0 -1px 1px rgba(255,255,255,0.06) !important;
   display: flex !important;
   justify-content: space-around !important;
   align-items: stretch !important;
@@ -139,7 +139,7 @@ body { background: transparent; }
   content: '' !important;
   position: absolute !important;
   top: 0 !important; left: 10% !important; right: 10% !important; height: 1px !important;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent) !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent) !important;
   pointer-events: none !important;
 }
 .bottombar::after {
@@ -147,7 +147,7 @@ body { background: transparent; }
   position: absolute !important;
   inset: 0 !important;
   border-radius: 999px !important;
-  background: linear-gradient(160deg, rgba(255,255,255,0.10) 0%, transparent 50%, rgba(255,255,255,0.04) 100%) !important;
+  background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 40%, rgba(255,255,255,0.03) 100%) !important;
   pointer-events: none !important;
 }
 .bottombar-tab {
