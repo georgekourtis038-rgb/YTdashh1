@@ -33,17 +33,15 @@ html {
 }
 body { background: transparent; }
 .topbar {
-  position: sticky; top: 0; z-index: 40;
-  display: flex; justify-content: flex-end; align-items: center;
+  position: fixed; top: 0; right: 0; z-index: 40;
+  display: flex; align-items: center;
   gap: 8px;
-  padding: max(12px, env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px calc(14px + env(safe-area-inset-left));
-  background: linear-gradient(180deg, rgba(255,255,255,0.14), rgba(255,255,255,0.06));
-  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.06);
-  backdrop-filter: blur(20px) saturate(160%) brightness(1.06);
-  border-bottom: 1px solid rgba(255,255,255,0.20);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.45);
+  padding: max(12px, env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px 14px;
+  background: none;
+  pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
+.topbar > * { pointer-events: auto; }
 .topbar-water-wrap { display: flex; align-items: stretch; }
 .topbar-water-pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -175,7 +173,7 @@ body.has-bottombar {
   padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
 }
 @media (max-width: 480px) {
-  .topbar { padding-left: 10px; padding-right: 10px; gap: 6px; }
+  .topbar { gap: 6px; }
   .topbar-water-pill { padding: 8px 11px; gap: 6px; }
   .topbar-pill-count { font-size: 12px; }
   .topbar-water-add { width: 40px; font-size: 18px; }
