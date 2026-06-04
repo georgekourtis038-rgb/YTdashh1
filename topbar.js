@@ -113,35 +113,41 @@ body { background: transparent; }
   filter: grayscale(100%) brightness(1.4); opacity: 0.85;
 }
 .bottombar {
-  position: fixed; bottom: 12px; left: 0; right: 0;
-  margin: 0 auto;
-  width: calc(100% - 32px); max-width: 420px; z-index: 40;
-  display: flex; justify-content: space-around; align-items: center;
-  border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06));
-  backdrop-filter: blur(40px) saturate(220%) brightness(1.15);
-  -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.15);
-  border: 1px solid rgba(255,255,255,0.22);
-  box-shadow: 0 18px 50px rgba(0,0,0,0.35),
-              inset 0 1px 0 rgba(255,255,255,0.35),
-              inset 0 -1px 1px rgba(255,255,255,0.12);
-  padding: 6px 12px;
-  padding-bottom: max(6px, env(safe-area-inset-bottom));
-  margin-bottom: env(safe-area-inset-bottom);
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  position: fixed !important;
+  bottom: 12px !important;
+  left: 0 !important;
+  right: 0 !important;
+  margin: 0 auto !important;
+  width: calc(100% - 32px) !important;
+  max-width: 420px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)) !important;
+  backdrop-filter: blur(40px) saturate(220%) brightness(1.15) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.15) !important;
+  border: 1px solid rgba(255,255,255,0.28) !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 1px rgba(255,255,255,0.12) !important;
+  display: flex !important;
+  justify-content: space-around !important;
+  align-items: stretch !important;
+  padding: 6px 12px 6px !important;
+  padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
+  z-index: 40 !important;
+  overflow: hidden !important;
 }
 .bottombar::before {
-  content: '';
-  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.7), transparent);
-  border-radius: 999px;
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important; left: 10% !important; right: 10% !important; height: 1px !important;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.8), transparent) !important;
+  pointer-events: none !important;
 }
 .bottombar::after {
-  content: '';
-  position: absolute; inset: 0;
-  border-radius: 999px;
-  background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 50%, rgba(255,255,255,0.04) 100%);
-  pointer-events: none;
+  content: '' !important;
+  position: absolute !important;
+  inset: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(160deg, rgba(255,255,255,0.10) 0%, transparent 50%, rgba(255,255,255,0.04) 100%) !important;
+  pointer-events: none !important;
 }
 .bottombar-tab {
   flex: 1;
