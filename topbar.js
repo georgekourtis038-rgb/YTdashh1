@@ -113,19 +113,19 @@ body { background: transparent; }
   filter: grayscale(100%) brightness(1.4); opacity: 0.85;
 }
 .bottombar {
-  position: fixed; bottom: 16px; left: 0; right: 0;
+  position: fixed; bottom: 12px; left: 0; right: 0;
   margin: 0 auto;
   width: calc(100% - 32px); max-width: 420px; z-index: 40;
   display: flex; justify-content: space-around; align-items: center;
   border-radius: 999px;
-  background: linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0.08));
+  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
   backdrop-filter: blur(28px) saturate(200%) brightness(1.1);
   -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.1);
-  border: 1px solid rgba(255,255,255,0.35);
+  border: 1px solid rgba(255,255,255,0.22);
   box-shadow: 0 18px 50px rgba(0,0,0,0.35),
-              inset 0 1px 1px rgba(255,255,255,0.55),
+              inset 0 1px 0 rgba(255,255,255,0.35),
               inset 0 -1px 1px rgba(255,255,255,0.12);
-  padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+  padding: 6px 12px calc(6px + env(safe-area-inset-bottom));
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 .bottombar::before {
