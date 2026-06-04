@@ -33,10 +33,10 @@ html {
 }
 body { background: transparent; }
 .topbar {
-  position: fixed; top: 0; right: 0; z-index: 40;
+  position: fixed; top: max(52px, env(safe-area-inset-top)); right: 0; z-index: 40;
   display: flex; align-items: center;
   gap: 8px;
-  padding: max(12px, env(safe-area-inset-top)) calc(14px + env(safe-area-inset-right)) 8px 14px;
+  padding: 8px calc(14px + env(safe-area-inset-right)) 8px 14px;
   background: none;
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
