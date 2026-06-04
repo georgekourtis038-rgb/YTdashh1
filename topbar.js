@@ -121,16 +121,16 @@ body { background: transparent; }
   width: calc(100% - 32px) !important;
   max-width: 420px !important;
   border-radius: 999px !important;
-  background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.06)) !important;
-  backdrop-filter: blur(40px) saturate(220%) brightness(1.15) !important;
-  -webkit-backdrop-filter: blur(40px) saturate(220%) brightness(1.15) !important;
-  border: 1px solid rgba(255,255,255,0.28) !important;
+  background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)) !important;
+  backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
+  -webkit-backdrop-filter: blur(48px) saturate(280%) brightness(1.2) !important;
+  border: 1px solid rgba(255,255,255,0.20) !important;
   box-shadow: 0 20px 60px rgba(0,0,0,0.4), inset 0 1px 1px rgba(255,255,255,0.55), inset 0 -1px 1px rgba(255,255,255,0.12) !important;
   display: flex !important;
   justify-content: space-around !important;
   align-items: stretch !important;
-  padding: 6px 12px 6px !important;
-  padding-bottom: max(6px, env(safe-area-inset-bottom)) !important;
+  padding: 4px 12px !important;
+  padding-bottom: max(4px, env(safe-area-inset-bottom)) !important;
   z-index: 40 !important;
   overflow: hidden !important;
 }
@@ -152,7 +152,7 @@ body { background: transparent; }
 .bottombar-tab {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 6px 4px; text-decoration: none;
+  gap: 3px; padding: 4px 8px !important; text-decoration: none;
   color: rgba(255, 255, 255, 0.45); border-radius: 999px;
   font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
   -webkit-tap-highlight-color: transparent;
@@ -183,7 +183,7 @@ body.has-bottombar {
   .topbar-water-add { width: 40px; font-size: 18px; }
   .topbar-finance-btn { width: 40px; height: 38px; }
   .topbar-finance-icon { font-size: 18px; }
-  .bottombar-tab-icon { font-size: 22px; }
+  .bottombar-tab-icon { font-size: 22px !important; }
   .bottombar-tab { font-size: 10px; }
 }
 html, body { -webkit-text-size-adjust: 100%; }
