@@ -197,7 +197,7 @@ html, body {
 
 /* Action row */
 .water-actions {
-  display: grid; grid-template-columns: 56px 1fr; gap: 10px; align-items: stretch;
+  display: grid; grid-template-columns: 56px 1fr 1fr; gap: 10px; align-items: stretch;
 }
 .water-minus-btn {
   background: rgba(255,255,255,0.06);
@@ -536,9 +536,13 @@ html, body {
     </div>
 
     <div class="water-actions">
-      <button class="water-minus-btn" id="waterMinusBtn" type="button" aria-label="Undo last">−</button>
-      <button class="water-plus-btn" id="waterPlusBtn" type="button">
-        <span id="waterPlusLabel">Drank a bottle</span>
+      <button class="water-minus-btn" id="waterMinusBtn" type="button" aria-label="Undo last addition">−</button>
+      <button class="water-plus-btn" id="waterBottleBtn" type="button">
+        <span id="waterBottleLabel">+ Bottle (500ml)</span>
+        <span>↑</span>
+      </button>
+      <button class="water-plus-btn" id="waterGlassBtn" type="button">
+        <span id="waterGlassLabel">+ Glass (250ml)</span>
         <span>↑</span>
       </button>
     </div>
@@ -742,7 +746,26 @@ html, body {
     s.profile = Object.assign({}, CONFIG.profile, s.profile || {});
     s.caffeineMgPerDay = (s.caffeineMgPerDay != null) ? s.caffeineMgPerDay : (CONFIG.caffeineMgPerDay || 200);
     s.substances = Array.isArray(s.substances) ? s.substances : (CONFIG.defaultSubstances || []);
-    s.logs = (s.logs && typeof s.logs === 'object') ? s.logs : {};  // {YYYY-MM-DD: number_of_servings}
+    // history: {YYYY-MM-DD: totalMl} — primary ml store (shared with topbar.js)
+    s.history = (s.history && typeof s.history === 'object') ? s.history : {};
+    // logs: {YYYY-MM-DD: [ml, ml, ...]} — per-addition stack for undo
+    if (s.logs && typeof s.logs === 'object') {
+      const unitMl = s.unit === 'glass' ? (s.glassMl || 250) : (s.bottleMl || 500);
+      const newLogs = {};
+      for (const k in s.logs) {
+        const v = s.logs[k];
+        if (typeof v === 'number' && v > 0) {
+          // Migrate old count-based entry → ml in history, undo stack starts empty
+          if (!s.history[k]) s.history[k] = v * unitMl;
+          newLogs[k] = [];
+        } else if (Array.isArray(v)) {
+          newLogs[k] = v;
+        }
+      }
+      s.logs = newLogs;
+    } else {
+      s.logs = {};
+    }
     return s;
   }
   function saveState() {
@@ -757,11 +780,31 @@ html, body {
     return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
   }
   function todayKey() { return dateKey(new Date()); }
-  function todayCount() { return state.logs[todayKey()] || 0; }
-  function setTodayCount(n) {
+  function todayMl() { return (state.history || {})[todayKey()] || 0; }
+  function todayLogs() {
+    const v = (state.logs || {})[todayKey()];
+    return Array.isArray(v) ? v : [];
+  }
+  function addMl(ml) {
     const k = todayKey();
-    if (n <= 0) delete state.logs[k];
-    else state.logs[k] = n;
+    if (!state.history) state.history = {};
+    state.history[k] = (state.history[k] || 0) + ml;
+    if (!state.logs) state.logs = {};
+    if (!Array.isArray(state.logs[k])) state.logs[k] = [];
+    state.logs[k].push(ml);
+    saveState();
+  }
+  function undoLast() {
+    const k = todayKey();
+    const logs = todayLogs().slice();
+    if (!logs.length) return;
+    const last = logs.pop();
+    state.logs[k] = logs;
+    if (!logs.length) delete state.logs[k];
+    if (!state.history) state.history = {};
+    const newMl = Math.max(0, (state.history[k] || 0) - last);
+    if (newMl === 0) delete state.history[k];
+    else state.history[k] = newMl;
     saveState();
   }
 
@@ -824,42 +867,65 @@ html, body {
   }
 
   function renderWater() {
-    const calc = computeTargetMl();
-    const targetUnits = Math.ceil(calc.total / unitVolMl());
-    const count = todayCount();
-    const unitName = unitLabelPlural();
+    const calc    = computeTargetMl();
+    const targetMl = calc.total;
+    const doneMl   = todayMl();
+    const bottleMl = state.bottleMl || 500;
+    const glassMl  = state.glassMl  || 250;
 
-    $('waterUnitLabel').textContent = unitName.toUpperCase() + ' DRANK TODAY';
-    $('waterNum').textContent = count;
-    $('waterTarget').textContent = '/ ' + targetUnits;
-    $('waterPlusLabel').textContent = 'Drank a ' + unitLabelSingular();
+    // Always show current sizes in button labels
+    $('waterBottleLabel').textContent = '+ Bottle (' + bottleMl + 'ml)';
+    $('waterGlassLabel').textContent  = '+ Glass ('  + glassMl  + 'ml)';
 
-    // Progress bar with three zones: low (0-65%), healthy (65-100%), over (100-150%)
-    const pctRaw = (count / targetUnits) * 100;
-    const fillPct = Math.min(150, pctRaw) / 1.5;   // bar represents 0-150%
+    // Display quantity in the selected unit
+    let dispNum, dispTarget, unitLabel;
+    if (state.unit === 'bottle') {
+      dispNum    = (doneMl   / bottleMl).toFixed(1);
+      dispTarget = (targetMl / bottleMl).toFixed(1);
+      unitLabel  = 'BOTTLES DRANK TODAY';
+    } else if (state.unit === 'glass') {
+      dispNum    = (doneMl   / glassMl).toFixed(1);
+      dispTarget = (targetMl / glassMl).toFixed(1);
+      unitLabel  = 'GLASSES DRANK TODAY';
+    } else if (state.unit === 'oz') {
+      dispNum    = (doneMl   / 29.57).toFixed(0);
+      dispTarget = (targetMl / 29.57).toFixed(0);
+      unitLabel  = 'OZ DRANK TODAY';
+    } else {
+      dispNum    = Math.round(doneMl);
+      dispTarget = Math.round(targetMl);
+      unitLabel  = 'ML DRANK TODAY';
+    }
+
+    $('waterUnitLabel').textContent = unitLabel;
+    $('waterNum').textContent       = dispNum;
+    $('waterTarget').textContent    = '/ ' + dispTarget;
+
+    // Progress bar (0–150% of target)
+    const pctRaw = targetMl > 0 ? (doneMl / targetMl) * 100 : 0;
+    const fillPct = Math.min(150, pctRaw) / 1.5;
     const fill = $('waterBarFill');
     fill.style.width = fillPct + '%';
     fill.classList.toggle('over', pctRaw > 100);
     $('waterBarMin').textContent = '0';
-    $('waterBarMax').textContent = (Math.ceil(targetUnits * 1.5)) + '+';
-    // Healthy zone bands at 65% and 100%
+    $('waterBarMax').textContent = fmtMl(targetMl * 1.5) + '+';
     $('waterBarZoneStart').style.left = (65 / 1.5) + '%';
     $('waterBarZoneEnd').style.left   = (100 / 1.5) + '%';
 
     // Helper text
     const helper = $('waterHelper');
-    if (count === 0) { helper.textContent = 'Start the day — first one in.'; helper.classList.remove('good'); }
-    else if (pctRaw < 50) { helper.textContent = 'Behind pace — drink one in the next hour.'; helper.classList.remove('good'); }
-    else if (pctRaw < 100) { helper.textContent = (targetUnits - count) + ' to go. Pacing well.'; helper.classList.remove('good'); }
-    else if (pctRaw < 130) { helper.textContent = '✓ Target hit — top up if you train this evening.'; helper.classList.add('good'); }
-    else { helper.textContent = 'Strong — way past target.'; helper.classList.add('good'); }
+    if (doneMl === 0)       { helper.textContent = 'Start the day — first one in.'; helper.classList.remove('good'); }
+    else if (pctRaw < 50)   { helper.textContent = 'Behind pace — drink some more soon.'; helper.classList.remove('good'); }
+    else if (pctRaw < 100)  { helper.textContent = fmtMl(targetMl - doneMl) + ' to go. Pacing well.'; helper.classList.remove('good'); }
+    else if (pctRaw < 130)  { helper.textContent = '✓ Target hit — top up if you train this evening.'; helper.classList.add('good'); }
+    else                     { helper.textContent = 'Strong — way past target.'; helper.classList.add('good'); }
 
-    // Disable minus when at zero
-    $('waterMinusBtn').disabled = count <= 0;
+    // Undo disabled when nothing logged today
+    $('waterMinusBtn').disabled = todayLogs().length === 0;
 
-    renderWhy(calc, targetUnits);
+    renderWhy(calc, Math.ceil(targetMl / unitVolMl()));
     renderHistory();
-    renderSparkline(targetUnits);
+    renderSparkline(targetMl);
   }
 
   function renderWhy(calc, targetUnits) {
@@ -885,28 +951,28 @@ html, body {
 
   function renderHistory() {
     const list = $('histList');
-    const target = Math.ceil(computeTargetMl().total / unitVolMl());
+    const targetMl = computeTargetMl().total;
     // Last 7 days
     const days = [];
     for (let i = 6; i >= 1; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const k = dateKey(d);
-      const n = state.logs[k] || 0;
-      days.push({ date: d, key: k, count: n });
+      const ml = (state.history || {})[k] || 0;
+      days.push({ date: d, key: k, ml });
     }
-    list.innerHTML = days.map(({ date, key: k, count }) => {
-      const dows = ['Sun','Mon','Tue','Wed','THU','Fri','Sat'];
+    list.innerHTML = days.map(({ date, key: k, ml }) => {
+      const dows = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
       const lbl = dows[date.getDay()] + ' ' + (date.getMonth()+1) + '/' + date.getDate();
-      const pct = Math.min(100, (count / target) * 100);
-      const cls = (count >= target) ? '' : 'miss';
+      const pct = Math.min(100, (ml / targetMl) * 100);
+      const cls = (ml >= targetMl) ? '' : 'miss';
       const isEditing = k === editingHistKey;
       const countHtml = isEditing
         ? '<span class="hist-edit-wrap">'
-          + '<input type="number" class="hist-edit-input" id="hei_' + k + '" value="' + count + '" min="0" step="1" inputmode="numeric">'
+          + '<input type="number" class="hist-edit-input" id="hei_' + k + '" value="' + Math.round(ml) + '" min="0" step="50" inputmode="numeric">'
           + '<button class="hist-edit-save" data-key="' + k + '">✓</button>'
           + '</span>'
-        : '<button class="hist-edit-btn" data-key="' + k + '" title="Tap to edit">' + count + '/' + target + '</button>';
+        : '<button class="hist-edit-btn" data-key="' + k + '" title="Tap to edit (ml)">' + fmtMl(ml) + '</button>';
       return '<div class="hist-row">'
         + '<span class="hist-date">' + lbl + '</span>'
         + '<div class="hist-bar-wrap"><div class="hist-bar-fill ' + cls + '" style="width:' + pct + '%"></div></div>'
@@ -929,8 +995,9 @@ html, body {
         const inp = document.getElementById('hei_' + k);
         if (!inp) return;
         const val = Math.max(0, parseInt(inp.value, 10) || 0);
-        if (val <= 0) delete state.logs[k];
-        else state.logs[k] = val;
+        if (!state.history) state.history = {};
+        if (val <= 0) { delete state.history[k]; delete state.logs[k]; }
+        else state.history[k] = val;
         editingHistKey = null;
         saveState();
         renderWater();
@@ -960,7 +1027,7 @@ html, body {
       const d = new Date();
       d.setDate(d.getDate() - i);
       const k = dateKey(d);
-      data.push(state.logs[k] || 0);
+      data.push((state.history || {})[k] || 0);
     }
     const maxVal = Math.max(target, Math.max.apply(null, data)) || 1;
     const colW = (W - pad * 2) / data.length;
@@ -984,15 +1051,23 @@ html, body {
   // ============================================================
   // EVENT WIRING
   // ============================================================
-  $('waterPlusBtn').addEventListener('click', () => {
-    setTodayCount(todayCount() + 1);
+  function flashBtn(id) {
+    const b = $(id);
+    b.style.transform = 'scale(0.97)';
+    setTimeout(() => { b.style.transform = ''; }, 120);
+  }
+  $('waterBottleBtn').addEventListener('click', () => {
+    addMl(state.bottleMl || 500);
     renderWater();
-    const btn = $('waterPlusBtn');
-    btn.style.transform = 'scale(0.97)';
-    setTimeout(() => { btn.style.transform = ''; }, 120);
+    flashBtn('waterBottleBtn');
+  });
+  $('waterGlassBtn').addEventListener('click', () => {
+    addMl(state.glassMl || 250);
+    renderWater();
+    flashBtn('waterGlassBtn');
   });
   $('waterMinusBtn').addEventListener('click', () => {
-    setTodayCount(Math.max(0, todayCount() - 1));
+    undoLast();
     renderWater();
   });
 
@@ -1140,7 +1215,10 @@ html, body {
     renderSettings();
     $('setModalBg').classList.add('show');
   });
-  $('setClose').addEventListener('click', () => $('setModalBg').classList.remove('show'));
+  $('setClose').addEventListener('click', () => {
+    $('setModalBg').classList.remove('show');
+    renderWater();
+  });
 
   // Export / import / reset
   $('setExport').addEventListener('click', () => {
