@@ -245,7 +245,11 @@
       try {
         const raw = localStorage.getItem('po_water_v1');
         const s = raw ? JSON.parse(raw) : {};
-        return { bottleMl: s.bottleMl || 500, glassMl: s.glassMl || 355 };
+        const sub = (s && s.settings) || {};
+        return {
+          bottleMl: sub.bottleMl || s.bottleMl || 500,
+          glassMl:  sub.glassMl  || s.glassMl  || 355,
+        };
       } catch (e) {
         return { bottleMl: 500, glassMl: 355 };
       }
