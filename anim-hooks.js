@@ -435,7 +435,7 @@
     toReveal.forEach(function (el) {
       var parent = el.parentElement || document.body;
       var idx = parentCounts.get(parent) || 0;
-      if (idx > 0) el.style.setProperty('--reveal-delay', (idx * 60) + 'ms');
+      if (idx > 0) el.style.setProperty('--reveal-delay', (idx * 80) + 'ms');
       parentCounts.set(parent, idx + 1);
       el.classList.add('gd-reveal');
     });
