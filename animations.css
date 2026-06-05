@@ -667,3 +667,31 @@ body {
     animation: none !important;
   }
 }
+
+
+/* ─── 25. SCROLL-TRIGGERED REVEAL ───────────────────────────── */
+
+/* Hidden initial state — applied by JS to below-fold elements only.
+   animation: none cancels any existing page-load CSS animation on the element. */
+.gd-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  animation: none !important;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.gd-reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Skip reveal for users who prefer reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .gd-reveal,
+  .gd-reveal.is-visible {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}

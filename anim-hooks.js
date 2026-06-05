@@ -393,6 +393,66 @@
     });
   };
 
+  /* ── 13. SCROLL-TRIGGERED ENTRANCE ANIMATIONS ───────────────── */
+  function bindScrollReveal() {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    if (!('IntersectionObserver' in window)) return;
+
+    var SELECTORS = [
+      // index.html
+      '.dash-title', '.ticker-row', '.day-ring-wrap',
+      '.section', '.gm-card', '.gm-card-tomorrow',
+      // health.html
+      '.stack-card', '.stack-window', '.water-section',
+      // gym.html
+      '.wt-card', '.wt-comp', '.wl-card', '.po-day-pill', '.po-header',
+      // po-water.html
+      '.card', '.divider',
+      // settings.html
+      '.settings-header', '.setting-section',
+    ].join(', ');
+
+    var all = Array.from(document.querySelectorAll(SELECTORS));
+    if (!all.length) return;
+
+    var vh = window.innerHeight;
+    var toReveal = [];
+
+    all.forEach(function (el) {
+      var rect = el.getBoundingClientRect();
+      // Elements already in the viewport keep their CSS page-load animations
+      if (rect.top < vh && rect.bottom > 0) {
+        el.classList.add('has-animated');
+      } else {
+        toReveal.push(el);
+      }
+    });
+
+    if (!toReveal.length) return;
+
+    // Stagger siblings by 60ms per element sharing the same parent
+    var parentCounts = new Map();
+    toReveal.forEach(function (el) {
+      var parent = el.parentElement || document.body;
+      var idx = parentCounts.get(parent) || 0;
+      if (idx > 0) el.style.setProperty('--reveal-delay', (idx * 60) + 'ms');
+      parentCounts.set(parent, idx + 1);
+      el.classList.add('gd-reveal');
+    });
+
+    var observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) return;
+        var el = entry.target;
+        if (el.classList.contains('has-animated')) { observer.unobserve(el); return; }
+        el.classList.add('is-visible', 'has-animated');
+        observer.unobserve(el);
+      });
+    }, { threshold: 0.1 });
+
+    toReveal.forEach(function (el) { observer.observe(el); });
+  }
+
   /* ── BOOT ─────────────────────────────────────────────────────── */
   function boot() {
     bindRipple();
@@ -406,6 +466,7 @@
     bindWaterCountUp();
     bindDayRingCountUp();
     observeNewRows();
+    bindScrollReveal();
 
     // Re-bind water ripple if topbar injects late
     setTimeout(bindRipple, 600);
