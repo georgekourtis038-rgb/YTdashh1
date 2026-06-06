@@ -27,6 +27,32 @@
     try { localStorage.setItem(k, JSON.stringify(v)); } catch (_) {}
   }
 
+  // ── Notification preferences (mirrors notification_prefs in localStorage) ─
+  function getNotifPrefs() {
+    var raw = lsGet('notification_prefs');
+    if (!raw) return {
+      enabled: true,
+      water:  { enabled: true, noon: true, evening: true, noonThreshold: 30, eveningThreshold: 70 },
+      weight: { enabled: true, offsetMins: 30 }
+    };
+    var w  = raw.water  || {};
+    var wt = raw.weight || {};
+    return {
+      enabled: raw.enabled !== false,
+      water: {
+        enabled:          w.enabled          !== false,
+        noon:             w.noon             !== false,
+        evening:          w.evening          !== false,
+        noonThreshold:    typeof w.noonThreshold    === 'number' ? w.noonThreshold    : 30,
+        eveningThreshold: typeof w.eveningThreshold === 'number' ? w.eveningThreshold : 70,
+      },
+      weight: {
+        enabled:    wt.enabled    !== false,
+        offsetMins: typeof wt.offsetMins === 'number' ? wt.offsetMins : 30,
+      }
+    };
+  }
+
   function todayKey() {
     var d = new Date();
     return d.getFullYear() + '-' +
@@ -112,6 +138,9 @@
   function check() {
     if (Notification.permission !== 'granted') return;
 
+    var prefs   = getNotifPrefs();
+    if (!prefs.enabled) return;
+
     var now     = new Date();
     var h       = now.getHours();
     var nowMins = h * 60 + now.getMinutes();
@@ -120,21 +149,23 @@
     var tgtMl   = water.targetMl;
     var pct     = tgtMl > 0 ? doneMl / tgtMl : 0;
 
-    // Noon water: past 12:00, under 30%
-    if (h >= 12 && pct < 0.30 && !wasSentToday('noon_water')) {
+    // Noon water: past 12:00, under noon threshold
+    if (prefs.water.enabled && prefs.water.noon &&
+        h >= 12 && pct < prefs.water.noonThreshold / 100 && !wasSentToday('noon_water')) {
       markSent('noon_water');
       notify(
         'Water reminder',
         doneMl === 0
           ? "You haven't had any water today — time to start! 💧"
-          : "You’re only at " + doneMl + "ml — time to catch up! 💧",
+          : "You're only at " + doneMl + "ml — time to catch up! 💧",
         'water-noon',
         '/health.html'
       );
     }
 
-    // 6pm water: past 18:00, under 70%
-    if (h >= 18 && pct < 0.70 && !wasSentToday('sixpm_water')) {
+    // 6pm water: past 18:00, under evening threshold
+    if (prefs.water.enabled && prefs.water.evening &&
+        h >= 18 && pct < prefs.water.eveningThreshold / 100 && !wasSentToday('sixpm_water')) {
       markSent('sixpm_water');
       notify(
         'Water check-in',
@@ -146,22 +177,27 @@
       );
     }
 
-    // Weight reminder: 30 min after wake, within 90-min window
-    var wAt = getWakeMins() + 30;
-    if (nowMins >= wAt && nowMins < wAt + 90 && !wasSentToday('weight')) {
-      markSent('weight');
-      notify(
-        'Morning weigh-in',
-        'Did you weigh yourself yet? Log it in the app! ⚖️',
-        'weight',
-        '/gym.html'
-      );
+    // Weight reminder: offsetMins after wake, within 90-min window
+    if (prefs.weight.enabled) {
+      var wAt = getWakeMins() + prefs.weight.offsetMins;
+      if (nowMins >= wAt && nowMins < wAt + 90 && !wasSentToday('weight')) {
+        markSent('weight');
+        notify(
+          'Morning weigh-in',
+          'Did you weigh yourself yet? Log it in the app! ⚖️',
+          'weight',
+          '/gym.html'
+        );
+      }
     }
   }
 
   // ── In-app permission card ──────────────────────────────────────
   function shouldShowCard() {
     if (Notification.permission !== 'default') return false;
+    // Don't show if the user explicitly disabled notifications in Settings
+    var raw = lsGet('notification_prefs');
+    if (raw && raw.enabled === false) return false;
     var ts = lsGet('dash_notif_dismissed_at');
     // Don't show again within 14 days of a dismissal
     if (ts && Date.now() - ts < 14 * 86400000) return false;
@@ -272,6 +308,7 @@
         wakeMins:  getWakeMins(),
         today:     todayKey(),
         sent:      lsGet('dash_notif_sent') || {},
+        prefs:     getNotifPrefs(),
       });
     }).catch(function () {});
   }

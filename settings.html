@@ -287,6 +287,74 @@ html, body {
   background: #6BE3A4;
   font-weight: 700;
 }
+
+/* ── Notification toggle switch ── */
+.notif-toggle {
+  position: relative;
+  display: inline-block;
+  width: 44px; height: 26px;
+  flex-shrink: 0; cursor: pointer;
+}
+.notif-toggle input {
+  opacity: 0; width: 0; height: 0;
+  position: absolute; pointer-events: none;
+}
+.notif-toggle-track {
+  position: absolute; inset: 0;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 13px;
+  transition: background 0.2s, border-color 0.2s;
+}
+.notif-toggle-track::before {
+  content: '';
+  position: absolute; left: 3px; top: 3px;
+  width: 18px; height: 18px; border-radius: 50%;
+  background: rgba(255,255,255,0.55);
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.notif-toggle input:checked + .notif-toggle-track {
+  background: #6BE3A4;
+  border-color: #6BE3A4;
+}
+.notif-toggle input:checked + .notif-toggle-track::before {
+  transform: translateX(18px);
+  background: #fff;
+}
+.notif-toggle input:disabled + .notif-toggle-track {
+  opacity: 0.35; cursor: not-allowed;
+}
+
+/* ── Notification panel ── */
+.notif-denied-card {
+  background: rgba(255,107,107,0.07);
+  border: 1px solid rgba(255,107,107,0.18);
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 18px;
+}
+.notif-denied-title {
+  font-size: 12px; font-weight: 700;
+  color: var(--danger); margin: 0 0 5px;
+}
+.notif-denied-desc {
+  font-size: 11px; color: var(--text-tertiary);
+  line-height: 1.55; margin: 0;
+}
+.notif-denied-desc strong { color: var(--text-secondary); }
+.notif-sub { transition: opacity 0.2s; }
+.notif-sub.is-muted { opacity: 0.38; pointer-events: none; }
+.notif-sub-rows { transition: opacity 0.2s; }
+.notif-sub-rows.is-muted { opacity: 0.38; pointer-events: none; }
+.notif-pct-wrap { display: flex; align-items: center; gap: 5px; }
+.notif-pct-input { width: 62px !important; }
+.notif-pct-unit {
+  font-size: 11px; font-weight: 600;
+  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  white-space: nowrap;
+}
 </style>
 </head>
 <body>
@@ -358,6 +426,126 @@ html, body {
       <button class="action-btn danger" id="btnReset">Reset today's data</button>
     </div>
   </div>
+
+  <!-- NOTIFICATIONS PANEL -->
+  <div class="section-panel" id="panel-notifications">
+
+    <div class="notif-denied-card" id="notifDeniedBanner" style="display:none">
+      <p class="notif-denied-title">Notifications are blocked in your browser</p>
+      <p class="notif-denied-desc">
+        <strong>Safari (iPhone):</strong> Tap AA in the address bar → Website Settings → Notifications → Allow.<br>
+        <strong>Chrome:</strong> Tap the lock icon → Site settings → Notifications → Allow.
+      </p>
+    </div>
+
+    <div class="setting-section">
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Enable Notifications</div>
+            <div class="setting-row-sub">Master switch for all reminders</div>
+          </div>
+          <label class="notif-toggle" aria-label="Enable notifications">
+            <input type="checkbox" id="npfEnabled">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="notif-sub" id="notifSubWater">
+      <div class="setting-section">
+        <div class="setting-section-label">Water Reminders</div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Water reminders</div>
+            </div>
+            <label class="notif-toggle" aria-label="Water reminders">
+              <input type="checkbox" id="npfWater">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="notif-sub-rows" id="notifWaterSub">
+            <div class="setting-row">
+              <div class="setting-row-left">
+                <div class="setting-row-label">Midday reminder</div>
+                <div class="setting-row-sub">Noon check-in if behind pace</div>
+              </div>
+              <label class="notif-toggle" aria-label="Midday reminder">
+                <input type="checkbox" id="npfNoon">
+                <span class="notif-toggle-track"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-row-left">
+                <div class="setting-row-label">Noon threshold</div>
+                <div class="setting-row-sub">Fire if below this % of daily goal</div>
+              </div>
+              <div class="notif-pct-wrap">
+                <input class="setting-input notif-pct-input" type="number" id="npfNoonPct" min="1" max="99" inputmode="numeric">
+                <span class="notif-pct-unit">%</span>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div class="setting-row-left">
+                <div class="setting-row-label">Evening reminder</div>
+                <div class="setting-row-sub">6 PM check-in if behind pace</div>
+              </div>
+              <label class="notif-toggle" aria-label="Evening reminder">
+                <input type="checkbox" id="npfEvening">
+                <span class="notif-toggle-track"></span>
+              </label>
+            </div>
+            <div class="setting-row">
+              <div class="setting-row-left">
+                <div class="setting-row-label">Evening threshold</div>
+                <div class="setting-row-sub">Fire if below this % of daily goal</div>
+              </div>
+              <div class="notif-pct-wrap">
+                <input class="setting-input notif-pct-input" type="number" id="npfEveningPct" min="1" max="99" inputmode="numeric">
+                <span class="notif-pct-unit">%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="notif-sub" id="notifSubWeight">
+      <div class="setting-section">
+        <div class="setting-section-label">Morning Weigh-in</div>
+        <div class="setting-card">
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Weigh-in reminder</div>
+            </div>
+            <label class="notif-toggle" aria-label="Weigh-in reminder">
+              <input type="checkbox" id="npfWeight">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="notif-sub-rows" id="notifWeightSub">
+            <div class="setting-row">
+              <div class="setting-row-left">
+                <div class="setting-row-label">Remind after wake time</div>
+                <div class="setting-row-sub">Minutes after your stored wake time</div>
+              </div>
+              <div class="notif-pct-wrap">
+                <input class="setting-input notif-pct-input" type="number" id="npfWeightOffset" min="0" max="120" inputmode="numeric">
+                <span class="notif-pct-unit">min</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="setting-section notif-sub" id="notifTestSection">
+      <button class="action-btn" id="btnTestNotif">Send test notification</button>
+    </div>
+
+  </div>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -372,7 +560,10 @@ html, body {
       <span class="nav-item-icon">👤</span>
       Personal Info
     </button>
-    <!-- Add more nav items here -->
+    <button class="nav-item" data-panel="notifications" data-title="Notifications">
+      <span class="nav-item-icon">🔔</span>
+      Notifications
+    </button>
   </nav>
 </aside>
 
@@ -434,6 +625,7 @@ html, body {
     if (panel) panel.classList.add('active');
 
     if (title) document.getElementById('pageTitle').textContent = title;
+    if (panelId === 'notifications') loadNotifPanel();
 
     closeSidebar();
   });
@@ -644,6 +836,146 @@ html, body {
       })
       .subscribe();
   })();
+
+  // ── Notifications preferences ────────────────────────────────────
+  const NOTIF_KEY = 'notification_prefs';
+
+  function getNPDefaults() {
+    return {
+      enabled: true,
+      water:  { enabled: true, noon: true, evening: true, noonThreshold: 30, eveningThreshold: 70 },
+      weight: { enabled: true, offsetMins: 30 }
+    };
+  }
+
+  function getNP() {
+    const raw = lsGet(NOTIF_KEY);
+    if (!raw) return getNPDefaults();
+    const d  = getNPDefaults();
+    const w  = raw.water  || {};
+    const wt = raw.weight || {};
+    return {
+      enabled: raw.enabled !== false,
+      water: {
+        enabled:          w.enabled          !== false,
+        noon:             w.noon             !== false,
+        evening:          w.evening          !== false,
+        noonThreshold:    typeof w.noonThreshold    === 'number' ? w.noonThreshold    : d.water.noonThreshold,
+        eveningThreshold: typeof w.eveningThreshold === 'number' ? w.eveningThreshold : d.water.eveningThreshold,
+      },
+      weight: {
+        enabled:    wt.enabled    !== false,
+        offsetMins: typeof wt.offsetMins === 'number' ? wt.offsetMins : d.weight.offsetMins,
+      }
+    };
+  }
+
+  function updateNotifMuted(p, denied) {
+    const masterOn = p.enabled && !denied;
+    document.getElementById('notifSubWater').classList.toggle('is-muted',    !masterOn);
+    document.getElementById('notifSubWeight').classList.toggle('is-muted',   !masterOn);
+    document.getElementById('notifTestSection').classList.toggle('is-muted', !masterOn);
+    // Only dim sub-rows when master is on; parent dim covers the case when it's off
+    document.getElementById('notifWaterSub').classList.toggle('is-muted',  masterOn && !p.water.enabled);
+    document.getElementById('notifWeightSub').classList.toggle('is-muted', masterOn && !p.weight.enabled);
+  }
+
+  function loadNotifPanel() {
+    const perm   = ('Notification' in window) ? Notification.permission : 'denied';
+    const denied = (perm === 'denied');
+    document.getElementById('notifDeniedBanner').style.display = denied ? 'block' : 'none';
+
+    const p         = getNP();
+    const enabledEl = document.getElementById('npfEnabled');
+    enabledEl.checked  = p.enabled && !denied;
+    enabledEl.disabled = denied;
+
+    document.getElementById('npfWater').checked        = p.water.enabled;
+    document.getElementById('npfNoon').checked         = p.water.noon;
+    document.getElementById('npfEvening').checked      = p.water.evening;
+    document.getElementById('npfNoonPct').value        = p.water.noonThreshold;
+    document.getElementById('npfEveningPct').value     = p.water.eveningThreshold;
+    document.getElementById('npfWeight').checked       = p.weight.enabled;
+    document.getElementById('npfWeightOffset').value   = p.weight.offsetMins;
+
+    updateNotifMuted(p, denied);
+  }
+
+  function saveNP() {
+    const p = {
+      enabled: document.getElementById('npfEnabled').checked,
+      water: {
+        enabled:          document.getElementById('npfWater').checked,
+        noon:             document.getElementById('npfNoon').checked,
+        evening:          document.getElementById('npfEvening').checked,
+        noonThreshold:    Math.max(1,   Math.min(99,  parseInt(document.getElementById('npfNoonPct').value,       10) || 30)),
+        eveningThreshold: Math.max(1,   Math.min(99,  parseInt(document.getElementById('npfEveningPct').value,    10) || 70)),
+      },
+      weight: {
+        enabled:    document.getElementById('npfWeight').checked,
+        offsetMins: Math.max(0, Math.min(120, parseInt(document.getElementById('npfWeightOffset').value, 10) || 30)),
+      }
+    };
+    lsSet(NOTIF_KEY, p);
+    const denied = ('Notification' in window) && Notification.permission === 'denied';
+    updateNotifMuted(p, denied);
+  }
+
+  // Master toggle — may need to request permission when it's 'default'
+  document.getElementById('npfEnabled').addEventListener('change', function () {
+    const perm = ('Notification' in window) ? Notification.permission : 'denied';
+    if (this.checked && perm === 'default') {
+      const self = this;
+      Notification.requestPermission().then(function (result) {
+        if (result !== 'granted') {
+          self.checked = false;
+          loadNotifPanel();
+          return;
+        }
+        try { localStorage.removeItem('dash_notif_dismissed_at'); } catch (_) {}
+        saveNP();
+      });
+      return; // Wait for permission callback before saving
+    }
+    saveNP();
+  });
+
+  ['npfWater', 'npfNoon', 'npfEvening', 'npfWeight'].forEach(function (id) {
+    document.getElementById(id).addEventListener('change', saveNP);
+  });
+  ['npfNoonPct', 'npfEveningPct', 'npfWeightOffset'].forEach(function (id) {
+    const el = document.getElementById(id);
+    el.addEventListener('change', saveNP);
+    el.addEventListener('input',  saveNP);
+  });
+
+  // Test notification button
+  document.getElementById('btnTestNotif').addEventListener('click', function () {
+    if (!('serviceWorker' in navigator) || !('Notification' in window) || Notification.permission !== 'granted') {
+      alert('Enable notifications first — flip the master switch above.');
+      return;
+    }
+    navigator.serviceWorker.ready.then(function (reg) {
+      return reg.showNotification("George's Dashboard", {
+        body:  'Test notification — everything is working! 🎉',
+        icon:  '/icon.svg',
+        badge: '/badge.svg',
+        tag:   'test',
+        data:  { url: '/' }
+      });
+    }).catch(function () {
+      alert('Could not send test — service worker not ready yet.');
+    });
+  });
+
+  // Re-render if browser permission state changes (e.g. user granted via the floating card)
+  if (typeof navigator !== 'undefined' && navigator.permissions) {
+    navigator.permissions.query({ name: 'notifications' }).then(function (ps) {
+      ps.addEventListener('change', loadNotifPanel);
+    }).catch(function () {});
+  }
+
+  loadNotifPanel();
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>

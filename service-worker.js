@@ -85,6 +85,16 @@ function todayStr() {
 function runCheck() {
   if (!swState) return;
 
+  var prefs = swState.prefs || {
+    enabled: true,
+    water:  { enabled: true, noon: true, evening: true, noonThreshold: 30, eveningThreshold: 70 },
+    weight: { enabled: true, offsetMins: 30 }
+  };
+  if (!prefs.enabled) return Promise.resolve();
+
+  var waterP  = prefs.water  || {};
+  var weightP = prefs.weight || {};
+
   var now      = new Date();
   var h        = now.getHours();
   var nowMins  = h * 60 + now.getMinutes();
@@ -97,14 +107,15 @@ function runCheck() {
 
   var promises = [];
 
-  // Noon water: past 12:00, under 30%
-  if (h >= 12 && pct < 0.30 && sent.noon_water !== today) {
+  // Noon water: past 12:00, under noon threshold
+  if (waterP.enabled !== false && waterP.noon !== false &&
+      h >= 12 && pct < (waterP.noonThreshold || 30) / 100 && sent.noon_water !== today) {
     sent.noon_water = today;
     promises.push(
       self.registration.showNotification('Water reminder', {
         body:  doneMl === 0
                  ? "You haven't had any water today — time to start! 💧"
-                 : "You’re only at " + doneMl + "ml — time to catch up! 💧",
+                 : "You're only at " + doneMl + "ml — time to catch up! 💧",
         icon:  '/icon.svg',
         badge: '/badge.svg',
         tag:   'water-noon',
@@ -114,8 +125,9 @@ function runCheck() {
     broadcastSent('noon_water', today);
   }
 
-  // 6pm water: past 18:00, under 70%
-  if (h >= 18 && pct < 0.70 && sent.sixpm_water !== today) {
+  // 6pm water: past 18:00, under evening threshold
+  if (waterP.enabled !== false && waterP.evening !== false &&
+      h >= 18 && pct < (waterP.eveningThreshold || 70) / 100 && sent.sixpm_water !== today) {
     sent.sixpm_water = today;
     promises.push(
       self.registration.showNotification('Water check-in', {
@@ -131,20 +143,22 @@ function runCheck() {
     broadcastSent('sixpm_water', today);
   }
 
-  // Weight reminder: 30 min after wake, within 90-min window
-  var weightAt = wakeMins + 30;
-  if (nowMins >= weightAt && nowMins < weightAt + 90 && sent.weight !== today) {
-    sent.weight = today;
-    promises.push(
-      self.registration.showNotification('Morning weigh-in ⚖️', {
-        body:  'Did you weigh yourself yet? Log it in the app!',
-        icon:  '/icon.svg',
-        badge: '/badge.svg',
-        tag:   'weight',
-        data:  { url: '/gym.html' },
-      })
-    );
-    broadcastSent('weight', today);
+  // Weight reminder: offsetMins after wake, within 90-min window
+  if (weightP.enabled !== false) {
+    var weightAt = wakeMins + (typeof weightP.offsetMins === 'number' ? weightP.offsetMins : 30);
+    if (nowMins >= weightAt && nowMins < weightAt + 90 && sent.weight !== today) {
+      sent.weight = today;
+      promises.push(
+        self.registration.showNotification('Morning weigh-in ⚖️', {
+          body:  'Did you weigh yourself yet? Log it in the app!',
+          icon:  '/icon.svg',
+          badge: '/badge.svg',
+          tag:   'weight',
+          data:  { url: '/gym.html' },
+        })
+      );
+      broadcastSent('weight', today);
+    }
   }
 
   swState.sent = sent;
