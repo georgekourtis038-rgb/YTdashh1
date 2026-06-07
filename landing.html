@@ -26,7 +26,6 @@ html,body{
 }
 @keyframes sceneIn{0%{opacity:0;}100%{opacity:1;}}
 
-/* subtle dot grid */
 .scene::before{
   content:'';position:absolute;inset:0;
   background-image:radial-gradient(rgba(45,232,162,0.022) 1px,transparent 1px);
@@ -34,57 +33,65 @@ html,body{
   pointer-events:none;z-index:0;
 }
 
-/* ambient bloom */
+/* ambient blooms — static or very slow, no overflow:hidden */
 .ambient{
   position:absolute;
   width:min(90vw,640px);height:min(90vw,640px);
   border-radius:50%;
   background:radial-gradient(circle,rgba(45,232,162,0.08) 0%,rgba(45,232,162,0.025) 45%,transparent 68%);
   pointer-events:none;z-index:0;
+  will-change:transform,opacity;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
   animation:ambientPulse 5.5s ease-in-out infinite;
 }
 @keyframes ambientPulse{
-  0%,100%{transform:scale(1);opacity:1;}
-  50%{transform:scale(1.14);opacity:0.5;}
+  0%,100%{-webkit-transform:scale(1);   transform:scale(1);    opacity:1;}
+  50%    {-webkit-transform:scale(1.14);transform:scale(1.14); opacity:0.5;}
 }
+/* ambient2 is static — no animation, just a deeper glow layer */
 .ambient2{
   position:absolute;
   width:min(150vw,1000px);height:min(150vw,1000px);
   border-radius:50%;
   background:radial-gradient(circle,rgba(45,232,162,0.028) 0%,transparent 58%);
   pointer-events:none;z-index:0;
-  animation:ambientPulse 8s ease-in-out infinite 2s;
+  opacity:0.6;
 }
 
-/* ── axis stage: floats up/down carrying SVG + brand together ── */
+/* ── axis stage: single GPU layer that floats up/down ──
+   NO overflow:hidden — that would block compositing on Safari */
 .axis-stage{
   position:relative;z-index:1;
   display:flex;align-items:center;justify-content:center;
+  will-change:transform;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  transform-origin:center center;
   animation:axisFloat 4s ease-in-out infinite;
 }
 @keyframes axisFloat{
-  0%,100%{transform:translateY(0);}
-  50%{transform:translateY(-12px);}
+  0%,100%{-webkit-transform:translate3d(0,0,0);    transform:translate3d(0,0,0);}
+  50%    {-webkit-transform:translate3d(0,-12px,0); transform:translate3d(0,-12px,0);}
 }
 
-/* axis SVG wrapper — scaled up to bleed beyond screen edges */
+/* axis-wrap: NO CSS filter — a filter here flattens all SVG children onto
+   one CPU-rasterized layer, killing GPU compositing for ring + arm animations.
+   The glow comes from SVG-native filter primitives on each child element. */
 .axis-wrap{
   width:min(116vw,760px);height:min(116vw,760px);
   flex-shrink:0;
-  filter:
-    drop-shadow(0 0 18px rgba(45,232,162,0.42))
-    drop-shadow(0 0 60px rgba(45,232,162,0.14));
 }
-.axis-wrap svg{width:100%;height:100%;}
+/* overflow:visible so pendulum extremes never clip */
+.axis-wrap svg{width:100%;height:100%;overflow:visible;}
 
-/* AXIS brand sits below origin, floats with axis-stage */
+/* AXIS brand sits below origin, carried by axis-stage */
 .axis-brand{
   position:absolute;z-index:5;
   left:50%;top:calc(50% + 52px);
   transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;
   pointer-events:none;
-  animation:sceneIn 1.8s ease both;
 }
 .axis-brand-text{
   font-size:clamp(15px,4vw,22px);
@@ -98,60 +105,47 @@ html,body{
     0 0 95px rgba(45,232,162,0.12);
 }
 
-/* ── ring animations: opacity pulse + gyroscope rotation ── */
-.r1{
-  transform-box:view-box;transform-origin:center;
-  animation:rp 7s ease-in-out infinite 0s, ringCW 20s linear infinite;
+/* ── rings: GPU-composited rotation, NO opacity animation ──
+   Opacity is baked into stroke-opacity SVG attributes instead,
+   removing the opacity/transform dual-animation cost per element.
+   translate3d(0,0,0) forces 3D compositing context on WebKit. */
+.r1,.r2,.r3,.r4{
+  transform-box:view-box;
+  transform-origin:center center;
+  will-change:transform;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
 }
-.r2{
-  transform-box:view-box;transform-origin:center;
-  animation:rp 7s ease-in-out infinite 1.4s, ringCCW 30s linear infinite;
-}
-.r3{
-  transform-box:view-box;transform-origin:center;
-  animation:rp 7s ease-in-out infinite 2.8s, ringCW 40s linear infinite;
-}
-.r4{
-  transform-box:view-box;transform-origin:center;
-  animation:rp 7s ease-in-out infinite 4.2s, ringCCW 50s linear infinite;
-}
-@keyframes rp   {0%,100%{opacity:0.18;}50%{opacity:0.52;}}
-@keyframes ringCW  {from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
-@keyframes ringCCW {from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+.r1{animation:ringCW  20s linear infinite;}
+.r2{animation:ringCCW 30s linear infinite;}
+.r3{animation:ringCW  40s linear infinite;}
+.r4{animation:ringCCW 50s linear infinite;}
 
-/* ── arm group: pendulum rotation around origin (250,250) ── */
+@keyframes ringCW{
+  from{-webkit-transform:translate3d(0,0,0) rotate(0deg);   transform:translate3d(0,0,0) rotate(0deg);}
+  to  {-webkit-transform:translate3d(0,0,0) rotate(360deg); transform:translate3d(0,0,0) rotate(360deg);}
+}
+@keyframes ringCCW{
+  from{-webkit-transform:translate3d(0,0,0) rotate(0deg);    transform:translate3d(0,0,0) rotate(0deg);}
+  to  {-webkit-transform:translate3d(0,0,0) rotate(-360deg); transform:translate3d(0,0,0) rotate(-360deg);}
+}
+
+/* ── arm-group: pendulum around SVG origin (250,250) ── */
 .arm-group{
   transform-box:view-box;
-  transform-origin:center;
+  transform-origin:center center;
+  will-change:transform;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
   animation:armPendulum 6s ease-in-out infinite;
 }
 @keyframes armPendulum{
-  0%,100%{transform:rotate(-8deg);}
-  50%{transform:rotate(8deg);}
+  0%,100%{-webkit-transform:translate3d(0,0,0) rotate(-8deg); transform:translate3d(0,0,0) rotate(-8deg);}
+  50%    {-webkit-transform:translate3d(0,0,0) rotate(8deg);  transform:translate3d(0,0,0) rotate(8deg);}
 }
 
-/* arm glow opacity — applied to inner groups, not arm-group */
-.arms{animation:ag 4.5s ease-in-out infinite;}
-.arrowheads{animation:ag 4.5s ease-in-out infinite 0.8s;}
-@keyframes ag{0%,100%{opacity:0.82;}50%{opacity:1;}}
-
-/* SVG internal node opacity flicker */
-.sn1{animation:snf1 12s ease-in-out infinite;}
-.sn2{animation:snf2 15s ease-in-out infinite;}
-.sn3{animation:snf3 10s ease-in-out infinite;}
-.sn4{animation:snf4 13s ease-in-out infinite;}
-.sn5{animation:snf5 11s ease-in-out infinite;}
-.sn6{animation:snf1 14s ease-in-out infinite 3s;}
-.sn7{animation:snf3 16s ease-in-out infinite 1.5s;}
-@keyframes snf1{0%,100%{opacity:0.45;}50%{opacity:0.9;}}
-@keyframes snf2{0%,100%{opacity:0.35;}50%{opacity:0.8;}}
-@keyframes snf3{0%,100%{opacity:0.55;}50%{opacity:1;}}
-@keyframes snf4{0%,100%{opacity:0.3;}50%{opacity:0.72;}}
-@keyframes snf5{0%,100%{opacity:0.5;}50%{opacity:0.95;}}
-
-/* origin breathing */
+/* origin breathing — opacity only, no transform, 1 element */
 .ob1{animation:ob 3s ease-in-out infinite;}
-.ob2{animation:ob 3s ease-in-out infinite 0.5s;}
 @keyframes ob{0%,100%{opacity:0.72;}50%{opacity:0.18;}}
 
 /* ── glass pill cards ── */
@@ -171,7 +165,9 @@ html,body{
   white-space:nowrap;
   cursor:pointer;
   transition:border-color 0.25s,box-shadow 0.25s;
-  animation:sceneIn 1.6s ease both;
+  will-change:transform;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
 }
 .card:hover{
   border-color:rgba(45,232,162,0.34);
@@ -180,24 +176,46 @@ html,body{
     0 0 22px rgba(45,232,162,0.15),
     inset 0 1px 0 rgba(255,255,255,0.08);
 }
-.card:active{transform:scale(0.95);}
+.card:active{-webkit-transform:scale(0.95);transform:scale(0.95);}
 .card-icon{width:17px;height:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 .card-label{font-size:11.5px;font-weight:600;letter-spacing:0.04em;color:rgba(255,255,255,0.7);}
 
-/* card positions + increased drift amplitude */
-.card-water   {top:10%;left:5%;  animation:cf1 7s   ease-in-out infinite, sceneIn 1.6s ease both;}
-.card-weight  {top: 7%;right:6%; animation:cf2 8.5s ease-in-out infinite, sceneIn 1.6s ease both;}
-.card-fitness {top:43%;right:2%; animation:cf3 6.5s ease-in-out infinite, sceneIn 1.6s ease both;}
-.card-goals   {top:64%;left:4%;  animation:cf4 9s   ease-in-out infinite, sceneIn 1.6s ease both;}
-.card-ai      {bottom:20%;right:11%;animation:cf5 7.5s ease-in-out infinite, sceneIn 1.6s ease both;}
+/* card float — translate3d only, no sceneIn overlap */
+.card-water   {top:10%;left:5%;  animation:cf1 7s   ease-in-out infinite;}
+.card-weight  {top: 7%;right:6%; animation:cf2 8.5s ease-in-out infinite;}
+.card-fitness {top:43%;right:2%; animation:cf3 6.5s ease-in-out infinite;}
+.card-goals   {top:64%;left:4%;  animation:cf4 9s   ease-in-out infinite;}
+.card-ai      {bottom:20%;right:11%;animation:cf5 7.5s ease-in-out infinite;}
 
-@keyframes cf1{0%,100%{transform:translate(0,0);}33%{transform:translate(11px,-18px);}66%{transform:translate(-8px,-9px);}}
-@keyframes cf2{0%,100%{transform:translate(0,0);}40%{transform:translate(-11px,14px);}70%{transform:translate(9px,-11px);}}
-@keyframes cf3{0%,100%{transform:translate(0,0);}30%{transform:translate(-10px,-15px);}60%{transform:translate(11px,10px);}}
-@keyframes cf4{0%,100%{transform:translate(0,0);}25%{transform:translate(13px,-11px);}75%{transform:translate(-9px,13px);}}
-@keyframes cf5{0%,100%{transform:translate(0,0);}35%{transform:translate(-13px,-13px);}65%{transform:translate(10px,12px);}}
+@keyframes cf1{
+  0%,100%{-webkit-transform:translate3d(0,0,0);       transform:translate3d(0,0,0);}
+  33%    {-webkit-transform:translate3d(11px,-18px,0); transform:translate3d(11px,-18px,0);}
+  66%    {-webkit-transform:translate3d(-8px,-9px,0);  transform:translate3d(-8px,-9px,0);}
+}
+@keyframes cf2{
+  0%,100%{-webkit-transform:translate3d(0,0,0);        transform:translate3d(0,0,0);}
+  40%    {-webkit-transform:translate3d(-11px,14px,0);  transform:translate3d(-11px,14px,0);}
+  70%    {-webkit-transform:translate3d(9px,-11px,0);   transform:translate3d(9px,-11px,0);}
+}
+@keyframes cf3{
+  0%,100%{-webkit-transform:translate3d(0,0,0);        transform:translate3d(0,0,0);}
+  30%    {-webkit-transform:translate3d(-10px,-15px,0); transform:translate3d(-10px,-15px,0);}
+  60%    {-webkit-transform:translate3d(11px,10px,0);   transform:translate3d(11px,10px,0);}
+}
+@keyframes cf4{
+  0%,100%{-webkit-transform:translate3d(0,0,0);       transform:translate3d(0,0,0);}
+  25%    {-webkit-transform:translate3d(13px,-11px,0); transform:translate3d(13px,-11px,0);}
+  75%    {-webkit-transform:translate3d(-9px,13px,0);  transform:translate3d(-9px,13px,0);}
+}
+@keyframes cf5{
+  0%,100%{-webkit-transform:translate3d(0,0,0);        transform:translate3d(0,0,0);}
+  35%    {-webkit-transform:translate3d(-13px,-13px,0); transform:translate3d(-13px,-13px,0);}
+  65%    {-webkit-transform:translate3d(10px,12px,0);   transform:translate3d(10px,12px,0);}
+}
 
-/* ── external floating diamond nodes — bigger glow + drift ── */
+/* ── external floating diamond nodes ──
+   Reduced to 6 (was 10) to stay within Safari's compositing budget.
+   will-change promotes each to its own GPU layer. */
 .fnode{
   position:absolute;z-index:2;
   background:rgba(45,232,162,0.09);
@@ -205,58 +223,58 @@ html,body{
   box-shadow:
     0 0 10px rgba(45,232,162,0.24),
     0 0 26px rgba(45,232,162,0.1);
-  transform:rotate(45deg);
   pointer-events:none;
+  will-change:transform,opacity;
+  -webkit-backface-visibility:hidden;
+  backface-visibility:hidden;
+  transform-origin:center center;
 }
-.fn1 {width: 8px;height: 8px;top:19%;left:27%; animation:nf1 11s ease-in-out infinite;}
-.fn2 {width: 6px;height: 6px;top:31%;right:21%;animation:nf2 13s ease-in-out infinite;}
-.fn3 {width:10px;height:10px;top:56%;left:16%;animation:nf3 9s  ease-in-out infinite;}
-.fn4 {width: 5px;height: 5px;top:16%;left:51%;animation:nf4 14s ease-in-out infinite;}
-.fn5 {width: 7px;height: 7px;top:71%;right:26%;animation:nf5 10s ease-in-out infinite;}
-.fn6 {width: 9px;height: 9px;top:45%;left:7%; animation:nf1 12s ease-in-out infinite 2.5s;}
-.fn7 {width: 5px;height: 5px;top:27%;right:9%;animation:nf3 15s ease-in-out infinite 1.2s;}
-.fn8 {width: 6px;height: 6px;top:83%;left:36%;animation:nf2 11s ease-in-out infinite 3s;}
-.fn9 {width: 7px;height: 7px;top:38%;left:44%;animation:nf4 16s ease-in-out infinite 1.8s;}
-.fn10{width: 5px;height: 5px;top:76%;left:62%;animation:nf5 12s ease-in-out infinite 4s;}
+.fn1{width: 8px;height: 8px;top:19%;left:27%; animation:nf1 11s ease-in-out infinite;}
+.fn2{width: 6px;height: 6px;top:31%;right:21%;animation:nf2 13s ease-in-out infinite;}
+.fn3{width:10px;height:10px;top:56%;left:16%;animation:nf3 9s  ease-in-out infinite;}
+.fn4{width: 5px;height: 5px;top:16%;left:51%;animation:nf4 14s ease-in-out infinite;}
+.fn5{width: 7px;height: 7px;top:71%;right:26%;animation:nf5 10s ease-in-out infinite;}
+.fn6{width: 9px;height: 9px;top:45%;left:7%; animation:nf1 12s ease-in-out infinite 2.5s;}
 
+/* rotate(45deg) baked into every keyframe stop — translate3d forces 3D context */
 @keyframes nf1{
-  0%  {transform:rotate(45deg) translate(0,0);    opacity:0.55;}
-  25% {transform:rotate(45deg) translate(18px,-22px); opacity:0.95;}
-  60% {transform:rotate(45deg) translate(-14px,-8px);opacity:0.7;}
-  100%{transform:rotate(45deg) translate(0,0);    opacity:0.55;}
+  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);       transform:rotate(45deg) translate3d(0,0,0);       opacity:0.55;}
+  25% {-webkit-transform:rotate(45deg) translate3d(18px,-22px,0); transform:rotate(45deg) translate3d(18px,-22px,0); opacity:0.95;}
+  60% {-webkit-transform:rotate(45deg) translate3d(-14px,-8px,0); transform:rotate(45deg) translate3d(-14px,-8px,0); opacity:0.7;}
+  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);       transform:rotate(45deg) translate3d(0,0,0);       opacity:0.55;}
 }
 @keyframes nf2{
-  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.45;}
-  30% {transform:rotate(45deg) translate(-18px,-16px);opacity:0.9;}
-  70% {transform:rotate(45deg) translate(12px,14px); opacity:0.65;}
-  100%{transform:rotate(45deg) translate(0,0);     opacity:0.45;}
+  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);         transform:rotate(45deg) translate3d(0,0,0);         opacity:0.45;}
+  30% {-webkit-transform:rotate(45deg) translate3d(-18px,-16px,0);  transform:rotate(45deg) translate3d(-18px,-16px,0);  opacity:0.9;}
+  70% {-webkit-transform:rotate(45deg) translate3d(12px,14px,0);    transform:rotate(45deg) translate3d(12px,14px,0);    opacity:0.65;}
+  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);         transform:rotate(45deg) translate3d(0,0,0);         opacity:0.45;}
 }
 @keyframes nf3{
-  0%  {transform:rotate(45deg) translate(0,0);    opacity:0.6;}
-  20% {transform:rotate(45deg) translate(20px,12px); opacity:1;}
-  65% {transform:rotate(45deg) translate(-10px,18px);opacity:0.75;}
-  100%{transform:rotate(45deg) translate(0,0);    opacity:0.6;}
+  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.6;}
+  20% {-webkit-transform:rotate(45deg) translate3d(20px,12px,0);   transform:rotate(45deg) translate3d(20px,12px,0);   opacity:1;}
+  65% {-webkit-transform:rotate(45deg) translate3d(-10px,18px,0);  transform:rotate(45deg) translate3d(-10px,18px,0);  opacity:0.75;}
+  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.6;}
 }
 @keyframes nf4{
-  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.4;}
-  40% {transform:rotate(45deg) translate(-22px,16px); opacity:0.88;}
-  80% {transform:rotate(45deg) translate(16px,-12px);opacity:0.62;}
-  100%{transform:rotate(45deg) translate(0,0);     opacity:0.4;}
+  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.4;}
+  40% {-webkit-transform:rotate(45deg) translate3d(-22px,16px,0);  transform:rotate(45deg) translate3d(-22px,16px,0);  opacity:0.88;}
+  80% {-webkit-transform:rotate(45deg) translate3d(16px,-12px,0);  transform:rotate(45deg) translate3d(16px,-12px,0);  opacity:0.62;}
+  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.4;}
 }
 @keyframes nf5{
-  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.5;}
-  35% {transform:rotate(45deg) translate(14px,-24px);opacity:0.95;}
-  70% {transform:rotate(45deg) translate(-16px,10px);opacity:0.68;}
-  100%{transform:rotate(45deg) translate(0,0);     opacity:0.5;}
+  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.5;}
+  35% {-webkit-transform:rotate(45deg) translate3d(14px,-24px,0);  transform:rotate(45deg) translate3d(14px,-24px,0);  opacity:0.95;}
+  70% {-webkit-transform:rotate(45deg) translate3d(-16px,10px,0);  transform:rotate(45deg) translate3d(-16px,10px,0);  opacity:0.68;}
+  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.5;}
 }
 
-/* ── Enter CTA ── */
+/* ── Enter CTA — static box-shadow, no animation
+   box-shadow can't be GPU composited and causes full repaints on Safari */
 .enter-wrap{
   position:absolute;
   bottom:calc(env(safe-area-inset-bottom,0px) + 42px);
   left:50%;transform:translateX(-50%);
   z-index:9;
-  animation:sceneIn 2s ease both;
 }
 .enter-btn{
   display:inline-flex;align-items:center;
@@ -270,24 +288,19 @@ html,body{
   font-size:13.5px;font-weight:600;letter-spacing:0.2em;padding-left:calc(56px + 0.2em);
   text-decoration:none;
   box-shadow:
-    0 0 28px rgba(45,232,162,0.13),
+    0 0 36px rgba(45,232,162,0.2),
     0 6px 30px rgba(0,0,0,0.48),
-    inset 0 1px 0 rgba(255,255,255,0.065);
+    inset 0 1px 0 rgba(255,255,255,0.07);
   transition:transform 0.15s,border-color 0.25s,box-shadow 0.25s;
-  animation:btnPulse 3.5s ease-in-out infinite;
 }
 .enter-btn:hover{
   border-color:rgba(45,232,162,0.58);
   box-shadow:
-    0 0 48px rgba(45,232,162,0.26),
+    0 0 52px rgba(45,232,162,0.3),
     0 6px 30px rgba(0,0,0,0.48),
     inset 0 1px 0 rgba(255,255,255,0.09);
 }
-.enter-btn:active{transform:scale(0.95);}
-@keyframes btnPulse{
-  0%,100%{box-shadow:0 0 28px rgba(45,232,162,0.13),0 6px 30px rgba(0,0,0,0.48),inset 0 1px 0 rgba(255,255,255,0.065);}
-  50%    {box-shadow:0 0 48px rgba(45,232,162,0.26),0 6px 30px rgba(0,0,0,0.48),inset 0 1px 0 rgba(255,255,255,0.065);}
-}
+.enter-btn:active{-webkit-transform:scale(0.95);transform:scale(0.95);}
 
 @media(max-width:380px){
   .card{padding:7px 12px;gap:6px;}
@@ -305,19 +318,15 @@ html,body{
   <div class="ambient"></div>
   <div class="ambient2"></div>
 
-  <!-- external floating diamond nodes -->
+  <!-- 6 floating diamond nodes (reduced from 10) -->
   <div class="fnode fn1"></div>
   <div class="fnode fn2"></div>
   <div class="fnode fn3"></div>
   <div class="fnode fn4"></div>
   <div class="fnode fn5"></div>
   <div class="fnode fn6"></div>
-  <div class="fnode fn7"></div>
-  <div class="fnode fn8"></div>
-  <div class="fnode fn9"></div>
-  <div class="fnode fn10"></div>
 
-  <!-- axis stage: SVG + brand float together -->
+  <!-- axis-stage: carries SVG + brand as one floated unit -->
   <div class="axis-stage">
     <div class="axis-wrap">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
@@ -336,53 +345,51 @@ html,body{
           </filter>
         </defs>
 
-        <!-- concentric dashed rings — each rotates at its own speed -->
-        <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"    stroke-dasharray="10,8"  filter="url(#g)"/>
-        <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8"  stroke-dasharray="13,10" filter="url(#g)"/>
-        <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" filter="url(#g)"/>
-        <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5"  stroke-dasharray="18,16" filter="url(#g)"/>
+        <!-- rings: stroke-opacity baked in as SVG attribute (removes per-element
+             opacity CSS animation), CSS only handles GPU-composited rotation -->
+        <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"    stroke-dasharray="10,8"  stroke-opacity="0.38" filter="url(#g)"/>
+        <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8"  stroke-dasharray="13,10" stroke-opacity="0.28" filter="url(#g)"/>
+        <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" stroke-opacity="0.2"  filter="url(#g)"/>
+        <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5"  stroke-dasharray="18,16" stroke-opacity="0.13" filter="url(#g)"/>
 
-        <!-- arm group: pendulum oscillation around origin (250,250) -->
+        <!-- arm group: pendulum around origin (250,250) -->
         <g class="arm-group">
-          <!-- three dashed arms: up, bottom-right (120°), bottom-left (240°) -->
-          <g class="arms" stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
+          <g stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
             <line x1="250" y1="250" x2="250" y2="92"/>
             <line x1="250" y1="250" x2="387" y2="328"/>
             <line x1="250" y1="250" x2="113" y2="328"/>
           </g>
-          <!-- arrowheads at arm tips -->
-          <g class="arrowheads" fill="#2de8a2" filter="url(#gm)">
+          <g fill="#2de8a2" filter="url(#gm)">
             <polygon points="250,80 243,93 257,93"/>
             <polygon points="387,328 370,327 377,314"/>
             <polygon points="113,328 123,314 130,327"/>
           </g>
         </g>
 
-        <!-- floating cube/node shapes scattered in arm gaps -->
-        <g filter="url(#g)">
-          <rect class="sn1" x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 156.5 146.5)"/>
-          <rect class="sn2" x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
-          <rect class="sn3" x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
-          <rect class="sn4" x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
-          <rect class="sn5" x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
-          <rect class="sn6" x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
-          <rect class="sn7" x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
+        <!-- static node shapes (opacity-only animation removed) -->
+        <g filter="url(#g)" opacity="0.55">
+          <rect x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 156.5 146.5)"/>
+          <rect x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
+          <rect x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
+          <rect x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
+          <rect x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
+          <rect x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
+          <rect x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
         </g>
 
-        <!-- origin: breathing glow rings + solid core (not in arm-group, stays fixed) -->
+        <!-- origin: single breathing glow (1 animated element, opacity only) -->
         <circle class="ob1" cx="250" cy="250" r="22" fill="#2de8a2" fill-opacity="0.06" filter="url(#gs)"/>
-        <circle class="ob2" cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.38" filter="url(#g)"/>
+        <circle cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.32" filter="url(#g)"/>
         <circle cx="250" cy="250" r="4.5" fill="#2de8a2" filter="url(#gs)"/>
       </svg>
     </div>
 
-    <!-- AXIS branding — positioned relative to axis-stage, floats with it -->
     <div class="axis-brand">
       <span class="axis-brand-text">AXIS</span>
     </div>
   </div>
 
-  <!-- feature cards floating around the axis -->
+  <!-- feature cards -->
   <div class="card card-water">
     <div class="card-icon">
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -433,7 +440,6 @@ html,body{
     <span class="card-label">AI Assistant</span>
   </div>
 
-  <!-- Enter CTA -->
   <div class="enter-wrap">
     <a href="index.html" class="enter-btn">ENTER</a>
   </div>
