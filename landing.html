@@ -562,14 +562,44 @@ html,body{
   function refreshCards() {
     var today = activeDate();
 
-    // Water: po_water_v1 → history[date] ml consumed + pre-calculated target
+    // Water: po_water_v1 → history[date] ml consumed + target via fallback chain
     try {
-      var wData  = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
-      var ml     = (wData.history && wData.history[today]) || 0;
-      var tgtMl  = (typeof wData.target === 'number' && wData.target > 0) ? wData.target : 0;
-      if (ml > 0 || tgtMl > 0) {
-        fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
+      var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
+      var ml    = (wData.history && wData.history[today]) || 0;
+      var tgtMl = 0;
+
+      // 1. Stored pre-calculated target (written by po-water saveState)
+      if (typeof wData.target === 'number' && wData.target > 0) {
+        tgtMl = wData.target;
       }
+      // 2. Alternative settings path
+      else if (wData.settings && typeof wData.settings.targetMl === 'number' && wData.settings.targetMl > 0) {
+        tgtMl = wData.settings.targetMl;
+      }
+      // 3. Derive from latest body weight
+      else {
+        try {
+          var wEntries = JSON.parse(localStorage.getItem('po_coach_weights') || 'null');
+          if (Array.isArray(wEntries) && wEntries.length) {
+            var wSorted = wEntries.slice().sort(function(a, b) {
+              return (b.dateKey || '') > (a.dateKey || '') ? 1 : -1;
+            });
+            var wLatest = wSorted[0];
+            if (wLatest && typeof wLatest.weight === 'number' && wLatest.weight > 0) {
+              var gymSt  = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
+              var bwUnit = gymSt.units || 'kg';
+              var bwKg   = bwUnit === 'lb' ? wLatest.weight / 2.20462 : wLatest.weight;
+              var profile = wData.profile || {};
+              tgtMl = bwKg * 35 + (profile.sex === 'm' ? 300 : 0);
+            }
+          }
+        } catch (e) {}
+      }
+
+      // 4. Hard fallback
+      if (!(tgtMl > 0)) tgtMl = 3000;
+
+      fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
     } catch (e) {}
 
     // Weight: po_coach_weights → most recent entry, converted to lb
