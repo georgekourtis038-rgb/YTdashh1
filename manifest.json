@@ -2,7 +2,7 @@
   "name": "Axis",
   "short_name": "Axis",
   "description": "Personal health and fitness dashboard",
-  "start_url": "/index.html",
+  "start_url": "/landing.html",
   "display": "standalone",
   "background_color": "#0a0a0b",
   "theme_color": "#0a0a0b",
