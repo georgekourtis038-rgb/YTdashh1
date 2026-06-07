@@ -822,7 +822,23 @@ html, body {
   // ============================================================
   function computeTargetMl() {
     const p = state.profile;
-    const wKg = state.weightUnit === 'lb' ? p.weightKg / 2.20462 : p.weightKg;
+    // Read fresh weight from po_coach_weights so changes in the health tracker are reflected immediately
+    let wKg = state.weightUnit === 'lb' ? p.weightKg / 2.20462 : p.weightKg;
+    try {
+      const rawWeights = localStorage.getItem('po_coach_weights');
+      if (rawWeights) {
+        const entries = JSON.parse(rawWeights);
+        if (Array.isArray(entries) && entries.length) {
+          entries.sort((a, b) => a.dateKey.localeCompare(b.dateKey));
+          const latest = entries[entries.length - 1];
+          if (latest && typeof latest.weight === 'number' && latest.weight > 0) {
+            let gymUnit = 'kg';
+            try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch (e) {}
+            wKg = gymUnit === 'lb' ? latest.weight / 2.20462 : latest.weight;
+          }
+        }
+      }
+    } catch (e) {}
     const base = wKg * 35;
     const exercise = (p.activityHrsPerWeek || 0) / 7 * 500;
     const caffeine = Math.max(0, (state.caffeineMgPerDay || 0) - 200) * 1.5;
