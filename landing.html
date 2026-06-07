@@ -562,14 +562,21 @@ html,body{
   function refreshCards() {
     var today = activeDate();
 
-    // Water: po_water_v1 → history[date] ml consumed + target via fallback chain
+    // Water: po_water_v1 → history[date] ml consumed + target
+    // po_water_v1 structure: { target: number, history: {YYYY-MM-DD: ml}, profile: {...}, ... }
+    // target is set by saveState() in po-water.html as: state.target = computeTargetMl().total
+    console.log('[water-debug] po_water_v1 raw:', localStorage.getItem('po_water_v1'));
+    console.log('[water-debug] po_water_settings raw:', localStorage.getItem('po_water_settings'));
+    console.log('[water-debug] dash_weight raw:', localStorage.getItem('dash_weight'));
+    console.log('[water-debug] dash_sex raw:', localStorage.getItem('dash_sex'));
     try {
       var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
+      console.log('[water-debug] wData.target:', wData.target, '| typeof:', typeof wData.target, '| profile:', JSON.stringify(wData.profile));
       var ml    = (wData.history && wData.history[today]) || 0;
       var tgtMl = (typeof wData.target === 'number' && wData.target > 0) ? wData.target : 3000;
 
       fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
-    } catch (e) {}
+    } catch (e) { console.error('[water-debug] error:', e); }
 
     // Weight: po_coach_weights → most recent entry, converted to lb
     try {
