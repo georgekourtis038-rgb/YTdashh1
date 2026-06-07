@@ -771,6 +771,7 @@ html, body {
     return s;
   }
   function saveState() {
+    state.target = computeTargetMl().total;
     try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch (e) {}
     try { pcSchedulePush(); } catch (e) {}
   }
