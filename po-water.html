@@ -1276,6 +1276,14 @@ html, body {
   // BOOT
   renderAll();
 
+  // Re-compute and persist the target whenever weight is updated on another page
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'po_coach_weights') {
+      saveState();
+      renderWater();
+    }
+  });
+
   // ============================================================
   // CLOUD SYNC via Supabase
   // ============================================================

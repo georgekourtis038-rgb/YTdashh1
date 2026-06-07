@@ -562,48 +562,43 @@ html,body{
   function refreshCards() {
     var today = activeDate();
 
-    // Water: po_water_v1 → history[date] ml consumed + target
-    // po_water_v1 structure: { target: number, history: {YYYY-MM-DD: ml}, profile: {...}, ... }
-    // target is set by saveState() in po-water.html as: state.target = computeTargetMl().total
-    console.log('[water-debug] po_water_v1 raw:', localStorage.getItem('po_water_v1'));
-    console.log('[water-debug] po_water_settings raw:', localStorage.getItem('po_water_settings'));
-    console.log('[water-debug] dash_weight raw:', localStorage.getItem('dash_weight'));
-    console.log('[water-debug] dash_sex raw:', localStorage.getItem('dash_sex'));
+    // Water: always recalculate target fresh from po_coach_weights (same formula as computeTargetMl() in po-water.html)
     try {
       var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
-      console.log('[water-debug] wData.target:', wData.target, '| typeof:', typeof wData.target, '| profile:', JSON.stringify(wData.profile));
-      var ml    = (wData.history && wData.history[today]) || 0;
-      var tgtMl = (typeof wData.target === 'number' && wData.target > 0) ? wData.target : 3000;
+      var ml = (wData.history && wData.history[today]) || 0;
 
-      // If target is exactly 3000 (the default fallback), verify against po_coach_weights
-      if (tgtMl === 3000) {
-        try {
-          var rawW = localStorage.getItem('po_coach_weights');
-          if (rawW) {
-            var wEntries = JSON.parse(rawW);
-            if (Array.isArray(wEntries) && wEntries.length) {
-              wEntries.sort(function(a, b) { return a.dateKey.localeCompare(b.dateKey); });
-              var latestW = wEntries[wEntries.length - 1];
-              if (latestW && typeof latestW.weight === 'number' && latestW.weight > 0) {
-                var gymUnit = 'kg';
-                try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch (e2) {}
-                var calcKg = gymUnit === 'lb' ? latestW.weight / 2.20462 : latestW.weight;
-                var calcBase = calcKg * 35;
-                var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
-                var calcCaffeine = Math.max(0, ((wData.caffeineMgPerDay != null ? wData.caffeineMgPerDay : 200) - 200)) * 1.5;
-                var calcAdjust = 0;
-                if (wData.profile && wData.profile.sex === 'm') calcAdjust += 200;
-                if (wData.profile && (wData.profile.age || 0) >= 50) calcAdjust += 100;
-                var calcTotal = Math.round(calcBase + calcExercise + calcCaffeine + calcAdjust);
-                if (calcTotal !== 3000) tgtMl = calcTotal;
-              }
+      var wKg = (wData.profile && wData.profile.weightKg) || 75;
+      if (wData.weightUnit === 'lb') wKg = wKg / 2.20462;
+      try {
+        var rawW = localStorage.getItem('po_coach_weights');
+        if (rawW) {
+          var wEntries = JSON.parse(rawW);
+          if (Array.isArray(wEntries) && wEntries.length) {
+            wEntries.sort(function(a, b) { return a.dateKey.localeCompare(b.dateKey); });
+            var latestW = wEntries[wEntries.length - 1];
+            if (latestW && typeof latestW.weight === 'number' && latestW.weight > 0) {
+              var gymUnit = 'kg';
+              try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch (e2) {}
+              wKg = gymUnit === 'lb' ? latestW.weight / 2.20462 : latestW.weight;
             }
           }
-        } catch (e2) {}
-      }
+        }
+      } catch (e2) {}
+      var calcBase     = wKg * 35;
+      var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
+      var calcCaffeine = Math.max(0, ((wData.caffeineMgPerDay != null ? wData.caffeineMgPerDay : 200) - 200)) * 1.5;
+      var calcSubs     = (wData.substances || []).reduce(function(s, x) {
+        var dose = (x.dose != null ? x.dose : x.defaultDose) || 0;
+        return s + Math.max(0, dose * (x.mlPerUnit || 0));
+      }, 0);
+      var calcAdjust = 0;
+      if (wData.profile && wData.profile.sex === 'm') calcAdjust += 200;
+      if (wData.profile && (wData.profile.age || 0) >= 50) calcAdjust += 100;
+      var tgtMl = Math.round(calcBase + calcExercise + calcCaffeine + calcSubs + calcAdjust);
+      if (!(tgtMl > 0)) tgtMl = 3000;
 
       fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
-    } catch (e) { console.error('[water-debug] error:', e); }
+    } catch (e) {}
 
     // Weight: po_coach_weights → most recent entry, converted to lb
     try {
