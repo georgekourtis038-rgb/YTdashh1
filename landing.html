@@ -559,59 +559,72 @@ html,body{
   }
   function fill(id, txt) { var e = document.getElementById(id); if (e) e.textContent = txt; }
 
-  var today = activeDate();
+  function refreshCards() {
+    var today = activeDate();
 
-  // Water: po_water_v1 → history[date] ml, target from dash_weight
-  try {
-    var wData   = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
-    var ml      = (wData.history && wData.history[today]) || 0;
-    var wLbs    = parseFloat(localStorage.getItem('dash_weight'));
-    var tgtMl   = null;
-    if (wLbs > 0) {
-      var kg   = wLbs / 2.205;
-      var base = kg * 35;
-      var sex  = localStorage.getItem('dash_sex') || '';
-      if (sex !== 'f' && sex !== 'female') base += 200;
-      tgtMl = Math.max(2000, Math.min(6000, Math.round(base / 50) * 50));
-    }
-    if (ml > 0 || tgtMl) {
-      var lStr = (ml / 1000).toFixed(1);
-      fill('cdWater', tgtMl ? lStr + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L' : lStr + 'L');
-    }
-  } catch (e) {}
+    // Water: po_water_v1 → history[date] ml consumed + profile-computed target
+    try {
+      var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
+      var ml    = (wData.history && wData.history[today]) || 0;
+      var p     = wData.profile || {};
+      var wKg   = wData.weightUnit === 'lb' ? (p.weightKg || 75) / 2.20462 : (p.weightKg || 75);
+      var tgtMl = wKg * 35
+        + ((p.activityHrsPerWeek || 0) / 7) * 500
+        + Math.max(0, ((wData.caffeineMgPerDay || 200) - 200) * 1.5)
+        + (wData.substances || []).reduce(function(s, x) {
+            return s + Math.max(0, ((x.dose != null ? x.dose : x.defaultDose) || 0) * (x.mlPerUnit || 0));
+          }, 0);
+      if (p.sex === 'm') tgtMl += 200;
+      if ((p.age || 0) >= 50) tgtMl += 100;
+      if (ml > 0 || tgtMl > 0) {
+        fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
+      }
+    } catch (e) {}
 
-  // Weight: dash_weight (raw lbs float)
-  try {
-    var raw = localStorage.getItem('dash_weight');
-    if (raw !== null) {
-      var v = parseFloat(JSON.parse(raw));
-      if (!isNaN(v) && v > 0) fill('cdWeight', v.toFixed(1) + ' lb');
-    }
-  } catch (e) {}
+    // Weight: po_coach_weights → most recent entry, converted to lb
+    try {
+      var entries = JSON.parse(localStorage.getItem('po_coach_weights') || 'null');
+      if (Array.isArray(entries) && entries.length) {
+        var sorted = entries.slice().sort(function(a, b) {
+          return (b.dateKey || '') > (a.dateKey || '') ? 1 : -1;
+        });
+        var latest = sorted[0];
+        if (latest && typeof latest.weight === 'number' && latest.weight > 0) {
+          var gymState = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
+          var wUnit    = gymState.units || 'kg';
+          var wLb      = wUnit === 'lb' ? latest.weight : latest.weight * 2.20462;
+          fill('cdWeight', wLb.toFixed(1) + ' lb');
+        }
+      }
+    } catch (e) {}
 
-  // Goals: goals:YYYY-MM-DD → [{ done }]
-  try {
-    var goals = JSON.parse(localStorage.getItem('goals:' + today) || 'null');
-    if (Array.isArray(goals) && goals.length) {
-      var done = goals.filter(function (g) { return g.done; }).length;
-      fill('cdGoals', done + ' / ' + goals.length + ' done');
-    }
-  } catch (e) {}
+    // Goals: goals:YYYY-MM-DD → count done / total
+    try {
+      var goals = JSON.parse(localStorage.getItem('goals:' + today) || 'null');
+      if (Array.isArray(goals) && goals.length) {
+        var done = goals.filter(function(g) { return g.done; }).length;
+        fill('cdGoals', done + ' / ' + goals.length + ' done');
+      }
+    } catch (e) {}
 
-  // Fitness split: po_coach_v1 → splitRotation + splitAnchor
-  try {
-    var gym    = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
-    var rot    = gym.splitRotation;
-    var anchor = gym.splitAnchor;
-    if (rot && rot.length && anchor && anchor.date != null && anchor.index != null) {
-      var a = new Date(anchor.date), t = new Date();
-      a.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
-      var diff = Math.round((t - a) / 86400000);
-      var idx  = ((anchor.index + diff) % rot.length + rot.length) % rot.length;
-      var spl  = rot[idx] || '';
-      fill('cdFitness', /^(rest|off)$/i.test(spl) ? 'Rest Day' : spl + ' Day');
-    }
-  } catch (e) {}
+    // Fitness: po_coach_v1 → splitRotation + splitAnchor
+    try {
+      var gym    = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
+      var rot    = gym.splitRotation;
+      var anchor = gym.splitAnchor;
+      if (rot && rot.length && anchor && anchor.date != null && anchor.index != null) {
+        var a = new Date(anchor.date), t = new Date();
+        a.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
+        var diff = Math.round((t - a) / 86400000);
+        var idx  = ((anchor.index + diff) % rot.length + rot.length) % rot.length;
+        var spl  = rot[idx] || '';
+        fill('cdFitness', /^(rest|off)$/i.test(spl) ? 'Rest Day' : spl + ' Day');
+      }
+    } catch (e) {}
+  }
+
+  refreshCards();
+  setInterval(refreshCards, 30000);
 
   /* ── star particle field on canvas ── */
   var canvas = document.getElementById('starCanvas');
