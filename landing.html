@@ -418,55 +418,29 @@ html,body{
       <div class="axis-wrap">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
           <defs>
-            <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="gs" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="9" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="gm" x="-70%" y="-70%" width="240%" height="240%">
-              <feGaussianBlur stdDeviation="5.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+            <filter id="glow" x="-80%" y="-80%" width="260%" height="260%">
+              <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur1"/>
+              <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur2"/>
+              <feMerge>
+                <feMergeNode in="blur2"/>
+                <feMergeNode in="blur1"/>
+                <feMergeNode in="blur1"/>
+                <feMergeNode in="SourceGraphic"/>
+              </feMerge>
             </filter>
           </defs>
-
-          <!-- rings: opacity baked as stroke-opacity, CSS only does rotation -->
-          <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"    stroke-dasharray="10,8"  stroke-opacity="0.38" filter="url(#g)"/>
-          <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8"  stroke-dasharray="13,10" stroke-opacity="0.28" filter="url(#g)"/>
-          <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" stroke-opacity="0.2"  filter="url(#g)"/>
-          <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5"  stroke-dasharray="18,16" stroke-opacity="0.13" filter="url(#g)"/>
-
-          <!-- arm pendulum group -->
-          <g class="arm-group">
-            <g stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
-              <line x1="250" y1="250" x2="250" y2="92"/>
-              <line x1="250" y1="250" x2="387" y2="328"/>
-              <line x1="250" y1="250" x2="113" y2="328"/>
+          <g class="arm-group" filter="url(#glow)">
+            <g stroke="#2de8a2" stroke-width="7" stroke-linecap="round" fill="none">
+              <line x1="250" y1="250" x2="250"   y2="105"/>
+              <line x1="250" y1="250" x2="375.6" y2="322.5"/>
+              <line x1="250" y1="250" x2="124.4" y2="322.5"/>
             </g>
-            <g fill="#2de8a2" filter="url(#gm)">
-              <polygon points="250,80 243,93 257,93"/>
-              <polygon points="387,328 370,327 377,314"/>
-              <polygon points="113,328 123,314 130,327"/>
+            <g fill="#2de8a2">
+              <polygon points="250,90 239,105 261,105"/>
+              <polygon points="388.6,330 370.1,332 381.1,313"/>
+              <polygon points="111.4,330 118.9,313 129.9,332"/>
             </g>
           </g>
-
-          <!-- static node shapes in arm gaps -->
-          <g filter="url(#g)" opacity="0.55">
-            <rect x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 156.5 146.5)"/>
-            <rect x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
-            <rect x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
-            <rect x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
-            <rect x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
-            <rect x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
-            <rect x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
-          </g>
-
-          <!-- origin: breathing glow + fixed core -->
-          <circle class="ob1" cx="250" cy="250" r="22" fill="#2de8a2" fill-opacity="0.06" filter="url(#gs)"/>
-          <circle cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.32" filter="url(#g)"/>
-          <circle cx="250" cy="250" r="4.5" fill="#2de8a2" filter="url(#gs)"/>
         </svg>
       </div>
 

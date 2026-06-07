@@ -1,5 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="42" fill="#0a0a0b"/>
-  <path d="M96 34 C96 34 48 102 48 132 C48 159 70 176 96 176 C122 176 144 159 144 132 C144 102 96 34 96 34Z" fill="#7DD3FC"/>
-  <path d="M76 148 C76 148 65 140 65 130" stroke="rgba(255,255,255,0.38)" stroke-width="4" stroke-linecap="round" fill="none"/>
+  <defs>
+    <filter id="glow" x="-100%" y="-100%" width="300%" height="300%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="192" height="192" rx="42" fill="#080c0b"/>
+  <g filter="url(#glow)">
+    <g stroke="#2de8a2" stroke-width="6" stroke-linecap="round" fill="none">
+      <line x1="96" y1="96" x2="96"    y2="34"/>
+      <line x1="96" y1="96" x2="149.7" y2="127"/>
+      <line x1="96" y1="96" x2="42.3"  y2="127"/>
+    </g>
+    <g fill="#2de8a2">
+      <polygon points="96,21 86,34 106,34"/>
+      <polygon points="161,133.5 144.7,135.7 154.7,118.3"/>
+      <polygon points="31,133.5 37.3,118.3 47.3,135.7"/>
+    </g>
+  </g>
 </svg>
