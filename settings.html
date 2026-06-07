@@ -7,7 +7,7 @@
 <link rel="manifest" href="/manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Settings — Dashboard</title>
+<title>Axis</title>
 <script src="topbar.js" defer></script>
 <script src="/push-init.js" defer></script>
 <link rel="stylesheet" href="/animations.css">
@@ -956,7 +956,7 @@ html, body {
       return;
     }
     navigator.serviceWorker.ready.then(function (reg) {
-      return reg.showNotification("George's Dashboard", {
+      return reg.showNotification("Axis", {
         body:  'Test notification — everything is working! 🎉',
         icon:  '/icon.svg',
         badge: '/badge.svg',

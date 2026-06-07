@@ -1,6 +1,6 @@
 {
-  "name": "George's Dashboard",
-  "short_name": "Dashboard",
+  "name": "Axis",
+  "short_name": "Axis",
   "description": "Personal health and fitness dashboard",
   "start_url": "/index.html",
   "display": "standalone",
