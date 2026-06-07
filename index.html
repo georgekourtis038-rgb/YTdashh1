@@ -596,33 +596,36 @@ body::after {
 <body>
 <div class="page">
 
-  <svg style="display:block;margin:0 0 14px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" aria-label="Axis" role="img">
-    <defs>
-      <filter id="axisGlow" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
-        <feMerge>
-          <feMergeNode in="coloredBlur"/>
-          <feMergeNode in="SourceGraphic"/>
-        </feMerge>
-      </filter>
-    </defs>
-    <!-- dark background circle -->
-    <circle cx="24" cy="24" r="22" fill="#111820" stroke="#2de8a2" stroke-width="0.5" stroke-opacity="0.25"/>
-    <!-- three dashed axis arms -->
-    <g stroke="#2de8a2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-dasharray="3,2" filter="url(#axisGlow)">
-      <line x1="24" y1="24" x2="24"   y2="12"/>
-      <line x1="24" y1="24" x2="34.4" y2="30"/>
-      <line x1="24" y1="24" x2="13.6" y2="30"/>
-    </g>
-    <!-- solid arrowheads -->
-    <g fill="#2de8a2" filter="url(#axisGlow)">
-      <polygon points="24,9.5 22.5,12 25.5,12"/>
-      <polygon points="36.6,31.3 35.15,28.7 33.65,31.3"/>
-      <polygon points="11.4,31.3 14.35,31.3 12.85,28.7"/>
-    </g>
-    <!-- origin dot -->
-    <circle cx="24" cy="24" r="1.5" fill="#2de8a2" filter="url(#axisGlow)"/>
-  </svg>
+  <div style="display:flex;align-items:center;gap:12px;margin:0 0 14px;">
+    <svg style="display:block;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" aria-label="Axis" role="img">
+      <defs>
+        <filter id="axisGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      <!-- dark background circle -->
+      <circle cx="24" cy="24" r="22" fill="#111820" stroke="#2de8a2" stroke-width="0.5" stroke-opacity="0.25"/>
+      <!-- three dashed axis arms -->
+      <g stroke="#2de8a2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-dasharray="3,2" filter="url(#axisGlow)">
+        <line x1="24" y1="24" x2="24"   y2="12"/>
+        <line x1="24" y1="24" x2="34.4" y2="30"/>
+        <line x1="24" y1="24" x2="13.6" y2="30"/>
+      </g>
+      <!-- solid arrowheads -->
+      <g fill="#2de8a2" filter="url(#axisGlow)">
+        <polygon points="24,9.5 22.5,12 25.5,12"/>
+        <polygon points="36.6,31.3 35.15,28.7 33.65,31.3"/>
+        <polygon points="11.4,31.3 14.35,31.3 12.85,28.7"/>
+      </g>
+      <!-- origin dot -->
+      <circle cx="24" cy="24" r="1.5" fill="#2de8a2" filter="url(#axisGlow)"/>
+    </svg>
+    <span style="font-size:28px;font-weight:700;letter-spacing:6px;color:#ffffff;text-shadow:0 0 20px rgba(45,232,162,0.4);">AXIS</span>
+  </div>
 
   <div class="ticker-row">
     <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
