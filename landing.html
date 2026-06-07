@@ -562,20 +562,47 @@ html,body{
   function refreshCards() {
     var today = activeDate();
 
-    // Water: po_water_v1 → history[date] ml consumed + profile-computed target
+    // Water: po_water_v1 → history[date] ml consumed + target
+    // Target priority: state.target → state.settings.targetMl → computed from formula.
+    // Weight for formula: po_water_v1 profile → po_coach_weights latest entry.
     try {
       var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
       var ml    = (wData.history && wData.history[today]) || 0;
       var p     = wData.profile || {};
-      var wKg   = wData.weightUnit === 'lb' ? (p.weightKg || 75) / 2.20462 : (p.weightKg || 75);
-      var tgtMl = wKg * 35
-        + ((p.activityHrsPerWeek || 0) / 7) * 500
-        + Math.max(0, ((wData.caffeineMgPerDay || 200) - 200) * 1.5)
-        + (wData.substances || []).reduce(function(s, x) {
-            return s + Math.max(0, ((x.dose != null ? x.dose : x.defaultDose) || 0) * (x.mlPerUnit || 0));
-          }, 0);
-      if (p.sex === 'm') tgtMl += 200;
-      if ((p.age || 0) >= 50) tgtMl += 100;
+      var tgtMl;
+      if (wData.target && typeof wData.target === 'number' && wData.target > 0) {
+        tgtMl = wData.target;
+      } else if (wData.settings && typeof wData.settings.targetMl === 'number' && wData.settings.targetMl > 0) {
+        tgtMl = wData.settings.targetMl;
+      } else {
+        var wKg = null;
+        if (p.weightKg && p.weightKg > 0) {
+          wKg = wData.weightUnit === 'lb' ? p.weightKg / 2.20462 : p.weightKg;
+        } else {
+          try {
+            var wtEntries = JSON.parse(localStorage.getItem('po_coach_weights') || 'null');
+            if (Array.isArray(wtEntries) && wtEntries.length) {
+              var wtSorted = wtEntries.slice().sort(function(a, b) {
+                return (b.dateKey || '') > (a.dateKey || '') ? 1 : -1;
+              });
+              var wtLatest = wtSorted[0];
+              if (wtLatest && typeof wtLatest.weight === 'number' && wtLatest.weight > 0) {
+                var gymCfg = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
+                wKg = (gymCfg.units || 'kg') === 'lb' ? wtLatest.weight / 2.20462 : wtLatest.weight;
+              }
+            }
+          } catch (_) {}
+        }
+        wKg = wKg || 75;
+        tgtMl = wKg * 35
+          + ((p.activityHrsPerWeek || 0) / 7) * 500
+          + Math.max(0, ((wData.caffeineMgPerDay || 200) - 200) * 1.5)
+          + (wData.substances || []).reduce(function(s, x) {
+              return s + Math.max(0, ((x.dose != null ? x.dose : x.defaultDose) || 0) * (x.mlPerUnit || 0));
+            }, 0);
+        if (p.sex === 'm') tgtMl += 200;
+        if ((p.age || 0) >= 50) tgtMl += 100;
+      }
       if (ml > 0 || tgtMl > 0) {
         fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
       }
@@ -607,17 +634,25 @@ html,body{
       }
     } catch (e) {}
 
-    // Fitness: po_coach_v1 → splitRotation + splitAnchor
+    // Fitness: replicates gym.html getTodaySplitName() exactly.
+    // 1. dash_gym_cycle — cycle rotation from a start date.
+    // 2. dash_gym_split — weekday → split name map.
     try {
-      var gym    = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
-      var rot    = gym.splitRotation;
-      var anchor = gym.splitAnchor;
-      if (rot && rot.length && anchor && anchor.date != null && anchor.index != null) {
-        var a = new Date(anchor.date), t = new Date();
-        a.setHours(0, 0, 0, 0); t.setHours(0, 0, 0, 0);
-        var diff = Math.round((t - a) / 86400000);
-        var idx  = ((anchor.index + diff) % rot.length + rot.length) % rot.length;
-        var spl  = rot[idx] || '';
+      var spl = '';
+      var gymCycle = JSON.parse(localStorage.getItem('dash_gym_cycle') || 'null');
+      if (gymCycle && gymCycle.type === 'cycle' && Array.isArray(gymCycle.days) && gymCycle.days.length && gymCycle.startDate) {
+        var cycleToday = new Date(); cycleToday.setHours(0,0,0,0);
+        var cycleStart = new Date(gymCycle.startDate + 'T00:00:00'); cycleStart.setHours(0,0,0,0);
+        var cycleDiff  = Math.round((cycleToday - cycleStart) / 86400000);
+        if (cycleDiff >= 0) spl = gymCycle.days[cycleDiff % gymCycle.days.length] || '';
+      }
+      if (!spl) {
+        var weekDays     = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+        var todayDayName = weekDays[new Date().getDay()];
+        var weeklySplit  = JSON.parse(localStorage.getItem('dash_gym_split') || '{}');
+        spl = weeklySplit[todayDayName] || '';
+      }
+      if (spl) {
         fill('cdFitness', /^(rest|off)$/i.test(spl) ? 'Rest Day' : spl + ' Day');
       }
     } catch (e) {}
