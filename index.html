@@ -612,28 +612,30 @@ body::after {
   <a href="landing.html" class="axis-home-link">
     <svg class="axis-logo-svg" style="display:block;flex-shrink:0;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" aria-label="Axis" role="img">
       <defs>
-        <filter id="axisGlow" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur"/>
+        <filter id="axisGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
           <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="blur"/>
+            <feMergeNode in="coloredBlur"/>
             <feMergeNode in="SourceGraphic"/>
           </feMerge>
         </filter>
       </defs>
-      <g filter="url(#axisGlow)">
-        <g stroke="#2de8a2" stroke-width="2" stroke-linecap="round" fill="none">
-          <line x1="24" y1="24" x2="24"   y2="8"/>
-          <line x1="24" y1="24" x2="38.8" y2="32"/>
-          <line x1="24" y1="24" x2="9.2"  y2="32"/>
-        </g>
-        <g fill="#2de8a2">
-          <polygon points="24,3 20,8 28,8"/>
-          <polygon points="43.1,34.5 36.8,35.5 40.8,28.5"/>
-          <polygon points="4.9,34.5 7.2,28.5 11.2,35.5"/>
-        </g>
+      <!-- dark background circle -->
+      <circle cx="24" cy="24" r="22" fill="#111820" stroke="#2de8a2" stroke-width="0.5" stroke-opacity="0.25"/>
+      <!-- three dashed axis arms -->
+      <g stroke="#2de8a2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-dasharray="3,2" filter="url(#axisGlow)">
+        <line x1="24" y1="24" x2="24"   y2="12"/>
+        <line x1="24" y1="24" x2="34.4" y2="30"/>
+        <line x1="24" y1="24" x2="13.6" y2="30"/>
       </g>
+      <!-- solid arrowheads -->
+      <g fill="#2de8a2" filter="url(#axisGlow)">
+        <polygon points="24,9.5 22.5,12 25.5,12"/>
+        <polygon points="36.6,31.3 35.15,28.7 33.65,31.3"/>
+        <polygon points="11.4,31.3 14.35,31.3 12.85,28.7"/>
+      </g>
+      <!-- origin dot -->
+      <circle cx="24" cy="24" r="1.5" fill="#2de8a2" filter="url(#axisGlow)"/>
     </svg>
     <span class="axis-logo-text" style="font-size:28px;font-weight:700;letter-spacing:6px;color:#ffffff;text-shadow:0 0 20px rgba(45,232,162,0.4);transition:text-shadow 0.2s ease;">AXIS</span>
   </a>
