@@ -22,7 +22,6 @@ html,body{
   position:relative;
   width:100vw;height:100dvh;
   display:flex;align-items:center;justify-content:center;
-  overflow:hidden;
   animation:sceneIn 1.4s ease both;
 }
 @keyframes sceneIn{0%{opacity:0;}100%{opacity:1;}}
@@ -30,80 +29,58 @@ html,body{
 /* subtle dot grid */
 .scene::before{
   content:'';position:absolute;inset:0;
-  background-image:radial-gradient(rgba(45,232,162,0.02) 1px,transparent 1px);
+  background-image:radial-gradient(rgba(45,232,162,0.022) 1px,transparent 1px);
   background-size:28px 28px;
   pointer-events:none;z-index:0;
 }
 
-/* ambient bloom around center */
+/* ambient bloom */
 .ambient{
   position:absolute;
-  width:min(82vw,600px);height:min(82vw,600px);
+  width:min(90vw,640px);height:min(90vw,640px);
   border-radius:50%;
-  background:radial-gradient(circle,rgba(45,232,162,0.07) 0%,rgba(45,232,162,0.02) 45%,transparent 68%);
+  background:radial-gradient(circle,rgba(45,232,162,0.08) 0%,rgba(45,232,162,0.025) 45%,transparent 68%);
   pointer-events:none;z-index:0;
   animation:ambientPulse 5.5s ease-in-out infinite;
 }
 @keyframes ambientPulse{
   0%,100%{transform:scale(1);opacity:1;}
-  50%{transform:scale(1.14);opacity:0.55;}
+  50%{transform:scale(1.14);opacity:0.5;}
 }
-
-/* second deeper bloom */
 .ambient2{
   position:absolute;
-  width:min(140vw,900px);height:min(140vw,900px);
+  width:min(150vw,1000px);height:min(150vw,1000px);
   border-radius:50%;
-  background:radial-gradient(circle,rgba(45,232,162,0.025) 0%,transparent 60%);
+  background:radial-gradient(circle,rgba(45,232,162,0.028) 0%,transparent 58%);
   pointer-events:none;z-index:0;
   animation:ambientPulse 8s ease-in-out infinite 2s;
 }
 
-/* ── axis SVG ── */
-.axis-wrap{
+/* ── axis stage: floats up/down carrying SVG + brand together ── */
+.axis-stage{
   position:relative;z-index:1;
-  width:min(90vw,500px);height:min(90vw,500px);
+  display:flex;align-items:center;justify-content:center;
+  animation:axisFloat 4s ease-in-out infinite;
+}
+@keyframes axisFloat{
+  0%,100%{transform:translateY(0);}
+  50%{transform:translateY(-12px);}
+}
+
+/* axis SVG wrapper — scaled up to bleed beyond screen edges */
+.axis-wrap{
+  width:min(116vw,760px);height:min(116vw,760px);
+  flex-shrink:0;
   filter:
-    drop-shadow(0 0 14px rgba(45,232,162,0.38))
-    drop-shadow(0 0 44px rgba(45,232,162,0.11));
+    drop-shadow(0 0 18px rgba(45,232,162,0.42))
+    drop-shadow(0 0 60px rgba(45,232,162,0.14));
 }
 .axis-wrap svg{width:100%;height:100%;}
 
-/* ring pulse */
-.r1{animation:rp 7s ease-in-out infinite 0s;}
-.r2{animation:rp 7s ease-in-out infinite 1.4s;}
-.r3{animation:rp 7s ease-in-out infinite 2.8s;}
-.r4{animation:rp 7s ease-in-out infinite 4.2s;}
-@keyframes rp{0%,100%{opacity:0.16;}50%{opacity:0.48;}}
-
-/* origin breathing — two animated rings + solid core */
-.ob1{animation:ob 3s ease-in-out infinite;}
-.ob2{animation:ob 3s ease-in-out infinite 0.5s;}
-@keyframes ob{0%,100%{opacity:0.7;}50%{opacity:0.18;}}
-
-/* arm glow */
-.arms{animation:ag 4.5s ease-in-out infinite;}
-.arrowheads{animation:ag 4.5s ease-in-out infinite 0.8s;}
-@keyframes ag{0%,100%{opacity:0.82;}50%{opacity:1;}}
-
-/* SVG node keyframes — translate-only (safe in SVG) */
-.sn1{animation:snf1 12s ease-in-out infinite;}
-.sn2{animation:snf2 15s ease-in-out infinite;}
-.sn3{animation:snf3 10s ease-in-out infinite;}
-.sn4{animation:snf4 13s ease-in-out infinite;}
-.sn5{animation:snf5 11s ease-in-out infinite;}
-.sn6{animation:snf1 14s ease-in-out infinite 3s;}
-.sn7{animation:snf3 16s ease-in-out infinite 1.5s;}
-@keyframes snf1{0%,100%{opacity:0.45;}50%{opacity:0.85;}}
-@keyframes snf2{0%,100%{opacity:0.35;}50%{opacity:0.75;}}
-@keyframes snf3{0%,100%{opacity:0.55;}50%{opacity:1;}}
-@keyframes snf4{0%,100%{opacity:0.3;}50%{opacity:0.7;}}
-@keyframes snf5{0%,100%{opacity:0.5;}50%{opacity:0.9;}}
-
-/* ── AXIS branding overlay ── */
+/* AXIS brand sits below origin, floats with axis-stage */
 .axis-brand{
   position:absolute;z-index:5;
-  left:50%;top:calc(50% + 48px);
+  left:50%;top:calc(50% + 52px);
   transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;
   pointer-events:none;
@@ -116,10 +93,66 @@ html,body{
   padding-left:0.38em;
   color:#fff;
   text-shadow:
-    0 0 18px rgba(45,232,162,0.75),
-    0 0 50px rgba(45,232,162,0.28),
-    0 0 90px rgba(45,232,162,0.1);
+    0 0 18px rgba(45,232,162,0.8),
+    0 0 52px rgba(45,232,162,0.32),
+    0 0 95px rgba(45,232,162,0.12);
 }
+
+/* ── ring animations: opacity pulse + gyroscope rotation ── */
+.r1{
+  transform-box:view-box;transform-origin:center;
+  animation:rp 7s ease-in-out infinite 0s, ringCW 20s linear infinite;
+}
+.r2{
+  transform-box:view-box;transform-origin:center;
+  animation:rp 7s ease-in-out infinite 1.4s, ringCCW 30s linear infinite;
+}
+.r3{
+  transform-box:view-box;transform-origin:center;
+  animation:rp 7s ease-in-out infinite 2.8s, ringCW 40s linear infinite;
+}
+.r4{
+  transform-box:view-box;transform-origin:center;
+  animation:rp 7s ease-in-out infinite 4.2s, ringCCW 50s linear infinite;
+}
+@keyframes rp   {0%,100%{opacity:0.18;}50%{opacity:0.52;}}
+@keyframes ringCW  {from{transform:rotate(0deg);}to{transform:rotate(360deg);}}
+@keyframes ringCCW {from{transform:rotate(0deg);}to{transform:rotate(-360deg);}}
+
+/* ── arm group: pendulum rotation around origin (250,250) ── */
+.arm-group{
+  transform-box:view-box;
+  transform-origin:center;
+  animation:armPendulum 6s ease-in-out infinite;
+}
+@keyframes armPendulum{
+  0%,100%{transform:rotate(-8deg);}
+  50%{transform:rotate(8deg);}
+}
+
+/* arm glow opacity — applied to inner groups, not arm-group */
+.arms{animation:ag 4.5s ease-in-out infinite;}
+.arrowheads{animation:ag 4.5s ease-in-out infinite 0.8s;}
+@keyframes ag{0%,100%{opacity:0.82;}50%{opacity:1;}}
+
+/* SVG internal node opacity flicker */
+.sn1{animation:snf1 12s ease-in-out infinite;}
+.sn2{animation:snf2 15s ease-in-out infinite;}
+.sn3{animation:snf3 10s ease-in-out infinite;}
+.sn4{animation:snf4 13s ease-in-out infinite;}
+.sn5{animation:snf5 11s ease-in-out infinite;}
+.sn6{animation:snf1 14s ease-in-out infinite 3s;}
+.sn7{animation:snf3 16s ease-in-out infinite 1.5s;}
+@keyframes snf1{0%,100%{opacity:0.45;}50%{opacity:0.9;}}
+@keyframes snf2{0%,100%{opacity:0.35;}50%{opacity:0.8;}}
+@keyframes snf3{0%,100%{opacity:0.55;}50%{opacity:1;}}
+@keyframes snf4{0%,100%{opacity:0.3;}50%{opacity:0.72;}}
+@keyframes snf5{0%,100%{opacity:0.5;}50%{opacity:0.95;}}
+
+/* origin breathing */
+.ob1{animation:ob 3s ease-in-out infinite;}
+.ob2{animation:ob 3s ease-in-out infinite 0.5s;}
+@keyframes ob{0%,100%{opacity:0.72;}50%{opacity:0.18;}}
 
 /* ── glass pill cards ── */
 .card{
@@ -133,7 +166,7 @@ html,body{
   border:1px solid rgba(45,232,162,0.15);
   box-shadow:
     0 4px 22px rgba(0,0,0,0.52),
-    0 0 12px rgba(45,232,162,0.055),
+    0 0 12px rgba(45,232,162,0.06),
     inset 0 1px 0 rgba(255,255,255,0.055);
   white-space:nowrap;
   cursor:pointer;
@@ -144,56 +177,78 @@ html,body{
   border-color:rgba(45,232,162,0.34);
   box-shadow:
     0 4px 22px rgba(0,0,0,0.52),
-    0 0 22px rgba(45,232,162,0.13),
+    0 0 22px rgba(45,232,162,0.15),
     inset 0 1px 0 rgba(255,255,255,0.08);
 }
 .card:active{transform:scale(0.95);}
-.card-icon{
-  width:17px;height:17px;
-  display:flex;align-items:center;justify-content:center;
-  flex-shrink:0;
-}
-.card-label{
-  font-size:11.5px;font-weight:600;letter-spacing:0.04em;
-  color:rgba(255,255,255,0.7);
-}
+.card-icon{width:17px;height:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.card-label{font-size:11.5px;font-weight:600;letter-spacing:0.04em;color:rgba(255,255,255,0.7);}
 
-/* ── card positions + drift animations ── */
+/* card positions + increased drift amplitude */
 .card-water   {top:10%;left:5%;  animation:cf1 7s   ease-in-out infinite, sceneIn 1.6s ease both;}
 .card-weight  {top: 7%;right:6%; animation:cf2 8.5s ease-in-out infinite, sceneIn 1.6s ease both;}
 .card-fitness {top:43%;right:2%; animation:cf3 6.5s ease-in-out infinite, sceneIn 1.6s ease both;}
 .card-goals   {top:64%;left:4%;  animation:cf4 9s   ease-in-out infinite, sceneIn 1.6s ease both;}
 .card-ai      {bottom:20%;right:11%;animation:cf5 7.5s ease-in-out infinite, sceneIn 1.6s ease both;}
 
-@keyframes cf1{0%,100%{transform:translate(0,0);}33%{transform:translate(5px,-9px);}66%{transform:translate(-3px,-4px);}}
-@keyframes cf2{0%,100%{transform:translate(0,0);}40%{transform:translate(-5px,7px);}70%{transform:translate(4px,-5px);}}
-@keyframes cf3{0%,100%{transform:translate(0,0);}30%{transform:translate(-5px,-8px);}60%{transform:translate(5px,5px);}}
-@keyframes cf4{0%,100%{transform:translate(0,0);}25%{transform:translate(7px,-5px);}75%{transform:translate(-4px,7px);}}
-@keyframes cf5{0%,100%{transform:translate(0,0);}35%{transform:translate(-7px,-7px);}65%{transform:translate(5px,6px);}}
+@keyframes cf1{0%,100%{transform:translate(0,0);}33%{transform:translate(11px,-18px);}66%{transform:translate(-8px,-9px);}}
+@keyframes cf2{0%,100%{transform:translate(0,0);}40%{transform:translate(-11px,14px);}70%{transform:translate(9px,-11px);}}
+@keyframes cf3{0%,100%{transform:translate(0,0);}30%{transform:translate(-10px,-15px);}60%{transform:translate(11px,10px);}}
+@keyframes cf4{0%,100%{transform:translate(0,0);}25%{transform:translate(13px,-11px);}75%{transform:translate(-9px,13px);}}
+@keyframes cf5{0%,100%{transform:translate(0,0);}35%{transform:translate(-13px,-13px);}65%{transform:translate(10px,12px);}}
 
-/* ── external floating diamond nodes ── */
+/* ── external floating diamond nodes — bigger glow + drift ── */
 .fnode{
   position:absolute;z-index:2;
-  background:rgba(45,232,162,0.07);
-  border:1px solid rgba(45,232,162,0.22);
-  box-shadow:0 0 7px rgba(45,232,162,0.12);
+  background:rgba(45,232,162,0.09);
+  border:1px solid rgba(45,232,162,0.28);
+  box-shadow:
+    0 0 10px rgba(45,232,162,0.24),
+    0 0 26px rgba(45,232,162,0.1);
   transform:rotate(45deg);
   pointer-events:none;
 }
-.fn1{width:7px;height:7px; top:19%;left:27%; animation:nf1 11s ease-in-out infinite;}
-.fn2{width:5px;height:5px; top:31%;right:21%;animation:nf2 13s ease-in-out infinite;}
-.fn3{width:9px;height:9px; top:56%;left:16%;animation:nf3 9s  ease-in-out infinite;}
-.fn4{width:4px;height:4px; top:16%;left:51%;animation:nf4 14s ease-in-out infinite;}
-.fn5{width:6px;height:6px; top:71%;right:26%;animation:nf5 10s ease-in-out infinite;}
-.fn6{width:8px;height:8px; top:45%;left:7%; animation:nf1 12s ease-in-out infinite 2.5s;}
-.fn7{width:4px;height:4px; top:27%;right:9%;animation:nf3 15s ease-in-out infinite 1.2s;}
-.fn8{width:5px;height:5px; top:83%;left:36%;animation:nf2 11s ease-in-out infinite 3s;}
+.fn1 {width: 8px;height: 8px;top:19%;left:27%; animation:nf1 11s ease-in-out infinite;}
+.fn2 {width: 6px;height: 6px;top:31%;right:21%;animation:nf2 13s ease-in-out infinite;}
+.fn3 {width:10px;height:10px;top:56%;left:16%;animation:nf3 9s  ease-in-out infinite;}
+.fn4 {width: 5px;height: 5px;top:16%;left:51%;animation:nf4 14s ease-in-out infinite;}
+.fn5 {width: 7px;height: 7px;top:71%;right:26%;animation:nf5 10s ease-in-out infinite;}
+.fn6 {width: 9px;height: 9px;top:45%;left:7%; animation:nf1 12s ease-in-out infinite 2.5s;}
+.fn7 {width: 5px;height: 5px;top:27%;right:9%;animation:nf3 15s ease-in-out infinite 1.2s;}
+.fn8 {width: 6px;height: 6px;top:83%;left:36%;animation:nf2 11s ease-in-out infinite 3s;}
+.fn9 {width: 7px;height: 7px;top:38%;left:44%;animation:nf4 16s ease-in-out infinite 1.8s;}
+.fn10{width: 5px;height: 5px;top:76%;left:62%;animation:nf5 12s ease-in-out infinite 4s;}
 
-@keyframes nf1{0%,100%{transform:rotate(45deg) translate(0,0);opacity:0.55;}50%{transform:rotate(45deg) translate(8px,-11px);opacity:0.9;}}
-@keyframes nf2{0%,100%{transform:rotate(45deg) translate(0,0);opacity:0.4;}50%{transform:rotate(45deg) translate(-7px,-8px);opacity:0.8;}}
-@keyframes nf3{0%,100%{transform:rotate(45deg) translate(0,0);opacity:0.6;}50%{transform:rotate(45deg) translate(10px,7px);opacity:1;}}
-@keyframes nf4{0%,100%{transform:rotate(45deg) translate(0,0);opacity:0.35;}50%{transform:rotate(45deg) translate(-9px,9px);opacity:0.7;}}
-@keyframes nf5{0%,100%{transform:rotate(45deg) translate(0,0);opacity:0.5;}50%{transform:rotate(45deg) translate(6px,-12px);opacity:0.85;}}
+@keyframes nf1{
+  0%  {transform:rotate(45deg) translate(0,0);    opacity:0.55;}
+  25% {transform:rotate(45deg) translate(18px,-22px); opacity:0.95;}
+  60% {transform:rotate(45deg) translate(-14px,-8px);opacity:0.7;}
+  100%{transform:rotate(45deg) translate(0,0);    opacity:0.55;}
+}
+@keyframes nf2{
+  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.45;}
+  30% {transform:rotate(45deg) translate(-18px,-16px);opacity:0.9;}
+  70% {transform:rotate(45deg) translate(12px,14px); opacity:0.65;}
+  100%{transform:rotate(45deg) translate(0,0);     opacity:0.45;}
+}
+@keyframes nf3{
+  0%  {transform:rotate(45deg) translate(0,0);    opacity:0.6;}
+  20% {transform:rotate(45deg) translate(20px,12px); opacity:1;}
+  65% {transform:rotate(45deg) translate(-10px,18px);opacity:0.75;}
+  100%{transform:rotate(45deg) translate(0,0);    opacity:0.6;}
+}
+@keyframes nf4{
+  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.4;}
+  40% {transform:rotate(45deg) translate(-22px,16px); opacity:0.88;}
+  80% {transform:rotate(45deg) translate(16px,-12px);opacity:0.62;}
+  100%{transform:rotate(45deg) translate(0,0);     opacity:0.4;}
+}
+@keyframes nf5{
+  0%  {transform:rotate(45deg) translate(0,0);     opacity:0.5;}
+  35% {transform:rotate(45deg) translate(14px,-24px);opacity:0.95;}
+  70% {transform:rotate(45deg) translate(-16px,10px);opacity:0.68;}
+  100%{transform:rotate(45deg) translate(0,0);     opacity:0.5;}
+}
 
 /* ── Enter CTA ── */
 .enter-wrap{
@@ -224,14 +279,14 @@ html,body{
 .enter-btn:hover{
   border-color:rgba(45,232,162,0.58);
   box-shadow:
-    0 0 46px rgba(45,232,162,0.24),
+    0 0 48px rgba(45,232,162,0.26),
     0 6px 30px rgba(0,0,0,0.48),
     inset 0 1px 0 rgba(255,255,255,0.09);
 }
 .enter-btn:active{transform:scale(0.95);}
 @keyframes btnPulse{
   0%,100%{box-shadow:0 0 28px rgba(45,232,162,0.13),0 6px 30px rgba(0,0,0,0.48),inset 0 1px 0 rgba(255,255,255,0.065);}
-  50%{box-shadow:0 0 46px rgba(45,232,162,0.24),0 6px 30px rgba(0,0,0,0.48),inset 0 1px 0 rgba(255,255,255,0.065);}
+  50%    {box-shadow:0 0 48px rgba(45,232,162,0.26),0 6px 30px rgba(0,0,0,0.48),inset 0 1px 0 rgba(255,255,255,0.065);}
 }
 
 @media(max-width:380px){
@@ -259,70 +314,72 @@ html,body{
   <div class="fnode fn6"></div>
   <div class="fnode fn7"></div>
   <div class="fnode fn8"></div>
+  <div class="fnode fn9"></div>
+  <div class="fnode fn10"></div>
 
-  <!-- large axis SVG centered -->
-  <div class="axis-wrap">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-      <defs>
-        <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3.5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="gs" x="-100%" y="-100%" width="300%" height="300%">
-          <feGaussianBlur stdDeviation="9" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-        <filter id="gm" x="-70%" y="-70%" width="240%" height="240%">
-          <feGaussianBlur stdDeviation="5.5" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-      </defs>
+  <!-- axis stage: SVG + brand float together -->
+  <div class="axis-stage">
+    <div class="axis-wrap">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+        <defs>
+          <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="3.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="gs" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="9" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="gm" x="-70%" y="-70%" width="240%" height="240%">
+            <feGaussianBlur stdDeviation="5.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
 
-      <!-- concentric dashed rings radiating from origin -->
-      <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"   stroke-dasharray="10,8"  filter="url(#g)"/>
-      <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8" stroke-dasharray="13,10" filter="url(#g)"/>
-      <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" filter="url(#g)"/>
-      <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5" stroke-dasharray="18,16" filter="url(#g)"/>
+        <!-- concentric dashed rings — each rotates at its own speed -->
+        <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"    stroke-dasharray="10,8"  filter="url(#g)"/>
+        <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8"  stroke-dasharray="13,10" filter="url(#g)"/>
+        <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" filter="url(#g)"/>
+        <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5"  stroke-dasharray="18,16" filter="url(#g)"/>
 
-      <!-- three dashed arms: up, bottom-right (120°), bottom-left (240°) -->
-      <g class="arms" stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
-        <line x1="250" y1="250" x2="250"   y2="92"/>
-        <line x1="250" y1="250" x2="387"   y2="328"/>
-        <line x1="250" y1="250" x2="113"   y2="328"/>
-      </g>
+        <!-- arm group: pendulum oscillation around origin (250,250) -->
+        <g class="arm-group">
+          <!-- three dashed arms: up, bottom-right (120°), bottom-left (240°) -->
+          <g class="arms" stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
+            <line x1="250" y1="250" x2="250" y2="92"/>
+            <line x1="250" y1="250" x2="387" y2="328"/>
+            <line x1="250" y1="250" x2="113" y2="328"/>
+          </g>
+          <!-- arrowheads at arm tips -->
+          <g class="arrowheads" fill="#2de8a2" filter="url(#gm)">
+            <polygon points="250,80 243,93 257,93"/>
+            <polygon points="387,328 370,327 377,314"/>
+            <polygon points="113,328 123,314 130,327"/>
+          </g>
+        </g>
 
-      <!-- arrowheads at arm tips -->
-      <g class="arrowheads" fill="#2de8a2" filter="url(#gm)">
-        <!-- up: tip (250,80), base at y=93 -->
-        <polygon points="250,80 243,93 257,93"/>
-        <!-- bottom-right: dir (0.866,0.5), tip (387,328) -->
-        <polygon points="387,328 370,327 377,314"/>
-        <!-- bottom-left: dir (-0.866,0.5), tip (113,328) -->
-        <polygon points="113,328 123,314 130,327"/>
-      </g>
+        <!-- floating cube/node shapes scattered in arm gaps -->
+        <g filter="url(#g)">
+          <rect class="sn1" x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 156.5 146.5)"/>
+          <rect class="sn2" x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
+          <rect class="sn3" x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
+          <rect class="sn4" x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
+          <rect class="sn5" x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
+          <rect class="sn6" x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
+          <rect class="sn7" x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
+        </g>
 
-      <!-- floating cube/node shapes scattered around -->
-      <g filter="url(#g)">
-        <rect class="sn1" x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8" transform="rotate(45 156.5 146.5)"/>
-        <rect class="sn2" x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
-        <rect class="sn3" x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
-        <rect class="sn4" x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
-        <rect class="sn5" x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
-        <rect class="sn6" x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
-        <rect class="sn7" x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
-      </g>
+        <!-- origin: breathing glow rings + solid core (not in arm-group, stays fixed) -->
+        <circle class="ob1" cx="250" cy="250" r="22" fill="#2de8a2" fill-opacity="0.06" filter="url(#gs)"/>
+        <circle class="ob2" cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.38" filter="url(#g)"/>
+        <circle cx="250" cy="250" r="4.5" fill="#2de8a2" filter="url(#gs)"/>
+      </svg>
+    </div>
 
-      <!-- origin: soft outer glow rings + core dot -->
-      <circle class="ob1" cx="250" cy="250" r="22" fill="#2de8a2" fill-opacity="0.06" filter="url(#gs)"/>
-      <circle class="ob2" cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.38" filter="url(#g)"/>
-      <!-- core solid dot -->
-      <circle cx="250" cy="250" r="4.5" fill="#2de8a2" filter="url(#gs)"/>
-    </svg>
-  </div>
-
-  <!-- AXIS branding below origin -->
-  <div class="axis-brand">
-    <span class="axis-brand-text">AXIS</span>
+    <!-- AXIS branding — positioned relative to axis-stage, floats with it -->
+    <div class="axis-brand">
+      <span class="axis-brand-text">AXIS</span>
+    </div>
   </div>
 
   <!-- feature cards floating around the axis -->
