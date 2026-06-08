@@ -49,7 +49,7 @@ body { background: transparent; }
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 body.has-topbar {
-  padding-top: calc(max(52px, env(safe-area-inset-top)) + 52px) !important;
+  padding-top: max(80px, calc(env(safe-area-inset-top) + 20px)) !important;
 }
 .topbar > * { pointer-events: auto; }
 .topbar-logo-link {
@@ -234,7 +234,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
   <a href="landing.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
-    <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="36" height="36" aria-hidden="true">
+    <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
       <defs>
         <filter id="tbAxisGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
