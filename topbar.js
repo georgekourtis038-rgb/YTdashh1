@@ -35,13 +35,17 @@ html {
 body { background: transparent; }
 .topbar {
   position: fixed;
-  top: 0; left: 0; right: 0; z-index: 40;
+  top: max(52px, env(safe-area-inset-top)); left: 0; right: 0; z-index: 40;
+  height: 44px;
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px;
-  padding: calc(max(10px, env(safe-area-inset-top)) + 8px) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
+  padding: 0 calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
   background: linear-gradient(180deg, rgba(10,10,11,0.94) 0%, rgba(10,10,11,0.0) 100%);
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+}
+body.has-topbar {
+  padding-top: calc(max(52px, env(safe-area-inset-top)) + 52px) !important;
 }
 .topbar > * { pointer-events: auto; }
 .topbar-logo-link {
@@ -304,6 +308,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const topWrap = document.createElement('div');
     topWrap.innerHTML = topbarHtml.trim();
     document.body.insertBefore(topWrap.firstChild, document.body.firstChild);
+    document.body.classList.add('has-topbar');
     if (!isAIPage()) {
       const bottomWrap = document.createElement('div');
       bottomWrap.innerHTML = bottombarHtml.trim();
