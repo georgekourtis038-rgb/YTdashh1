@@ -40,7 +40,11 @@ body { background: transparent; }
   display: flex; align-items: center; justify-content: space-between;
   gap: 8px;
   padding: 0 calc(14px + env(safe-area-inset-right)) 0 calc(14px + env(safe-area-inset-left));
-  background: linear-gradient(180deg, rgba(10,10,11,0.94) 0%, rgba(10,10,11,0.0) 100%);
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  border: none;
+  box-shadow: none;
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
