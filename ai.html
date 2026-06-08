@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f0e">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="axis-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Axis AI</title>
+<script src="topbar.js" defer></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{
+  width:100%;height:100%;
+  background:#0a0f0e;
+  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;
+  -webkit-font-smoothing:antialiased;
+}
+body{
+  min-height:100vh;
+  padding:0 0 80px;
+}
+.page{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  min-height:calc(100vh - 80px);
+  padding:max(120px, calc(env(safe-area-inset-top) + 80px)) 24px 40px;
+  text-align:center;
+}
+.ai-label{
+  font-size:11px;
+  letter-spacing:6px;
+  color:rgba(45,232,162,0.45);
+  font-weight:600;
+  text-transform:uppercase;
+  margin-bottom:14px;
+}
+.ai-coming{
+  font-size:22px;
+  font-weight:700;
+  color:#2de8a2;
+  letter-spacing:-0.01em;
+  text-shadow:0 0 30px rgba(45,232,162,0.35);
+}
+</style>
+</head>
+<body>
+<div class="page">
+  <p class="ai-label">Axis AI</p>
+  <p class="ai-coming">Coming soon</p>
+</div>
+</body>
+</html>
