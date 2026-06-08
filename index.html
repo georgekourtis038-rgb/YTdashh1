@@ -70,6 +70,26 @@ body::after {
   padding: max(110px, calc(env(safe-area-inset-top) + 60px)) 20px 0;
 }
 
+/* ===== Page heading (AXIS + name) ===== */
+.dash-page-heading {
+  margin: 0 0 18px;
+  line-height: 1.2;
+}
+.dash-page-heading-title {
+  display: block;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.025em;
+}
+.dash-page-heading-sub {
+  display: block;
+  font-size: 14px;
+  font-weight: 400;
+  color: rgba(255,255,255,0.4);
+  margin-top: 2px;
+}
+
 /* ===== Component 1: page title ===== */
 .dash-title {
   margin: 0 0 14px;
@@ -597,6 +617,11 @@ body::after {
 </head>
 <body>
 <div class="page">
+
+  <div class="dash-page-heading">
+    <span class="dash-page-heading-title">AXIS</span>
+    <span class="dash-page-heading-sub" id="dashHeadingSub">— Your Dashboard</span>
+  </div>
 
   <div class="ticker-row">
     <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
@@ -1298,6 +1323,17 @@ body::after {
     document.getElementById('tomorrowStatus'),
     loadTomorrow
   );
+
+  // ---------- Page heading ----------
+  (function() {
+    const el = document.getElementById('dashHeadingSub');
+    if (!el) return;
+    try {
+      const s = JSON.parse(localStorage.getItem('settings'));
+      const name = s && typeof s.firstName === 'string' && s.firstName.trim();
+      if (name) el.textContent = '— ' + name + '’s Dashboard';
+    } catch(e) {}
+  })();
 
   // ---------- Boot ----------
   rollover();

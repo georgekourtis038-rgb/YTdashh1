@@ -52,15 +52,6 @@ body { background: transparent; }
 }
 .topbar-logo-link:active { opacity: 0.65; }
 .topbar-logo-svg { flex-shrink: 0; display: block; }
-.topbar-logo-text {
-  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
-  color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.topbar-logo-name {
-  font-weight: 400; font-size: 0.85em; letter-spacing: 0.04em;
-  color: rgba(255,255,255,0.50);
-}
 .topbar-right {
   display: flex; align-items: center; gap: 8px; flex-shrink: 0;
 }
@@ -254,7 +245,6 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       </g>
       <circle cx="24" cy="24" r="1.5" fill="#2de8a2" filter="url(#tbAxisGlow)"/>
     </svg>
-    <span class="topbar-logo-text" id="topbarLogoText">AXIS</span>
   </a>
   <div class="topbar-right">
     <div class="topbar-water-wrap">
@@ -299,28 +289,6 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     if (p.endsWith('health')) return 'health';
     if (p.endsWith('gym')) return 'fitness';
     return 'main';
-  }
-
-  function getFirstName() {
-    try {
-      const s = JSON.parse(localStorage.getItem('settings'));
-      return (s && typeof s.firstName === 'string' && s.firstName.trim()) || '';
-    } catch (e) { return ''; }
-  }
-
-  function renderLogoText() {
-    const el = document.getElementById('topbarLogoText');
-    if (!el) return;
-    const name = getFirstName();
-    el.textContent = '';
-    const axisNode = document.createTextNode('AXIS');
-    el.appendChild(axisNode);
-    if (name) {
-      const nameSpan = document.createElement('span');
-      nameSpan.className = 'topbar-logo-name';
-      nameSpan.textContent = ' — ' + name + '’s Dashboard';
-      el.appendChild(nameSpan);
-    }
   }
 
   function injectStyleAndHTML() {
@@ -402,7 +370,6 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     if (status === 'good' || status === 'warn' || status === 'miss') pillEl.classList.add(status);
   }
   function render() {
-    renderLogoText();
     const waterEl = document.getElementById('topbarWater');
     if (!waterEl) return;
     const w = getWaterProgress();
