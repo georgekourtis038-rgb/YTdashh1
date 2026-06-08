@@ -11,47 +11,615 @@
 <title>Axis AI</title>
 <script src="topbar.js" defer></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
-html,body{
-  width:100%;height:100%;
-  background:#0a0f0e;
-  font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",Roboto,sans-serif;
-  -webkit-font-smoothing:antialiased;
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0a0f0e;
+  --mint: #2de8a2;
+  --mint-dim: rgba(45,232,162,0.4);
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --label: rgba(255,255,255,0.4);
+  --subtle: rgba(255,255,255,0.3);
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
-body{
-  min-height:100vh;
-  padding:0 0 80px;
+
+html, body {
+  width: 100%;
+  min-height: 100%;
+  background: var(--bg);
+  color: #fff;
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
 }
-.page{
-  display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  min-height:calc(100vh - 80px);
-  padding:max(120px, calc(env(safe-area-inset-top) + 80px)) 24px 40px;
-  text-align:center;
+
+body {
+  padding-bottom: calc(84px + env(safe-area-inset-bottom));
 }
-.ai-label{
-  font-size:11px;
-  letter-spacing:6px;
-  color:rgba(45,232,162,0.45);
-  font-weight:600;
-  text-transform:uppercase;
-  margin-bottom:14px;
+
+/* ── Shell ── */
+.ai-shell {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: max(110px, calc(env(safe-area-inset-top) + 80px)) 20px 24px;
 }
-.ai-coming{
-  font-size:22px;
-  font-weight:700;
-  color:#2de8a2;
-  letter-spacing:-0.01em;
-  text-shadow:0 0 30px rgba(45,232,162,0.35);
+
+/* ── Header ── */
+.ai-eyebrow {
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: var(--mint);
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.85;
+  margin-bottom: 10px;
+}
+
+.ai-greeting {
+  font-size: 26px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+}
+
+/* ── Briefing card ── */
+.briefing-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 28px;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+.briefing-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.briefing-icon {
+  font-size: 13px;
+}
+
+.briefing-title {
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--label);
+  text-transform: uppercase;
+  font-weight: 700;
+}
+
+.briefing-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--subtle);
+  font-size: 13px;
+}
+
+.dot-pulse {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.dot-pulse span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--mint-dim);
+  animation: dotPulse 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8) translateZ(0); }
+  40%            { opacity: 1;   transform: scale(1)   translateZ(0); }
+}
+
+.briefing-text {
+  font-size: 15px;
+  line-height: 1.65;
+  color: rgba(255,255,255,0.85);
+}
+
+.briefing-no-key {
+  font-size: 13px;
+  color: var(--subtle);
+  line-height: 1.55;
+}
+
+.briefing-no-key code {
+  color: var(--mint);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+/* ── Chat thread ── */
+.chat-thread {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ── Message bubbles ── */
+.msg {
+  display: flex;
+  max-width: 85%;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+@keyframes msgIn {
+  from { opacity: 0; transform: translateY(10px) translateZ(0); }
+  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
+}
+
+.msg-user { align-self: flex-end; flex-direction: row-reverse; }
+.msg-ai   { align-self: flex-start; }
+
+.msg-bubble {
+  padding: 12px 16px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.msg-user .msg-bubble {
+  background: rgba(45,232,162,0.12);
+  border: 1px solid rgba(45,232,162,0.28);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.msg-ai .msg-bubble {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  color: rgba(255,255,255,0.88);
+  border-bottom-left-radius: 4px;
+}
+
+/* ── Typing indicator ── */
+.msg-typing .msg-bubble { padding: 14px 18px; }
+
+.typing-dots {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.typing-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint-dim);
+  animation: dotPulse 1.2s ease-in-out infinite;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+/* ── Chat input bar (liquid glass) ── */
+.chat-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 10px 16px max(14px, calc(env(safe-area-inset-bottom) + 6px));
+  background: rgba(8,12,11,0.85);
+  -webkit-backdrop-filter: blur(20px) saturate(140%);
+  backdrop-filter: blur(20px) saturate(140%);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 30;
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-family: var(--font);
+  color: #fff;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s ease;
+}
+
+.chat-input::placeholder { color: var(--subtle); }
+.chat-input:focus { border-color: rgba(45,232,162,0.4); }
+
+.chat-send-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(45,232,162,0.1);
+  border: 2px solid var(--mint);
+  color: var(--mint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.chat-send-btn:active { background: rgba(45,232,162,0.22); transform: scale(0.93); }
+.chat-send-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+/* ── Page entry animations ── */
+.ai-eyebrow  { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+.ai-greeting { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.10s both; }
+.briefing-card { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(40px) translateZ(0); }
+  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 </style>
 </head>
 <body>
-<div class="page">
-  <p class="ai-label">Axis AI</p>
-  <p class="ai-coming">Coming soon</p>
+
+<div class="ai-shell">
+  <p class="ai-eyebrow">Axis AI</p>
+  <h1 class="ai-greeting" id="aiGreeting">Good morning</h1>
+
+  <div class="briefing-card">
+    <div class="briefing-header">
+      <span class="briefing-icon">⚡</span>
+      <span class="briefing-title">Daily Briefing</span>
+    </div>
+    <div class="briefing-loading" id="briefingLoading">
+      <div class="dot-pulse"><span></span><span></span><span></span></div>
+      <span>Analyzing your day…</span>
+    </div>
+    <p id="briefingText" style="display:none"></p>
+  </div>
+
+  <div class="chat-thread" id="chatThread"></div>
 </div>
+
+<div class="chat-bar">
+  <input type="text" id="chatInput" class="chat-input"
+    placeholder="Ask anything about your day…"
+    autocomplete="off" enterkeyhint="send">
+  <button id="chatSend" class="chat-send-btn" type="button" aria-label="Send">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <path d="M9 15V3M9 3L4 8M9 3L14 8" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // Paste your Anthropic key here to enable Axis AI.
+  const ANTHROPIC_API_KEY = '';
+
+  // ── Storage helpers ─────────────────────────────────────────────
+  function lsGet(k) {
+    try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; }
+  }
+  function lsRaw(k) {
+    try { return localStorage.getItem(k); } catch (_) { return null; }
+  }
+
+  // ── Date helpers (6 AM day boundary) ────────────────────────────
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  function activeDate() {
+    const d = new Date();
+    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+    return fmt(d);
+  }
+  function tomorrowDate() {
+    const d = new Date();
+    if (d.getHours() >= 6) d.setDate(d.getDate() + 1);
+    return fmt(d);
+  }
+  function calendarToday() { return fmt(new Date()); }
+
+  // ── Profile ──────────────────────────────────────────────────────
+  function getFirstName() {
+    const s = lsGet('settings') || {};
+    if (s.firstName) return s.firstName;
+    const raw = lsRaw('dash_name') || '';
+    if (raw) {
+      const sp = raw.indexOf(' ');
+      return sp >= 0 ? raw.slice(0, sp) : raw;
+    }
+    return '';
+  }
+
+  function getGreeting() {
+    const h = new Date().getHours();
+    const name = getFirstName();
+    const time = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+    return name ? time + ', ' + name : time;
+  }
+
+  // ── Data collectors ──────────────────────────────────────────────
+  function getWaterData() {
+    const state = lsGet('po_water_v1') || {};
+    const today = calendarToday();
+    const doneMl = ((state.history || {})[today]) || 0;
+    let targetMl = 2500;
+    try {
+      const raw = lsGet('dash_weight');
+      const lbs = parseFloat(raw);
+      if (!isNaN(lbs) && lbs > 0) {
+        const kg = lbs / 2.205;
+        const sex = lsRaw('dash_sex') || 'm';
+        const adj = (sex === 'female' || sex === 'f') ? 0 : 200;
+        targetMl = Math.max(2000, Math.min(6000, Math.round(((kg * 35) + adj) / 50) * 50));
+      }
+    } catch (_) {}
+    return { doneMl, targetMl };
+  }
+
+  function getGoalData(dateKey) {
+    return lsGet('goals:' + dateKey) || [];
+  }
+
+  function getStreak() {
+    const s = lsGet('goal_streak_v1') || {};
+    return typeof s.count === 'number' ? s.count : 0;
+  }
+
+  function getWeightInfo() {
+    const raw = lsGet('dash_weight');
+    const latestLbs = raw != null ? parseFloat(raw) : null;
+    let trendStr = null;
+    try {
+      const gymState = lsGet('po_gym_v1') || {};
+      const log = gymState.weightLog;
+      if (Array.isArray(log) && log.length > 1) {
+        const recent = log.slice(-7);
+        const delta = recent[recent.length - 1].weight - recent[0].weight;
+        if (!isNaN(delta)) {
+          trendStr = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' lbs over last ' + recent.length + ' entries';
+        }
+      }
+    } catch (_) {}
+    return { latestLbs, trendStr };
+  }
+
+  function getGymSplitToday() {
+    try {
+      const split = lsGet('dash_gym_split') || {};
+      const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      return split[days[new Date().getDay()]] || null;
+    } catch (_) { return null; }
+  }
+
+  // ── System prompt ────────────────────────────────────────────────
+  function buildSystemPrompt() {
+    const today = activeDate();
+    const tomorrow = tomorrowDate();
+    const todayGoals = getGoalData(today);
+    const tomorrowGoals = getGoalData(tomorrow);
+    const water = getWaterData();
+    const streak = getStreak();
+    const wt = getWeightInfo();
+    const gymSplit = getGymSplitToday();
+    const name = getFirstName();
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+
+    const doneGoals    = todayGoals.filter(g => g.done);
+    const pendingGoals = todayGoals.filter(g => !g.done);
+    const waterPct     = water.targetMl > 0 ? Math.round(water.doneMl / water.targetMl * 100) : 0;
+
+    let p = `You are Axis AI — ${name || 'the user'}'s personal health and productivity coach. Be direct, specific, and actionable. Reference their actual numbers. No generic advice. Keep responses concise: 2–3 sentences for simple questions, a short paragraph for complex ones.
+
+=== USER DATA (${dateStr}, ${timeStr}) ===`;
+
+    p += `\nGOALS TODAY: ${doneGoals.length}/${todayGoals.length} complete`;
+    if (doneGoals.length)    p += `\n  Completed: ${doneGoals.map(g => g.text).join(' | ')}`;
+    if (pendingGoals.length) p += `\n  Pending:   ${pendingGoals.map(g => g.text).join(' | ')}`;
+    if (!todayGoals.length)  p += '\n  (no goals set today)';
+
+    p += tomorrowGoals.length
+      ? `\nTOMORROW:   ${tomorrowGoals.map(g => g.text).join(' | ')}`
+      : '\nTOMORROW:   nothing planned yet';
+
+    p += `\nWATER:      ${water.doneMl}ml / ${water.targetMl}ml (${waterPct}%)`;
+    p += `\nSTREAK:     ${streak} day${streak !== 1 ? 's' : ''}`;
+
+    if (gymSplit) p += `\nGYM SPLIT:  ${gymSplit}`;
+
+    if (wt.latestLbs != null) {
+      p += `\nWEIGHT:     ${wt.latestLbs} lbs`;
+      if (wt.trendStr) p += ` (${wt.trendStr})`;
+    }
+
+    const age    = lsRaw('dash_age');
+    const sex    = lsRaw('dash_sex');
+    const height = lsRaw('dash_height');
+    if (age || sex || height) {
+      const parts = [];
+      if (age)    parts.push('age ' + age);
+      if (sex)    parts.push(sex);
+      if (height) parts.push(height + '"');
+      p += `\nPROFILE:    ${parts.join(', ')}`;
+    }
+
+    p += '\n===';
+    return p;
+  }
+
+  // ── API call ─────────────────────────────────────────────────────
+  async function callClaude(messages) {
+    if (!ANTHROPIC_API_KEY) throw new Error('no-key');
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': ANTHROPIC_API_KEY,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: buildSystemPrompt(),
+        messages
+      })
+    });
+    if (!res.ok) throw new Error('API ' + res.status);
+    const data = await res.json();
+    return data.content[0].text;
+  }
+
+  // ── Chat state ────────────────────────────────────────────────────
+  const chatHistory = [];
+
+  // ── DOM helpers ───────────────────────────────────────────────────
+  function scrollToBottom() {
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  }
+
+  function appendBubble(role, text) {
+    const thread = document.getElementById('chatThread');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg msg-' + role;
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    wrap.appendChild(bubble);
+    thread.appendChild(wrap);
+    scrollToBottom();
+  }
+
+  function appendTyping() {
+    const thread = document.getElementById('chatThread');
+    const wrap = document.createElement('div');
+    wrap.className = 'msg msg-ai msg-typing';
+    wrap.innerHTML = '<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+    thread.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+  }
+
+  // ── Send ──────────────────────────────────────────────────────────
+  async function sendMessage(text) {
+    text = text.trim();
+    if (!text) return;
+
+    const input   = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('chatSend');
+    input.value   = '';
+    input.disabled   = true;
+    sendBtn.disabled = true;
+
+    chatHistory.push({ role: 'user', content: text });
+    appendBubble('user', text);
+    const typingEl = appendTyping();
+
+    try {
+      const reply = await callClaude([...chatHistory]);
+      typingEl.remove();
+      chatHistory.push({ role: 'assistant', content: reply });
+      appendBubble('ai', reply);
+    } catch (err) {
+      typingEl.remove();
+      const msg = err.message === 'no-key'
+        ? 'Add your Anthropic API key to the ANTHROPIC_API_KEY constant at the top of the script to enable chat.'
+        : 'Something went wrong — check your connection and API key.';
+      appendBubble('ai', msg);
+    } finally {
+      input.disabled   = false;
+      sendBtn.disabled = false;
+      input.focus();
+    }
+  }
+
+  // ── Daily briefing ────────────────────────────────────────────────
+  async function loadBriefing() {
+    const loadingEl = document.getElementById('briefingLoading');
+    const textEl    = document.getElementById('briefingText');
+
+    if (!ANTHROPIC_API_KEY) {
+      loadingEl.style.display = 'none';
+      textEl.className = 'briefing-no-key';
+      textEl.innerHTML = 'Add your <code>ANTHROPIC_API_KEY</code> to the script to enable the daily briefing and chat.';
+      textEl.style.display = '';
+      return;
+    }
+
+    try {
+      const reply = await callClaude([{
+        role: 'user',
+        content: 'Give me a 3-sentence daily briefing based on my data. Be specific and actionable. Start with the most important thing I should focus on today.'
+      }]);
+      loadingEl.style.display = 'none';
+      textEl.className = 'briefing-text';
+      textEl.textContent = reply;
+      textEl.style.display = '';
+    } catch (_) {
+      loadingEl.style.display = 'none';
+      textEl.className = 'briefing-no-key';
+      textEl.textContent = 'Could not load briefing — check your connection and API key.';
+      textEl.style.display = '';
+    }
+  }
+
+  // ── Boot ──────────────────────────────────────────────────────────
+  function boot() {
+    document.getElementById('aiGreeting').textContent = getGreeting();
+    loadBriefing();
+
+    const input   = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('chatSend');
+
+    sendBtn.addEventListener('click', function () { sendMessage(input.value); });
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage(input.value);
+      }
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+})();
+</script>
 </body>
 </html>
