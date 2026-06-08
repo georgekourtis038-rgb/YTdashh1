@@ -586,7 +586,7 @@ html,body{
       } catch (e2) {}
       var calcBase     = wKg * 35;
       var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
-      var calcCaffeine = Math.max(0, ((wData.caffeineMgPerDay != null ? wData.caffeineMgPerDay : 200) - 200)) * 1.5;
+      var calcCaffeine = Math.max(0, (wData.caffeineMgPerDay || 0) - 200) * 1.5;
       var calcSubs     = (wData.substances || []).reduce(function(s, x) {
         var dose = (x.dose != null ? x.dose : x.defaultDose) || 0;
         return s + Math.max(0, dose * (x.mlPerUnit || 0));
@@ -594,7 +594,7 @@ html,body{
       var calcAdjust = 0;
       if (wData.profile && wData.profile.sex === 'm') calcAdjust += 200;
       if (wData.profile && (wData.profile.age || 0) >= 50) calcAdjust += 100;
-      var tgtMl = Math.round(calcBase + calcExercise + calcCaffeine + calcSubs + calcAdjust);
+      var tgtMl = calcBase + calcExercise + calcCaffeine + calcSubs + calcAdjust;
       if (!(tgtMl > 0)) tgtMl = 3000;
 
       fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
