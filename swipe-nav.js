@@ -41,7 +41,7 @@
     startX = touch.clientX;
     startTime = Date.now();
     // Only arm if at top of page and touch starts in the top 15% of the viewport
-    tracking = window.scrollY === 0 && startY <= window.innerHeight * 0.15;
+    tracking = window.scrollY === 0 && startY <= window.innerHeight * 0.20;
   }, { passive: true });
 
   document.addEventListener('touchmove', function (e) {
@@ -53,7 +53,7 @@
     const elapsed = Date.now() - startTime;
 
     // Must be fast (< 400ms), far enough (> 150px), and not diagonal
-    if (dy < 150 || dx > 40 || elapsed > 400) return;
+    if (dy < 110 || dx > 40 || elapsed > 400) return;
 
     tracking = false; // fire once per gesture
 
