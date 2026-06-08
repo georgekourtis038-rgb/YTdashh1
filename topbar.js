@@ -6,6 +6,7 @@
 // and renders the water +1 button in the top bar plus the
 // Main/Health/Fitness bottom tabs. Skips chrome on finance.html
 // and inside iframes (so the water tracker can embed cleanly).
+// Bottom tabs are suppressed on ai.html (topbar logo is the nav).
 // =============================================================
 (function() {
   if (window.__lsOrigSet) return;
@@ -33,15 +34,36 @@ html {
 }
 body { background: transparent; }
 .topbar {
-  position: fixed; top: max(52px, env(safe-area-inset-top)); right: 0; z-index: 40;
-  display: flex; align-items: center;
+  position: fixed;
+  top: 0; left: 0; right: 0; z-index: 40;
+  display: flex; align-items: center; justify-content: space-between;
   gap: 8px;
-  padding: 8px calc(14px + env(safe-area-inset-right)) 8px 14px;
-  background: none;
+  padding: calc(max(10px, env(safe-area-inset-top)) + 8px) calc(14px + env(safe-area-inset-right)) 10px calc(14px + env(safe-area-inset-left));
+  background: linear-gradient(180deg, rgba(10,10,11,0.94) 0%, rgba(10,10,11,0.0) 100%);
   pointer-events: none;
   font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
 }
 .topbar > * { pointer-events: auto; }
+.topbar-logo-link {
+  display: flex; align-items: center; gap: 8px;
+  text-decoration: none; flex: 1; min-width: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s;
+}
+.topbar-logo-link:active { opacity: 0.65; }
+.topbar-logo-svg { flex-shrink: 0; display: block; }
+.topbar-logo-text {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.08em;
+  color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.topbar-logo-name {
+  font-weight: 400; font-size: 0.85em; letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.50);
+}
+.topbar-right {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
 .topbar-water-wrap { display: flex; align-items: stretch; }
 .topbar-water-pill {
   display: inline-flex; align-items: center; gap: 8px;
@@ -211,16 +233,41 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
 
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
-  <div class="topbar-water-wrap">
-    <a href="health.html#water" class="topbar-water-pill" id="topbarWater" aria-label="Water progress">
-      <span class="topbar-pill-dot"></span>
-      <span class="topbar-pill-count" id="topbarWaterCount">0/0</span>
-    </a>
-    <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
-  </div>
-  <a href="settings.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Settings">
-    <span class="topbar-finance-icon">⚙️</span>
+  <a href="landing.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
+    <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="28" height="28" aria-hidden="true">
+      <defs>
+        <filter id="tbAxisGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
+          <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <circle cx="24" cy="24" r="22" fill="#111820" stroke="#2de8a2" stroke-width="0.5" stroke-opacity="0.25"/>
+      <g stroke="#2de8a2" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-dasharray="3,2" filter="url(#tbAxisGlow)">
+        <line x1="24" y1="24" x2="24" y2="12"/>
+        <line x1="24" y1="24" x2="34.4" y2="30"/>
+        <line x1="24" y1="24" x2="13.6" y2="30"/>
+      </g>
+      <g fill="#2de8a2" filter="url(#tbAxisGlow)">
+        <polygon points="24,9.5 22.5,12 25.5,12"/>
+        <polygon points="36.6,31.3 35.15,28.7 33.65,31.3"/>
+        <polygon points="11.4,31.3 14.35,31.3 12.85,28.7"/>
+      </g>
+      <circle cx="24" cy="24" r="1.5" fill="#2de8a2" filter="url(#tbAxisGlow)"/>
+    </svg>
+    <span class="topbar-logo-text" id="topbarLogoText">AXIS</span>
   </a>
+  <div class="topbar-right">
+    <div class="topbar-water-wrap">
+      <a href="health.html#water" class="topbar-water-pill" id="topbarWater" aria-label="Water progress">
+        <span class="topbar-pill-dot"></span>
+        <span class="topbar-pill-count" id="topbarWaterCount">0/0</span>
+      </a>
+      <button class="topbar-water-add" id="topbarWaterAdd" aria-label="Log one drink" type="button">+</button>
+    </div>
+    <a href="settings.html" class="topbar-finance-btn" id="topbarFinance" aria-label="Settings">
+      <span class="topbar-finance-icon">⚙️</span>
+    </a>
+  </div>
 </header>`;
 
   const bottombarHtml = `
@@ -236,23 +283,44 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   </a>
 </nav>`;
 
-  function isFinancePage() {
-    const p = (window.location.pathname || '').toLowerCase();
-    return p.endsWith('/finance.html') || p.endsWith('finance.html');
+  function pageIs(name) {
+    const p = (window.location.pathname || '').toLowerCase().replace(/\.html$/, '');
+    return p === '/' + name || p.endsWith('/' + name) || p === name;
   }
-  function isSettingsPage() {
-    const p = (window.location.pathname || '').toLowerCase();
-    return p.endsWith('/settings.html') || p.endsWith('settings.html');
-  }
+  function isFinancePage() { return pageIs('finance'); }
+  function isSettingsPage() { return pageIs('settings'); }
+  function isAIPage() { return pageIs('ai'); }
   function isEmbedded() {
     try { return window.self !== window.top; } catch (e) { return true; }
   }
   function shouldShowChrome() { return !isFinancePage() && !isEmbedded(); }
   function currentPageKey() {
-    const p = (window.location.pathname || '').toLowerCase();
-    if (p.endsWith('health.html')) return 'health';
-    if (p.endsWith('gym.html')) return 'fitness';
+    const p = (window.location.pathname || '').toLowerCase().replace(/\.html$/, '');
+    if (p.endsWith('health')) return 'health';
+    if (p.endsWith('gym')) return 'fitness';
     return 'main';
+  }
+
+  function getFirstName() {
+    try {
+      const s = JSON.parse(localStorage.getItem('settings'));
+      return (s && typeof s.firstName === 'string' && s.firstName.trim()) || '';
+    } catch (e) { return ''; }
+  }
+
+  function renderLogoText() {
+    const el = document.getElementById('topbarLogoText');
+    if (!el) return;
+    const name = getFirstName();
+    el.textContent = '';
+    const axisNode = document.createTextNode('AXIS');
+    el.appendChild(axisNode);
+    if (name) {
+      const nameSpan = document.createElement('span');
+      nameSpan.className = 'topbar-logo-name';
+      nameSpan.textContent = ' — ' + name + '’s Dashboard';
+      el.appendChild(nameSpan);
+    }
   }
 
   function injectStyleAndHTML() {
@@ -267,14 +335,16 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     const topWrap = document.createElement('div');
     topWrap.innerHTML = topbarHtml.trim();
     document.body.insertBefore(topWrap.firstChild, document.body.firstChild);
-    const bottomWrap = document.createElement('div');
-    bottomWrap.innerHTML = bottombarHtml.trim();
-    document.body.appendChild(bottomWrap.firstChild);
-    const active = currentPageKey();
-    document.querySelectorAll('.bottombar-tab').forEach((t) => {
-      t.classList.toggle('active', t.getAttribute('data-page') === active);
-    });
-    document.body.classList.add('has-bottombar');
+    if (!isAIPage()) {
+      const bottomWrap = document.createElement('div');
+      bottomWrap.innerHTML = bottombarHtml.trim();
+      document.body.appendChild(bottomWrap.firstChild);
+      const active = currentPageKey();
+      document.querySelectorAll('.bottombar-tab').forEach((t) => {
+        t.classList.toggle('active', t.getAttribute('data-page') === active);
+      });
+      document.body.classList.add('has-bottombar');
+    }
     if (isSettingsPage()) {
       const finBtn = document.getElementById('topbarFinance');
       if (finBtn) finBtn.href = sessionStorage.getItem('dash_prev_page') || 'index.html';
@@ -332,6 +402,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     if (status === 'good' || status === 'warn' || status === 'miss') pillEl.classList.add(status);
   }
   function render() {
+    renderLogoText();
     const waterEl = document.getElementById('topbarWater');
     if (!waterEl) return;
     const w = getWaterProgress();
