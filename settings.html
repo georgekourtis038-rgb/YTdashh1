@@ -372,9 +372,15 @@ html, body {
       <div class="setting-card">
         <div class="setting-row">
           <div class="setting-row-left">
-            <div class="setting-row-label">Name</div>
+            <div class="setting-row-label">First Name</div>
           </div>
-          <input class="setting-input setting-input-name" id="settingName" type="text" value="George Kourtis" autocomplete="off">
+          <input class="setting-input setting-input-name" id="settingFirstName" type="text" autocomplete="off">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Last Name</div>
+          </div>
+          <input class="setting-input setting-input-name" id="settingLastName" type="text" autocomplete="off">
         </div>
         <div class="setting-row">
           <div class="setting-row-left">
@@ -633,7 +639,22 @@ html, body {
 
   // ── Load from localStorage ───────────────────────────────────
   function loadSettings() {
-    document.getElementById('settingName').value   = lsRaw('dash_name')   || 'George Kourtis';
+    (function() {
+      const s = lsGet('settings') || {};
+      let firstName = s.firstName || '';
+      let lastName  = s.lastName  || '';
+      if (!firstName) {
+        const raw = lsRaw('dash_name') || 'George Kourtis';
+        const sp  = raw.indexOf(' ');
+        firstName = sp >= 0 ? raw.slice(0, sp) : raw;
+        lastName  = sp >= 0 ? raw.slice(sp + 1) : '';
+        s.firstName = firstName;
+        s.lastName  = lastName;
+        lsSet('settings', s);
+      }
+      document.getElementById('settingFirstName').value = firstName;
+      document.getElementById('settingLastName').value  = lastName;
+    })();
     document.getElementById('settingAge').value    = lsRaw('dash_age')    || '17';
     document.getElementById('settingHeight').value = lsRaw('dash_height') || '175';
     document.getElementById('settingWake').value   = lsRaw('dash_wake_time')  || '08:00';
@@ -658,7 +679,13 @@ html, body {
 
   // ── Save all ─────────────────────────────────────────────────
   function saveAll() {
-    lsRawSet('dash_name',   document.getElementById('settingName').value.trim());
+    const firstName = document.getElementById('settingFirstName').value.trim();
+    const lastName  = document.getElementById('settingLastName').value.trim();
+    const cfg = lsGet('settings') || {};
+    cfg.firstName = firstName;
+    cfg.lastName  = lastName;
+    lsSet('settings', cfg);
+    lsRawSet('dash_name', [firstName, lastName].filter(Boolean).join(' '));
     lsRawSet('dash_age',    document.getElementById('settingAge').value);
     lsRawSet('dash_height', document.getElementById('settingHeight').value);
 

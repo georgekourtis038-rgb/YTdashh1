@@ -1330,7 +1330,12 @@ body::after {
     if (!el) return;
     try {
       const s = JSON.parse(localStorage.getItem('settings'));
-      const name = s && typeof s.firstName === 'string' && s.firstName.trim();
+      let name = s && typeof s.firstName === 'string' && s.firstName.trim();
+      if (!name) {
+        const raw = localStorage.getItem('dash_name') || '';
+        const sp  = raw.indexOf(' ');
+        name = sp >= 0 ? raw.slice(0, sp) : raw;
+      }
       if (name) el.textContent = '— ' + name + '’s Dashboard';
     } catch(e) {}
   })();
