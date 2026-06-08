@@ -47,6 +47,7 @@ body { background: transparent; }
 .topbar-logo-link {
   display: flex; align-items: center; gap: 8px;
   text-decoration: none; flex: 1; min-width: 0;
+  padding: 4px;
   -webkit-tap-highlight-color: transparent;
   transition: opacity 0.2s;
 }
@@ -225,7 +226,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
   <a href="landing.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
-    <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="28" height="28" aria-hidden="true">
+    <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="40" height="40" aria-hidden="true">
       <defs>
         <filter id="tbAxisGlow" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation="1.2" result="coloredBlur"/>
