@@ -485,8 +485,6 @@ html,body{
       <div class="card-text">
         <span class="card-label">Water</span>
         <span class="card-data" id="cdWater">—</span>
-        <span id="cdWaterDbg" style="font-size:8px;color:#ff0;opacity:0.9;letter-spacing:0.02em;"></span>
-        <span id="cdWaterDbg2" style="font-size:8px;color:#ff0;opacity:0.9;letter-spacing:0.02em;"></span>
       </div>
     </div>
 
@@ -586,10 +584,6 @@ html,body{
           }
         }
       } catch (e2) {}
-      var dbgEl = document.getElementById('cdWaterDbg');
-      if (dbgEl) dbgEl.textContent = 'using: ' + (wKg * 2.20462).toFixed(1) + 'lbs';
-      var dbgEl2 = document.getElementById('cdWaterDbg2');
-      if (dbgEl2) dbgEl2.textContent = 'sex: ' + ((wData.profile && wData.profile.sex) || 'undefined');
       var calcBase     = wKg * 35;
       var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
       var calcCaffeine = Math.max(0, (wData.caffeineMgPerDay || 0) - 200) * 1.5;
@@ -598,7 +592,8 @@ html,body{
         return s + Math.max(0, dose * (x.mlPerUnit || 0));
       }, 0);
       var calcAdjust = 0;
-      if (wData.profile && wData.profile.sex === 'm') calcAdjust += 200;
+      var dashSex = localStorage.getItem('dash_sex') || '';
+      if (dashSex !== 'female' && dashSex !== 'other') calcAdjust += 200;
       if (wData.profile && (wData.profile.age || 0) >= 50) calcAdjust += 100;
       var tgtMl = calcBase + calcExercise + calcCaffeine + calcSubs + calcAdjust;
       if (!(tgtMl > 0)) tgtMl = 3000;
