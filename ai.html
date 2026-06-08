@@ -325,7 +325,7 @@ body {
   'use strict';
 
   // Paste your Anthropic key here to enable Axis AI.
-  const ANTHROPIC_API_KEY = '';
+  const ANTHROPIC_API_KEY = localStorage.getItem('axis_api_key') || '';
 
   // ── Storage helpers ─────────────────────────────────────────────
   function lsGet(k) {
@@ -557,7 +557,7 @@ body {
     } catch (err) {
       typingEl.remove();
       const msg = err.message === 'no-key'
-        ? 'Add your Anthropic API key to the ANTHROPIC_API_KEY constant at the top of the script to enable chat.'
+        ? 'No API key found. Go to Settings → Axis AI to add your Anthropic API key.'
         : 'Something went wrong — check your connection and API key.';
       appendBubble('ai', msg);
     } finally {
@@ -575,7 +575,7 @@ body {
     if (!ANTHROPIC_API_KEY) {
       loadingEl.style.display = 'none';
       textEl.className = 'briefing-no-key';
-      textEl.innerHTML = 'Add your <code>ANTHROPIC_API_KEY</code> to the script to enable the daily briefing and chat.';
+      textEl.innerHTML = 'Go to <a href="settings.html" style="color:var(--mint)">Settings → Axis AI</a> to add your Anthropic API key.';
       textEl.style.display = '';
       return;
     }
