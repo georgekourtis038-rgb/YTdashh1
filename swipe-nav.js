@@ -32,14 +32,16 @@
 
   let startY = 0;
   let startX = 0;
+  let startTime = 0;
   let tracking = false;
 
   document.addEventListener('touchstart', function (e) {
     const touch = e.touches[0];
     startY = touch.clientY;
     startX = touch.clientX;
-    // Only arm if the touch starts in the top 30% of the viewport
-    tracking = startY <= window.innerHeight * 0.30;
+    startTime = Date.now();
+    // Only arm if at top of page and touch starts in the top 15% of the viewport
+    tracking = window.scrollY === 0 && startY <= window.innerHeight * 0.15;
   }, { passive: true });
 
   document.addEventListener('touchmove', function (e) {
@@ -48,9 +50,10 @@
     const touch = e.touches[0];
     const dy = touch.clientY - startY;   // positive = downward
     const dx = Math.abs(touch.clientX - startX);
+    const elapsed = Date.now() - startTime;
 
-    // Must be a predominantly downward swipe
-    if (dy < 80 || dx > 40) return;
+    // Must be fast (< 400ms), far enough (> 150px), and not diagonal
+    if (dy < 150 || dx > 40 || elapsed > 400) return;
 
     tracking = false; // fire once per gesture
 
