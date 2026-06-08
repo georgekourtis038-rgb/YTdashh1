@@ -88,8 +88,8 @@ html,body{
   animation:axisFloat 4s ease-in-out infinite;
 }
 @keyframes axisFloat{
-  0%,100%{-webkit-transform:translate3d(0,0,0);    transform:translate3d(0,0,0);}
-  50%    {-webkit-transform:translate3d(0,-12px,0); transform:translate3d(0,-12px,0);}
+  0%,100%{-webkit-transform:translate3d(0,60px,0);    transform:translate3d(0,60px,0);}
+  50%    {-webkit-transform:translate3d(0,48px,0); transform:translate3d(0,48px,0);}
 }
 
 @keyframes axisIn{
@@ -192,7 +192,7 @@ html,body{
 
 /* Water: top-left, farthest → opacity 0.70, scale 0.88 */
 .card-water{
-  top:calc(50% - 170px);left:calc(50% - 180px);
+  top:calc(50% - 110px);left:calc(50% - 180px);
   opacity:0.70;
   animation:cardIn0 0.45s ease 0.2s both, cf1 7s ease-in-out infinite 0.65s;
 }
@@ -204,7 +204,7 @@ html,body{
 
 /* Weight: top-right, far → opacity 0.75, scale 0.91 */
 .card-weight{
-  top:calc(50% - 162px);left:calc(50% + 60px);
+  top:calc(50% - 102px);left:calc(50% + 60px);
   opacity:0.75;
   animation:cardIn1 0.45s ease 0.28s both, cf2 8.5s ease-in-out infinite 0.73s;
 }
@@ -216,7 +216,7 @@ html,body{
 
 /* Fitness: right-middle, nearest → opacity 1, scale 1 */
 .card-fitness{
-  top:calc(50% + 28px);left:calc(50% + 96px);
+  top:calc(50% + 88px);left:calc(50% + 96px);
   opacity:1;
   animation:cardIn2 0.45s ease 0.36s both, cf3 6.5s ease-in-out infinite 0.81s;
 }
@@ -228,7 +228,7 @@ html,body{
 
 /* Goals: bottom-left, mid → opacity 0.85, scale 0.94 */
 .card-goals{
-  top:calc(50% + 115px);left:calc(50% - 172px);
+  top:calc(50% + 175px);left:calc(50% - 172px);
   opacity:0.85;
   animation:cardIn3 0.45s ease 0.44s both, cf4 9s ease-in-out infinite 0.89s;
 }
@@ -341,32 +341,52 @@ html,body{
   50%    {opacity:1;}
 }
 
-/* welcome header */
-.welcome-header{
+/* hero header */
+.hero-header{
   position:absolute;
-  top:calc(env(safe-area-inset-top,0px) + 52px);
+  top:calc(env(safe-area-inset-top,0px) + 20px);
   left:50%;
   transform:translateX(-50%);
   z-index:10;
   display:flex;flex-direction:column;align-items:center;
-  gap:6px;
   text-align:center;
   pointer-events:none;
-  white-space:nowrap;
   animation:sceneIn 0.8s ease 0.3s both;
 }
-.welcome-title{
-  font-size:11px;
-  letter-spacing:6px;
-  color:rgba(255,255,255,0.5);
-  font-weight:600;
-  text-transform:uppercase;
+.hero-logo{
+  display:flex;align-items:center;justify-content:center;
+  filter:drop-shadow(0 0 12px rgba(45,232,162,0.7)) drop-shadow(0 0 28px rgba(45,232,162,0.35));
+  margin-bottom:14px;
 }
-.welcome-sub{
-  font-size:13px;
-  color:rgba(255,255,255,0.3);
+.hero-arm-group{
+  transform-box:view-box;
+  transform-origin:50px 50px;
+  animation:heroArmPendulum 6s ease-in-out infinite;
+}
+@keyframes heroArmPendulum{
+  0%,100%{transform:rotate(-8deg);}
+  50%    {transform:rotate(8deg);}
+}
+.hero-title{
+  font-size:48px;
+  font-weight:800;
+  letter-spacing:8px;
+  color:#2de8a2;
+  text-shadow:
+    0 0 30px rgba(45,232,162,0.9),
+    0 0 60px rgba(45,232,162,0.5),
+    0 0 100px rgba(45,232,162,0.2);
+  line-height:1;
+  margin-bottom:10px;
+  padding-left:8px;
+}
+.hero-sub{
+  font-size:11px;
+  letter-spacing:4px;
+  color:rgba(255,255,255,0.35);
   font-weight:400;
-  letter-spacing:0.02em;
+  text-transform:uppercase;
+  padding-left:4px;
 }
 
 /* origin dot — tappable with pulse glow */
@@ -393,10 +413,39 @@ html,body{
 </head>
 <body>
 <div class="scene">
-  <!-- welcome header -->
-  <div class="welcome-header">
-    <span class="welcome-title">WELCOME TO AXIS</span>
-    <span class="welcome-sub">Your personal operating system</span>
+  <!-- hero header -->
+  <div class="hero-header">
+    <div class="hero-logo">
+      <svg width="60" height="60" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="hlg" x="-100%" y="-100%" width="300%" height="300%">
+            <feGaussianBlur stdDeviation="1.5" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+          <filter id="hlgs" x="-150%" y="-150%" width="400%" height="400%">
+            <feGaussianBlur stdDeviation="4" result="b"/>
+            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g class="hero-arm-group">
+          <g stroke="#2de8a2" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-dasharray="7,5" filter="url(#hlg)">
+            <line x1="50" y1="50" x2="50" y2="16"/>
+            <line x1="50" y1="50" x2="79" y2="68"/>
+            <line x1="50" y1="50" x2="21" y2="68"/>
+          </g>
+          <g fill="#2de8a2" filter="url(#hlg)">
+            <polygon points="50,10 45.5,18 54.5,18"/>
+            <polygon points="84,73 73,67 76,59"/>
+            <polygon points="16,73 24,59 27,67"/>
+          </g>
+        </g>
+        <circle cx="50" cy="50" r="18" fill="#2de8a2" fill-opacity="0.07" filter="url(#hlgs)"/>
+        <circle cx="50" cy="50" r="9" fill="none" stroke="#2de8a2" stroke-width="0.9" stroke-opacity="0.35" filter="url(#hlg)"/>
+        <circle cx="50" cy="50" r="4" fill="#2de8a2" filter="url(#hlgs)"/>
+      </svg>
+    </div>
+    <span class="hero-title">AXIS</span>
+    <span class="hero-sub">Your personal operating system</span>
   </div>
 
   <!-- star particle field: animated on canvas (single GPU layer) -->
