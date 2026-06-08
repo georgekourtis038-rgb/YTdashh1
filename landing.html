@@ -486,6 +486,7 @@ html,body{
         <span class="card-label">Water</span>
         <span class="card-data" id="cdWater">—</span>
         <span id="cdWaterDbg" style="font-size:8px;color:#ff0;opacity:0.9;letter-spacing:0.02em;"></span>
+        <span id="cdWaterDbg2" style="font-size:8px;color:#ff0;opacity:0.9;letter-spacing:0.02em;"></span>
       </div>
     </div>
 
@@ -587,6 +588,8 @@ html,body{
       } catch (e2) {}
       var dbgEl = document.getElementById('cdWaterDbg');
       if (dbgEl) dbgEl.textContent = 'using: ' + (wKg * 2.20462).toFixed(1) + 'lbs';
+      var dbgEl2 = document.getElementById('cdWaterDbg2');
+      if (dbgEl2) dbgEl2.textContent = 'sex: ' + ((wData.profile && wData.profile.sex) || 'undefined');
       var calcBase     = wKg * 35;
       var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
       var calcCaffeine = Math.max(0, (wData.caffeineMgPerDay || 0) - 200) * 1.5;
