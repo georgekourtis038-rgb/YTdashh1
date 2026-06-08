@@ -1474,10 +1474,15 @@ html, body {
 }
 .modal-bg {
   padding-bottom: max(20px, env(safe-area-inset-bottom));
-  padding-top: max(20px, env(safe-area-inset-top));
+  padding-top: max(76px, calc(env(safe-area-inset-top) + 56px));
 }
 .modal {
   max-height: calc(88vh - env(safe-area-inset-bottom));
+}
+@media (max-width: 480px) {
+  #setModalBg > .modal {
+    padding-top: calc(max(10px, env(safe-area-inset-top)) + 60px) !important;
+  }
 }
 .water-plus-btn,
 .water-minus-btn {
