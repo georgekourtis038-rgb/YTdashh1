@@ -357,38 +357,6 @@ html, body {
   white-space: nowrap;
 }
 
-/* ── Axis AI panel ── */
-.setting-row-col {
-  flex-direction: column;
-  align-items: stretch;
-}
-.setting-input-api {
-  width: 100%;
-  text-align: left;
-  font-family: var(--font-mono);
-  font-size: 13px;
-  padding: 9px 12px;
-}
-.api-key-badge {
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.05em; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 5px; flex-shrink: 0;
-}
-.api-key-badge.set {
-  color: var(--success);
-  background: rgba(107,227,164,0.10);
-  border: 1px solid rgba(107,227,164,0.20);
-}
-.api-key-badge.unset {
-  color: var(--text-tertiary);
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.api-key-header { display: flex; align-items: center; justify-content: space-between; width: 100%; margin-bottom: 4px; }
-.api-key-actions { display: flex; gap: 8px; margin-top: 10px; }
-.api-key-actions .action-btn { margin: 0; flex: 1; font-size: 13px; padding: 10px; }
-.api-key-actions .action-btn.danger { flex: 0; padding: 10px 14px; white-space: nowrap; }
-.api-key-status { font-size: 11px; margin: 6px 0 0; }
 </style>
 </head>
 <body>
@@ -587,31 +555,6 @@ html, body {
 
   </div>
 
-  <!-- AXIS AI PANEL -->
-  <div class="section-panel" id="panel-axis-ai">
-    <div class="setting-section">
-      <div class="setting-section-label">API Key</div>
-      <div class="setting-card">
-        <div class="setting-row setting-row-col">
-          <div class="api-key-header">
-            <div class="setting-row-label">Anthropic API Key</div>
-            <span class="api-key-badge unset" id="apiKeyBadge">Not set</span>
-          </div>
-          <div class="setting-row-sub" style="margin-bottom:10px;">Stored locally on this device — only sent to the Anthropic API when you use Axis AI.</div>
-          <input id="axisApiKey" type="password" class="setting-input setting-input-api"
-            placeholder="sk-ant-api03-…" autocomplete="off" spellcheck="false">
-          <div class="api-key-actions">
-            <button class="action-btn" id="btnSaveApiKey">Save Key</button>
-            <button class="action-btn danger" id="btnClearApiKey">Clear</button>
-          </div>
-          <p id="apiKeyStatus" class="api-key-status" style="display:none;"></p>
-        </div>
-      </div>
-    </div>
-    <div class="setting-section">
-      <a href="ai.html" class="action-btn" style="display:block;text-align:center;text-decoration:none;">Open Axis AI →</a>
-    </div>
-  </div>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -629,10 +572,6 @@ html, body {
     <button class="nav-item" data-panel="notifications" data-title="Notifications">
       <span class="nav-item-icon">🔔</span>
       Notifications
-    </button>
-    <button class="nav-item" data-panel="axis-ai" data-title="Axis AI">
-      <span class="nav-item-icon">✦</span>
-      Axis AI
     </button>
   </nav>
 </aside>
@@ -696,7 +635,6 @@ html, body {
 
     if (title) document.getElementById('pageTitle').textContent = title;
     if (panelId === 'notifications') loadNotifPanel();
-    if (panelId === 'axis-ai') loadAxisAiPanel();
 
     closeSidebar();
   });
@@ -1068,47 +1006,6 @@ html, body {
   }
 
   loadNotifPanel();
-
-  // ── Axis AI API key ──────────────────────────────────────────────
-  function loadAxisAiPanel() {
-    const key = localStorage.getItem('axis_api_key') || '';
-    const input = document.getElementById('axisApiKey');
-    const badge = document.getElementById('apiKeyBadge');
-    if (input) input.value = key;
-    if (badge) {
-      if (key) {
-        badge.textContent = 'Set ✓';
-        badge.className = 'api-key-badge set';
-      } else {
-        badge.textContent = 'Not set';
-        badge.className = 'api-key-badge unset';
-      }
-    }
-  }
-
-  function showApiKeyStatus(msg, isSuccess) {
-    var el = document.getElementById('apiKeyStatus');
-    if (!el) return;
-    el.textContent = msg;
-    el.style.color = isSuccess ? 'var(--success)' : 'var(--text-tertiary)';
-    el.style.display = 'block';
-    clearTimeout(el._t);
-    el._t = setTimeout(function() { el.style.display = 'none'; }, 2500);
-  }
-
-  document.getElementById('btnSaveApiKey').addEventListener('click', function() {
-    var key = (document.getElementById('axisApiKey').value || '').trim();
-    try { localStorage.setItem('axis_api_key', key); } catch(e) {}
-    loadAxisAiPanel();
-    showApiKeyStatus(key ? '✓ Key saved' : 'Key cleared', !!key);
-  });
-
-  document.getElementById('btnClearApiKey').addEventListener('click', function() {
-    try { localStorage.removeItem('axis_api_key'); } catch(e) {}
-    document.getElementById('axisApiKey').value = '';
-    loadAxisAiPanel();
-    showApiKeyStatus('Key cleared', false);
-  });
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
