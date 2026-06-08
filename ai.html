@@ -278,6 +278,21 @@ body {
   to   { opacity: 1; transform: translateY(0)    translateZ(0); }
 }
 
+/* ── Streaming cursor ── */
+.streaming::after {
+  content: '▋';
+  display: inline-block;
+  animation: cursorBlink 0.65s step-end infinite;
+  color: var(--mint);
+  margin-left: 1px;
+  vertical-align: baseline;
+  will-change: opacity;
+}
+@keyframes cursorBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -478,16 +493,42 @@ body {
     return p;
   }
 
-  // ── API call ─────────────────────────────────────────────────────
-  async function callClaude(messages) {
+  // ── SSE streaming helper ─────────────────────────────────────────
+  // Calls /api/chat, streams SSE chunks, calls onChunk(text) for each
+  // text delta. Returns the full accumulated text when the stream ends.
+  async function streamClaude(messages, onChunk) {
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system: buildSystemPrompt(), messages })
     });
     if (!res.ok) throw new Error('API ' + res.status);
-    const data = await res.json();
-    return data.content[0].text;
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let full = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop(); // keep any incomplete line
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim();
+        if (!raw) continue;
+        try {
+          const evt = JSON.parse(raw);
+          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+            full += evt.delta.text;
+            onChunk(full);
+          }
+        } catch (_) {}
+      }
+    }
+    return full;
   }
 
   // ── Chat state ────────────────────────────────────────────────────
@@ -533,17 +574,40 @@ body {
 
     chatHistory.push({ role: 'user', content: text });
     appendBubble('user', text);
+
+    // Show typing indicator; swap it for the streaming bubble on first token
     const typingEl = appendTyping();
+    const thread = document.getElementById('chatThread');
+    const aiWrap = document.createElement('div');
+    aiWrap.className = 'msg msg-ai';
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'msg-bubble streaming';
+    aiWrap.appendChild(aiBubble);
+    let bubbleAttached = false;
 
     try {
-      const reply = await callClaude([...chatHistory]);
+      const full = await streamClaude([...chatHistory], function (accumulated) {
+        if (!bubbleAttached) {
+          typingEl.remove();
+          thread.appendChild(aiWrap);
+          bubbleAttached = true;
+        }
+        aiBubble.textContent = accumulated;
+        scrollToBottom();
+      });
+
+      aiBubble.classList.remove('streaming');
+      if (!bubbleAttached) {
+        typingEl.remove();
+        appendBubble('ai', 'No response received.');
+      } else {
+        chatHistory.push({ role: 'assistant', content: full });
+      }
+    } catch (_) {
+      aiBubble.classList.remove('streaming');
       typingEl.remove();
-      chatHistory.push({ role: 'assistant', content: reply });
-      appendBubble('ai', reply);
-    } catch (err) {
-      typingEl.remove();
-      const msg = 'Something went wrong — check your connection or try again.';
-      appendBubble('ai', msg);
+      if (bubbleAttached) aiWrap.remove();
+      appendBubble('ai', 'Something went wrong — check your connection or try again.');
     } finally {
       input.disabled   = false;
       sendBtn.disabled = false;
@@ -555,20 +619,28 @@ body {
   async function loadBriefing() {
     const loadingEl = document.getElementById('briefingLoading');
     const textEl    = document.getElementById('briefingText');
+    let shown = false;
 
     try {
-      const reply = await callClaude([{
+      await streamClaude([{
         role: 'user',
         content: 'Give me a 3-sentence daily briefing based on my data. Be specific and actionable. Start with the most important thing I should focus on today.'
-      }]);
-      loadingEl.style.display = 'none';
-      textEl.className = 'briefing-text';
-      textEl.textContent = reply;
-      textEl.style.display = '';
+      }], function (accumulated) {
+        if (!shown) {
+          loadingEl.style.display = 'none';
+          textEl.className = 'briefing-text streaming';
+          textEl.style.display = '';
+          shown = true;
+        }
+        textEl.textContent = accumulated;
+      });
+      textEl.classList.remove('streaming');
+      if (!shown) throw new Error('empty');
     } catch (_) {
       loadingEl.style.display = 'none';
+      textEl.classList.remove('streaming');
       textEl.className = 'briefing-no-key';
-      textEl.textContent = 'Could not load briefing — check your connection and API key.';
+      textEl.textContent = 'Could not load briefing — check your connection or try again.';
       textEl.style.display = '';
     }
   }
