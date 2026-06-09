@@ -454,10 +454,65 @@ body {
 
   function getGymSplitToday() {
     try {
+      const cycle = lsGet('dash_gym_cycle');
+      if (cycle && cycle.type === 'cycle' && Array.isArray(cycle.days) && cycle.days.length && cycle.startDate) {
+        const today = new Date(); today.setHours(0,0,0,0);
+        const start = new Date(cycle.startDate + 'T00:00:00'); start.setHours(0,0,0,0);
+        const diff = Math.max(0, Math.round((today - start) / 86400000));
+        return cycle.days[diff % cycle.days.length] || null;
+      }
       const split = lsGet('dash_gym_split') || {};
-      const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       return split[days[new Date().getDay()]] || null;
     } catch (_) { return null; }
+  }
+
+  function getGymSessionsPerWeek() {
+    try {
+      const cycle = lsGet('dash_gym_cycle');
+      if (cycle && cycle.type === 'cycle' && Array.isArray(cycle.days) && cycle.days.length) {
+        const active = cycle.days.filter(function(d) { return d && !/^(rest|off)$/i.test(d); }).length;
+        return Math.round(active / cycle.days.length * 7);
+      }
+      const split = lsGet('dash_gym_split') || {};
+      const count = Object.values(split).filter(function(v) { return v && !/^(rest|off)$/i.test(v); }).length;
+      return count || null;
+    } catch (_) { return null; }
+  }
+
+  function getWorkoutHistory() {
+    try {
+      const s = lsGet('po_coach_v1');
+      if (!s || !Array.isArray(s.exercises) || !s.logs) return [];
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      cutoff.setHours(0, 0, 0, 0);
+      const bySess = {};
+      s.exercises.forEach(function(ex) {
+        (s.logs[ex.id] || []).forEach(function(l) {
+          const key = l.sid ? l.sid.slice(0, 10) : (l.date || '').slice(0, 10);
+          if (!key) return;
+          if (new Date(key + 'T00:00:00') < cutoff) return;
+          if (!bySess[key]) bySess[key] = [];
+          bySess[key].push({ ex: ex, log: l });
+        });
+      });
+      return Object.entries(bySess)
+        .sort(function(a, b) { return b[0].localeCompare(a[0]); })
+        .map(function(entry) {
+          const dateKey = entry[0], sets = entry[1];
+          const byEx = {};
+          sets.forEach(function(item) {
+            if (!byEx[item.ex.id]) byEx[item.ex.id] = { name: item.ex.name, sets: [] };
+            byEx[item.ex.id].sets.push({ reps: item.log.reps, weight: item.log.weight, bw: item.ex.bw });
+          });
+          const exercises = Object.values(byEx);
+          const totalVol = exercises.reduce(function(sum, e) {
+            return sum + e.sets.reduce(function(s2, set) { return s2 + (set.weight || 0) * (set.reps || 0); }, 0);
+          }, 0);
+          return { date: dateKey, exercises: exercises, totalVol: Math.round(totalVol), units: s.units || 'kg' };
+        });
+    } catch (_) { return []; }
   }
 
   // ── System prompt ────────────────────────────────────────────────
@@ -470,6 +525,8 @@ body {
     const streak = getStreak();
     const wt = getWeightInfo();
     const gymSplit = getGymSplitToday();
+    const gymSessions = getGymSessionsPerWeek();
+    const workouts = getWorkoutHistory();
     const name = getFirstName();
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
@@ -495,7 +552,11 @@ body {
     p += `\nWATER:      ${water.doneMl}ml / ${water.targetMl}ml (${waterPct}%)`;
     p += `\nSTREAK:     ${streak} day${streak !== 1 ? 's' : ''}`;
 
-    if (gymSplit) p += `\nGYM SPLIT:  ${gymSplit}`;
+    if (gymSplit || gymSessions != null) {
+      let splitLine = gymSplit ? `\nGYM SPLIT:  ${gymSplit}` : '\nGYM SPLIT:  (not set for today)';
+      if (gymSessions != null) splitLine += ` · ${gymSessions}x/week`;
+      p += splitLine;
+    }
 
     if (wt.latestLbs != null) {
       p += `\nWEIGHT:     ${wt.latestLbs} lbs`;
@@ -519,6 +580,20 @@ body {
       ltGoals.forEach(function(g) {
         p += '\n  ' + g.title + ': target ' + g.targetValue + ' ' + g.unit +
              (g.deadline ? ', deadline ' + g.deadline : '');
+      });
+    }
+
+    if (workouts.length) {
+      p += '\nWORKOUT HISTORY (last 7 days):';
+      workouts.forEach(function(w) {
+        const vol = w.totalVol > 0 ? `, ${w.totalVol.toLocaleString()} ${w.units} vol` : '';
+        p += `\n  ${w.date} — ${w.exercises.length} exercise${w.exercises.length !== 1 ? 's' : ''}${vol}`;
+        w.exercises.forEach(function(e) {
+          const setsStr = e.sets.map(function(s) {
+            return s.weight ? `${s.weight}${w.units}×${s.reps}` : `${s.reps} reps`;
+          }).join(', ');
+          p += `\n    ${e.name}: ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''} — ${setsStr}`;
+        });
       });
     }
 
