@@ -1672,6 +1672,8 @@ body::after {
   window.addEventListener('storage', function(e) {
     if (e.key === KEY || e.key === 'po_coach_weights' || e.key === 'po_water_v1') render();
   });
+  // Re-render when Supabase sync applies remote axis_goals data
+  window.addEventListener('goals-changed', render);
 
   render();
 })();
@@ -1685,7 +1687,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'goals';
   function pcKeyInScope(k) {
-    return typeof k === 'string' && (k.indexOf('goals:') === 0 || k === 'goal_streak_v1');
+    return typeof k === 'string' && (k.indexOf('goals:') === 0 || k === 'goal_streak_v1' || k === 'axis_goals');
   }
 
   let pcSupa = null;

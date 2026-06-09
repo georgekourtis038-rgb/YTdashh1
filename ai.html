@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Axis AI</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="topbar.js" defer></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -364,6 +365,41 @@ body {
   }
   function lsRaw(k) {
     try { return localStorage.getItem(k); } catch (_) { return null; }
+  }
+
+  // ── Supabase briefing sync ───────────────────────────────────────
+  const _SUPA_URL  = 'https://oyylbiscxnymnmetyrho.supabase.co';
+  const _SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
+  const _BRIEF_ROW = 'briefing';
+  let _supaClient  = null;
+
+  function _getSupa() {
+    if (_supaClient) return _supaClient;
+    if (!window.supabase) return null;
+    _supaClient = window.supabase.createClient(_SUPA_URL, _SUPA_KEY);
+    return _supaClient;
+  }
+
+  async function _fetchRemoteBriefing() {
+    const supa = _getSupa();
+    if (!supa) return null;
+    try {
+      const { data, error } = await supa
+        .from('app_state').select('data').eq('key', _BRIEF_ROW).maybeSingle();
+      if (error || !data || !data.data) return null;
+      return data.data;
+    } catch (_) { return null; }
+  }
+
+  async function _pushBriefingToSupabase(obj) {
+    const supa = _getSupa();
+    if (!supa) return;
+    try {
+      await supa.from('app_state').upsert(
+        { key: _BRIEF_ROW, data: obj, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      );
+    } catch (_) {}
   }
 
   // ── Date helpers (6 AM day boundary) ────────────────────────────
@@ -730,6 +766,17 @@ body {
 
     // Serve from cache if available and not forcing
     if (!forceRefresh) {
+      // Supabase first — ensures all devices show the same briefing for the day
+      const remote = await _fetchRemoteBriefing();
+      if (remote && remote.date === todayStr() && remote.text) {
+        try { localStorage.setItem('axis_briefing_cache', JSON.stringify(remote)); } catch(_) {}
+        loadingEl.style.display = 'none';
+        textEl.className = 'briefing-text';
+        textEl.textContent = remote.text;
+        textEl.style.display = '';
+        return;
+      }
+      // Local fallback (offline or Supabase unavailable)
       try {
         const cache = JSON.parse(localStorage.getItem('axis_briefing_cache') || 'null');
         if (cache && cache.date === todayStr() && cache.text) {
@@ -766,8 +813,10 @@ body {
       });
       textEl.classList.remove('streaming');
       if (!shown) throw new Error('empty');
-      // Cache for today
-      try { localStorage.setItem('axis_briefing_cache', JSON.stringify({ date: todayStr(), text: fullText })); } catch(_) {}
+      // Cache for today — save to both localStorage and Supabase
+      const _briefingObj = { date: todayStr(), text: fullText };
+      try { localStorage.setItem('axis_briefing_cache', JSON.stringify(_briefingObj)); } catch(_) {}
+      _pushBriefingToSupabase(_briefingObj);
     } catch (_) {
       loadingEl.style.display = 'none';
       textEl.classList.remove('streaming');
