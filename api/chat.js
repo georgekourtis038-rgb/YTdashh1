@@ -1,6 +1,5 @@
 module.exports = async function handler(req, res) {
   console.log('[chat] method:', req.method);
-  console.log('[chat] headers:', JSON.stringify(req.headers));
 
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -50,7 +49,7 @@ module.exports = async function handler(req, res) {
   }
 
   try {
-    console.log('[chat] calling Anthropic...');
+    console.log('[chat] calling Anthropic (stream)...');
     const upstream = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -63,15 +62,36 @@ module.exports = async function handler(req, res) {
         max_tokens: 1000,
         system: system || '',
         messages,
+        stream: true,
       }),
     });
 
     console.log('[chat] Anthropic status:', upstream.status);
-    const data = await upstream.json();
-    console.log('[chat] Anthropic response type:', data.type);
-    return res.status(upstream.status).json(data);
+
+    if (!upstream.ok) {
+      const errData = await upstream.json();
+      console.error('[chat] Anthropic error:', JSON.stringify(errData));
+      return res.status(upstream.status).json(errData);
+    }
+
+    // Stream SSE back to client
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    const reader = upstream.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      res.write(value);
+    }
+    res.end();
   } catch (err) {
     console.error('[chat] fetch error:', err.message);
-    return res.status(500).json({ error: 'Proxy error: ' + err.message });
+    if (!res.headersSent) {
+      return res.status(500).json({ error: 'Proxy error: ' + err.message });
+    }
+    res.end();
   }
 };
