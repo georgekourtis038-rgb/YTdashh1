@@ -551,6 +551,60 @@ body {
     } catch (_) { return []; }
   }
 
+  function getNutritionTargets() {
+    try {
+      const weightLbs = parseFloat(lsRaw('dash_weight'));
+      const heightCm  = parseFloat(lsRaw('dash_height'));
+      const age       = parseFloat(lsRaw('dash_age'));
+      const sex       = (lsRaw('dash_sex') || '').toLowerCase();
+
+      if (isNaN(weightLbs) || weightLbs <= 0 || isNaN(heightCm) || heightCm <= 0 || isNaN(age) || age <= 0) return null;
+
+      const weightKg = weightLbs / 2.205;
+      const isFemale = sex === 'f' || sex === 'female';
+      const bmr = Math.round((10 * weightKg) + (6.25 * heightCm) - (5 * age) + (isFemale ? -161 : 5));
+
+      const sessions = getGymSessionsPerWeek() || 0;
+      let multiplier, activityLabel;
+      if (sessions >= 5)      { multiplier = 1.725; activityLabel = 'active';   }
+      else if (sessions >= 3) { multiplier = 1.55;  activityLabel = 'moderate'; }
+      else if (sessions >= 1) { multiplier = 1.375; activityLabel = 'light';    }
+      else                    { multiplier = 1.2;   activityLabel = 'sedentary';}
+
+      const tdee = Math.round(bmr * multiplier);
+
+      let recommendedCals = tdee;
+      let deficitNote = null;
+
+      const goals = getLtGoals();
+      const weightGoal = goals.find(function(g) {
+        return g.category === 'weight' && g.targetValue != null && g.deadline;
+      });
+
+      if (weightGoal) {
+        const targetRaw = parseFloat(weightGoal.targetValue);
+        const targetLbs = (weightGoal.unit === 'kg') ? targetRaw * 2.205 : targetRaw;
+        const lbsToLose = weightLbs - targetLbs;
+        if (lbsToLose > 0.5) {
+          const today = new Date(); today.setHours(0, 0, 0, 0);
+          const deadline = new Date(weightGoal.deadline + 'T00:00:00');
+          const daysLeft = Math.round((deadline - today) / 86400000);
+          if (daysLeft > 0) {
+            const rawDeficit = Math.round((lbsToLose * 3500) / daysLeft);
+            const dailyDeficit = Math.min(1000, rawDeficit);
+            recommendedCals = tdee - dailyDeficit;
+            deficitNote = `${dailyDeficit} kcal/day deficit · lose ${lbsToLose.toFixed(1)} lbs by ${weightGoal.deadline} (${daysLeft} days remaining)`;
+          }
+        }
+      }
+
+      const proteinMin = Math.round(weightLbs * 0.8);
+      const proteinMax = Math.round(weightLbs * 1.0);
+
+      return { bmr, tdee, multiplier, activityLabel, recommendedCals, deficitNote, proteinMin, proteinMax };
+    } catch (_) { return null; }
+  }
+
   // ── System prompt ────────────────────────────────────────────────
   function buildSystemPrompt() {
     const today = activeDate();
@@ -606,8 +660,17 @@ body {
       const parts = [];
       if (age)    parts.push('age ' + age);
       if (sex)    parts.push(sex);
-      if (height) parts.push(height + '"');
+      if (height) parts.push(height + ' cm');
       p += `\nPROFILE:    ${parts.join(', ')}`;
+    }
+
+    const nutrition = getNutritionTargets();
+    if (nutrition) {
+      p += `\nNUTRITION:  BMR ${nutrition.bmr} kcal · TDEE ${nutrition.tdee} kcal (${nutrition.activityLabel}, ${getGymSessionsPerWeek() || 0}x/week)`;
+      p += `\n  Calories: ${nutrition.recommendedCals} kcal/day`;
+      if (nutrition.deficitNote) p += ` — ${nutrition.deficitNote}`;
+      else p += ' — maintenance';
+      p += `\n  Protein:  ${nutrition.proteinMin}–${nutrition.proteinMax} g/day`;
     }
 
     const ltGoals = getLtGoals();
