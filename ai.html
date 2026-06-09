@@ -279,6 +279,19 @@ body {
 }
 
 
+/* ── Briefing refresh button ── */
+.briefing-header { justify-content: flex-start; }
+.briefing-refresh-btn {
+  margin-left: auto; width: 26px; height: 26px;
+  border: none; background: transparent; color: var(--mint);
+  opacity: 0.5; cursor: pointer; border-radius: 6px; padding: 0;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+}
+.briefing-refresh-btn:hover { opacity: 1; }
+.briefing-refresh-btn.spinning svg { animation: refreshSpin 0.65s linear; }
+@keyframes refreshSpin { to { transform: rotate(360deg); } }
+
 /* ── Streaming cursor ── */
 .streaming::after {
   content: '▋';
@@ -313,6 +326,11 @@ body {
     <div class="briefing-header">
       <span class="briefing-icon">⚡</span>
       <span class="briefing-title">Daily Briefing</span>
+      <button class="briefing-refresh-btn" id="briefingRefresh" aria-label="Refresh briefing" title="Regenerate">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <path d="M12.5 2.5v3h-3M1.5 11.5v-3h3M2.1 5.5a5.5 5.5 0 0 1 10 1M11.9 8.5a5.5 5.5 0 0 1-10 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
     <div class="briefing-loading" id="briefingLoading">
       <div class="dot-pulse"><span></span><span></span><span></span></div>
@@ -363,6 +381,7 @@ body {
     return fmt(d);
   }
   function calendarToday() { return fmt(new Date()); }
+  function todayStr()      { return fmt(new Date()); }
 
   // ── Profile ──────────────────────────────────────────────────────
   function getFirstName() {
@@ -429,6 +448,10 @@ body {
     return { latestLbs, trendStr };
   }
 
+  function getLtGoals() {
+    try { return JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; }
+  }
+
   function getGymSplitToday() {
     try {
       const split = lsGet('dash_gym_split') || {};
@@ -488,6 +511,15 @@ body {
       if (sex)    parts.push(sex);
       if (height) parts.push(height + '"');
       p += `\nPROFILE:    ${parts.join(', ')}`;
+    }
+
+    const ltGoals = getLtGoals();
+    if (ltGoals.length) {
+      p += '\nLONG-TERM GOALS:';
+      ltGoals.forEach(function(g) {
+        p += '\n  ' + g.title + ': target ' + g.targetValue + ' ' + g.unit +
+             (g.deadline ? ', deadline ' + g.deadline : '');
+      });
     }
 
     p += '\n===';
@@ -615,17 +647,39 @@ body {
     }
   }
 
-  // ── Daily briefing ────────────────────────────────────────────────
-  async function loadBriefing() {
-    const loadingEl = document.getElementById('briefingLoading');
-    const textEl    = document.getElementById('briefingText');
-    let shown = false;
+  // ── Daily briefing (cached per day) ─────────────────────────────
+  async function loadBriefing(forceRefresh) {
+    const loadingEl  = document.getElementById('briefingLoading');
+    const textEl     = document.getElementById('briefingText');
+    const refreshBtn = document.getElementById('briefingRefresh');
 
+    // Serve from cache if available and not forcing
+    if (!forceRefresh) {
+      try {
+        const cache = JSON.parse(localStorage.getItem('axis_briefing_cache') || 'null');
+        if (cache && cache.date === todayStr() && cache.text) {
+          loadingEl.style.display = 'none';
+          textEl.className = 'briefing-text';
+          textEl.textContent = cache.text;
+          textEl.style.display = '';
+          return;
+        }
+      } catch(_) {}
+    }
+
+    // Generate fresh
+    loadingEl.style.display = '';
+    textEl.style.display = 'none';
+    textEl.classList.remove('streaming');
+    if (refreshBtn) { refreshBtn.classList.add('spinning'); refreshBtn.disabled = true; }
+
+    let shown = false;
+    let fullText = '';
     try {
       await streamClaude([{
         role: 'user',
         content: 'Give me a 3-sentence daily briefing based on my data. Be specific and actionable. Start with the most important thing I should focus on today.'
-      }], function (accumulated) {
+      }], function(accumulated) {
         if (!shown) {
           loadingEl.style.display = 'none';
           textEl.className = 'briefing-text streaming';
@@ -633,15 +687,23 @@ body {
           shown = true;
         }
         textEl.textContent = accumulated;
+        fullText = accumulated;
       });
       textEl.classList.remove('streaming');
       if (!shown) throw new Error('empty');
+      // Cache for today
+      try { localStorage.setItem('axis_briefing_cache', JSON.stringify({ date: todayStr(), text: fullText })); } catch(_) {}
     } catch (_) {
       loadingEl.style.display = 'none';
       textEl.classList.remove('streaming');
       textEl.className = 'briefing-no-key';
       textEl.textContent = 'Could not load briefing — check your connection or try again.';
       textEl.style.display = '';
+    } finally {
+      if (refreshBtn) {
+        refreshBtn.disabled = false;
+        setTimeout(function() { refreshBtn.classList.remove('spinning'); }, 700);
+      }
     }
   }
 
@@ -652,6 +714,9 @@ body {
 
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
+
+    const refreshBtn = document.getElementById('briefingRefresh');
+    if (refreshBtn) refreshBtn.addEventListener('click', function() { loadBriefing(true); });
 
     sendBtn.addEventListener('click', function () { sendMessage(input.value); });
     input.addEventListener('keydown', function (e) {

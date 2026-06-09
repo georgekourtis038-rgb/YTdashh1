@@ -611,6 +611,91 @@ body::after {
   .gm-progress-num { font-size: 36px; }
 }
 
+/* ── Long-term goals ── */
+.ltg-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 10px;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+.ltg-card-top {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  margin-bottom: 10px;
+}
+.ltg-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+.ltg-card-sub   { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
+.ltg-card-actions { display: flex; gap: 5px; flex-shrink: 0; margin-left: 8px; }
+.ltg-btn-icon {
+  width: 28px; height: 28px; border: none;
+  background: rgba(255,255,255,0.06); border-radius: 8px;
+  color: var(--text-tertiary); font-size: 12px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s;
+}
+.ltg-btn-icon:hover { background: rgba(255,255,255,0.10); }
+.ltg-btn-del:hover  { color: var(--danger); }
+.ltg-vals { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
+.ltg-cur {
+  font-size: 28px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1;
+}
+.ltg-sep { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.ltg-bar-wrap { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
+.ltg-bar { height: 100%; background: var(--success); border-radius: 3px; box-shadow: 0 0 6px rgba(107,227,164,0.4); transition: width 0.7s cubic-bezier(0.22,1,0.36,1); }
+.ltg-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
+.ltg-empty  { text-align: center; font-size: 13px; color: var(--text-tertiary); padding: 20px 0; }
+.ltg-add-btn {
+  width: 100%; padding: 12px; border-radius: 12px;
+  border: 1px dashed rgba(255,255,255,0.14); background: transparent;
+  color: var(--text-tertiary); font-family: var(--font); font-size: 14px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  margin-top: 4px;
+}
+.ltg-add-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); border-color: rgba(255,255,255,0.24); }
+/* LTG Modal */
+.ltg-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.72);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  z-index: 900; align-items: flex-end; justify-content: center;
+}
+.ltg-modal {
+  background: #111318; border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px max(28px, calc(env(safe-area-inset-bottom) + 20px));
+  width: 100%; max-width: 540px; max-height: 90vh;
+  overflow-y: auto; overscroll-behavior: contain;
+}
+.ltg-modal-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
+.ltg-field { margin-bottom: 14px; }
+.ltg-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
+.ltg-minput, .ltg-mselect {
+  width: 100%; background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10); border-radius: 10px;
+  color: var(--text-primary); font-family: var(--font);
+  font-size: 16px; padding: 10px 13px; outline: none;
+  -webkit-appearance: none; box-sizing: border-box; transition: border-color 0.15s;
+}
+.ltg-minput:focus, .ltg-mselect:focus { border-color: rgba(107,227,164,0.45); }
+.ltg-modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+.ltg-btn-save {
+  flex: 1; padding: 13px; border-radius: 12px; border: none;
+  background: linear-gradient(180deg,#FFFFFF 0%,#E8E5DD 100%);
+  color: #0A0A0B; font-family: var(--font); font-size: 14px; font-weight: 700;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.ltg-btn-cancel {
+  padding: 13px 18px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04);
+  color: var(--text-secondary); font-family: var(--font); font-size: 14px;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+
 </style>
 <link rel="stylesheet" href="/animations.css">
 </head>
@@ -713,6 +798,53 @@ body::after {
     </div>
   </div>
 
+  <!-- LONG-TERM GOALS -->
+  <div class="section" id="ltgSection">
+    <div class="section-title">Long-Term Goals</div>
+    <div id="ltgList"></div>
+    <button type="button" class="ltg-add-btn" id="ltgAddBtn">+ Add Goal</button>
+  </div>
+
+</div>
+
+<!-- LTG Add/Edit Modal -->
+<div class="ltg-modal-bg" id="ltgModalBg" style="display:none">
+  <div class="ltg-modal">
+    <div class="ltg-modal-title" id="ltgModalTitle">New Goal</div>
+    <input type="hidden" id="ltgEditIdx">
+    <div class="ltg-field">
+      <div class="ltg-label">Category</div>
+      <select class="ltg-mselect" id="ltgCat">
+        <option value="weight">Weight</option>
+        <option value="water">Water (daily intake)</option>
+        <option value="fitness">Fitness (sessions/wk)</option>
+        <option value="custom">Custom</option>
+      </select>
+    </div>
+    <div class="ltg-field">
+      <div class="ltg-label">Title</div>
+      <input type="text" class="ltg-minput" id="ltgTitle" placeholder="e.g. Reach 170lb" autocomplete="off">
+    </div>
+    <div class="ltg-field" id="ltgCurRow" style="display:none">
+      <div class="ltg-label">Current Value</div>
+      <input type="number" class="ltg-minput" id="ltgCurVal" placeholder="e.g. 5" inputmode="decimal" step="any">
+    </div>
+    <div class="ltg-field">
+      <div class="ltg-label">Target Value &amp; Unit</div>
+      <div style="display:flex;gap:8px">
+        <input type="number" class="ltg-minput" id="ltgTarget" placeholder="e.g. 170" inputmode="decimal" step="any" style="flex:1">
+        <input type="text" class="ltg-minput" id="ltgUnit" placeholder="unit" autocomplete="off" style="width:100px">
+      </div>
+    </div>
+    <div class="ltg-field">
+      <div class="ltg-label">Deadline (optional)</div>
+      <input type="date" class="ltg-minput" id="ltgDeadline">
+    </div>
+    <div class="ltg-modal-btns">
+      <button type="button" class="ltg-btn-cancel" id="ltgCancelBtn">Cancel</button>
+      <button type="button" class="ltg-btn-save"   id="ltgSaveBtn">Save</button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -1354,6 +1486,194 @@ body::after {
     loadToday(); loadTomorrow(); renderStreak();
     updateDayRing();
   });
+})();
+</script>
+
+<script>
+/* ── Long-Term Goals ─────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  const KEY = 'axis_goals';
+  function getGoals()     { try { return JSON.parse(localStorage.getItem(KEY)) || []; } catch(_) { return []; } }
+  function saveGoals(arr) { try { localStorage.setItem(KEY, JSON.stringify(arr)); } catch(_) {} }
+
+  function todayStr() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  }
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function getCurrentValue(goal) {
+    if (goal.category === 'weight') {
+      try {
+        const wts = JSON.parse(localStorage.getItem('po_coach_weights') || 'null');
+        if (Array.isArray(wts) && wts.length) return parseFloat(wts[wts.length-1].weight);
+      } catch(_) {}
+      try { const w = JSON.parse(localStorage.getItem('dash_weight')); if (w != null) return parseFloat(w); } catch(_) {}
+      return null;
+    }
+    if (goal.category === 'water') {
+      try {
+        const state = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
+        return ((state.history || {})[todayStr()]) || 0;
+      } catch(_) { return 0; }
+    }
+    return goal.currentValue != null ? parseFloat(goal.currentValue) : null;
+  }
+
+  function calcPct(goal, cur) {
+    if (cur == null || goal.startValue == null) return 0;
+    const s = parseFloat(goal.startValue), t = parseFloat(goal.targetValue), c = parseFloat(cur);
+    if (isNaN(s) || isNaN(t) || isNaN(c) || t === s) return 0;
+    return Math.min(100, Math.max(0, (c - s) / (t - s) * 100));
+  }
+
+  function calcProjection(goal, cur) {
+    if (cur == null || goal.startValue == null || !goal.startDate) return null;
+    const s = parseFloat(goal.startValue), t = parseFloat(goal.targetValue), c = parseFloat(cur);
+    if (isNaN(s) || isNaN(t) || isNaN(c) || t === s) return null;
+    const needed = t - c;
+    if (Math.abs(needed) < 0.001) return 'Done! 🎉';
+    const daysElapsed = Math.max(1, (Date.now() - new Date(goal.startDate + 'T00:00:00').getTime()) / 86400000);
+    const rate = (c - s) / daysElapsed;
+    if (rate === 0 || (rate > 0) !== (needed > 0)) return null;
+    const daysLeft = needed / rate;
+    if (daysLeft < 0 || !isFinite(daysLeft)) return null;
+    return new Date(Date.now() + daysLeft * 86400000)
+      .toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+  }
+
+  function render() {
+    const goals = getGoals();
+    const container = document.getElementById('ltgList');
+    if (!container) return;
+    container.innerHTML = '';
+    if (!goals.length) {
+      container.innerHTML = '<p class="ltg-empty">No long-term goals yet — tap below to add one.</p>';
+      return;
+    }
+    goals.forEach(function(goal, i) {
+      const cur  = getCurrentValue(goal);
+      const pct  = calcPct(goal, cur);
+      const proj = calcProjection(goal, cur);
+      const curStr = cur != null ? parseFloat(cur).toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+      const tgtStr = parseFloat(goal.targetValue).toLocaleString(undefined,{maximumFractionDigits:1});
+      const dl = goal.deadline
+        ? new Date(goal.deadline+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+        : null;
+      const el = document.createElement('div');
+      el.className = 'ltg-card';
+      el.innerHTML =
+        '<div class="ltg-card-top">' +
+          '<div><div class="ltg-card-title">' + esc(goal.title) + '</div>' +
+          '<div class="ltg-card-sub">' + esc(goal.category) + ' · ' + esc(goal.unit) + '</div></div>' +
+          '<div class="ltg-card-actions">' +
+            '<button class="ltg-btn-icon" data-edit="'+i+'" aria-label="Edit">✏️</button>' +
+            '<button class="ltg-btn-icon ltg-btn-del" data-del="'+i+'" aria-label="Delete">✕</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="ltg-vals"><span class="ltg-cur">'+curStr+'</span>' +
+          '<span class="ltg-sep">/ '+tgtStr+' '+esc(goal.unit)+'</span></div>' +
+        '<div class="ltg-bar-wrap"><div class="ltg-bar" style="width:'+pct.toFixed(1)+'%"></div></div>' +
+        '<div class="ltg-footer">' +
+          '<span>'+(proj ? 'Projected: '+proj : 'Tracking…')+'</span>' +
+          (dl ? '<span>By '+dl+'</span>' : '') +
+        '</div>';
+      container.appendChild(el);
+    });
+  }
+
+  document.getElementById('ltgList').addEventListener('click', function(e) {
+    const ed = e.target.closest('[data-edit]');
+    const dl = e.target.closest('[data-del]');
+    if (ed) openModal(parseInt(ed.dataset.edit));
+    if (dl) deleteGoal(parseInt(dl.dataset.del));
+  });
+
+  function openModal(idx) {
+    const goals = getGoals();
+    const g = idx != null ? goals[idx] : null;
+    document.getElementById('ltgModalTitle').textContent = g ? 'Edit Goal' : 'New Goal';
+    document.getElementById('ltgEditIdx').value   = idx != null ? idx : '';
+    document.getElementById('ltgCat').value       = g ? g.category    : 'weight';
+    document.getElementById('ltgTitle').value     = g ? g.title       : '';
+    document.getElementById('ltgTarget').value    = g ? g.targetValue  : '';
+    document.getElementById('ltgUnit').value      = g ? g.unit        : '';
+    document.getElementById('ltgDeadline').value  = g ? (g.deadline||'') : '';
+    document.getElementById('ltgCurVal').value    = g ? (g.currentValue != null ? g.currentValue : '') : '';
+    updateModalFields();
+    document.getElementById('ltgModalBg').style.display = 'flex';
+  }
+
+  function closeModal() { document.getElementById('ltgModalBg').style.display = 'none'; }
+
+  function updateModalFields() {
+    const cat = document.getElementById('ltgCat').value;
+    document.getElementById('ltgCurRow').style.display = (cat === 'custom' || cat === 'fitness') ? '' : 'none';
+    const unitEl = document.getElementById('ltgUnit');
+    const defaults = ['lb','kg','ml','sessions/wk'];
+    if (!unitEl.value || defaults.includes(unitEl.value)) {
+      if      (cat === 'weight')  unitEl.value = 'lb';
+      else if (cat === 'water')   unitEl.value = 'ml';
+      else if (cat === 'fitness') unitEl.value = 'sessions/wk';
+      else                        unitEl.value = '';
+    }
+  }
+
+  function saveGoal() {
+    const title  = document.getElementById('ltgTitle').value.trim();
+    const target = parseFloat(document.getElementById('ltgTarget').value);
+    const unit   = document.getElementById('ltgUnit').value.trim();
+    const cat    = document.getElementById('ltgCat').value;
+    const dl     = document.getElementById('ltgDeadline').value;
+    const idxStr = document.getElementById('ltgEditIdx').value;
+    if (!title)        { alert('Enter a title.');        return; }
+    if (isNaN(target)) { alert('Enter a target value.'); return; }
+    const goals = getGoals();
+    if (idxStr !== '') {
+      const i = parseInt(idxStr);
+      Object.assign(goals[i], { category:cat, title, targetValue:target, unit, deadline:dl });
+      if (cat === 'custom' || cat === 'fitness') {
+        const cv = parseFloat(document.getElementById('ltgCurVal').value);
+        if (!isNaN(cv)) goals[i].currentValue = cv;
+      }
+    } else {
+      const newG = { id:'ltg_'+Date.now(), category:cat, title, targetValue:target, unit, deadline:dl,
+                     startDate:todayStr(), createdAt:Date.now() };
+      const tempCur = getCurrentValue(newG);
+      newG.startValue = tempCur != null ? tempCur : target;
+      if (cat === 'custom' || cat === 'fitness') {
+        const cv = parseFloat(document.getElementById('ltgCurVal').value);
+        newG.currentValue = isNaN(cv) ? null : cv;
+        newG.startValue   = isNaN(cv) ? target : cv;
+      }
+      goals.push(newG);
+    }
+    saveGoals(goals);
+    closeModal();
+    render();
+  }
+
+  function deleteGoal(i) {
+    if (!confirm('Delete this goal?')) return;
+    const goals = getGoals(); goals.splice(i, 1); saveGoals(goals); render();
+  }
+
+  document.getElementById('ltgAddBtn').addEventListener('click', function() { openModal(null); });
+  document.getElementById('ltgSaveBtn').addEventListener('click', saveGoal);
+  document.getElementById('ltgCancelBtn').addEventListener('click', closeModal);
+  document.getElementById('ltgModalBg').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+  document.getElementById('ltgCat').addEventListener('change', updateModalFields);
+
+  // Re-render when weight or water data changes (other tabs or topbar water add)
+  window.addEventListener('storage', function(e) {
+    if (e.key === KEY || e.key === 'po_coach_weights' || e.key === 'po_water_v1') render();
+  });
+
+  render();
 })();
 </script>
 
