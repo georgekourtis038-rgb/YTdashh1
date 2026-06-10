@@ -635,34 +635,109 @@ body {
   }
 
   // ── Gmail inbox context ──────────────────────────────────────────
-  let _cachedGmailEmails = [];
+  // Primary source: axis_gmail_cache written by email.html (includes message IDs).
+  // Fallback: live fetch if cache is absent.
+  let _cachedGmailEmails = []; // [{ id, sender, subject, snippet }]
+
+  function _getGmailToken() {
+    try {
+      const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+      if (!stored || !stored.token || Date.now() >= (stored.expiry || 0)) return null;
+      return stored.token;
+    } catch (_) { return null; }
+  }
+
+  function loadGmailFromCache() {
+    try {
+      const cache = JSON.parse(localStorage.getItem('axis_gmail_cache') || 'null');
+      if (Array.isArray(cache) && cache.length) {
+        _cachedGmailEmails = cache.slice(0, 5);
+        return true;
+      }
+    } catch (_) {}
+    return false;
+  }
 
   async function fetchGmailEmails() {
-    const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
-    const tok = stored && stored.token;
-    if (!tok || Date.now() >= (stored.expiry || 0)) return;
+    // Prefer the pre-parsed cache from email.html
+    if (loadGmailFromCache()) return;
+    // Fallback: live fetch
+    const tok = _getGmailToken();
+    if (!tok) return;
     try {
       const listRes = await fetch(
-        'https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=10',
+        'https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=5',
         { headers: { 'Authorization': 'Bearer ' + tok } }
       );
       if (!listRes.ok) return;
       const listData = await listRes.json();
       const msgs = listData.messages || [];
-      const details = await Promise.all(msgs.map(m =>
-        fetch(
-          `https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From,Subject`,
+      const details = await Promise.all(msgs.map(function(m) {
+        return fetch(
+          'https://www.googleapis.com/gmail/v1/users/me/messages/' + m.id + '?format=metadata&metadataHeaders=From,Subject',
           { headers: { 'Authorization': 'Bearer ' + tok } }
-        ).then(r => r.ok ? r.json() : null).catch(() => null)
-      ));
-      _cachedGmailEmails = details.filter(Boolean).map(msg => {
+        ).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+      }));
+      _cachedGmailEmails = details.filter(Boolean).map(function(msg) {
         const hdrs = (msg.payload && msg.payload.headers) || [];
-        const from = (hdrs.find(h => h.name === 'From') || {}).value || '';
-        const subject = (hdrs.find(h => h.name === 'Subject') || {}).value || '(No subject)';
-        const m = from.match(/^(.+?)\s*<[^>]+>$/);
-        const sender = m ? m[1].replace(/^"|"$/g, '').trim() : from.split('@')[0];
-        return { sender, subject, snippet: (msg.snippet || '').slice(0, 100) };
+        const from = (hdrs.find(function(h) { return h.name === 'From'; }) || {}).value || '';
+        const subject = (hdrs.find(function(h) { return h.name === 'Subject'; }) || {}).value || '(No subject)';
+        const m2 = from.match(/^(.+?)\s*<[^>]+>$/);
+        const sender = m2 ? m2[1].replace(/^"|"$/g, '').trim() : from.split('@')[0];
+        return { id: msg.id, sender, subject, snippet: (msg.snippet || '').slice(0, 120) };
       });
+    } catch (_) {}
+  }
+
+  // ── Google Calendar context ───────────────────────────────────────
+  let _calendarEvents = { today: [], tomorrow: [] }; // [{ time, title, duration }]
+
+  async function fetchCalendarEvents() {
+    const tok = _getGmailToken();
+    if (!tok) return;
+    try {
+      const tz   = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now  = new Date();
+      // today window: start of today → end of today
+      const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
+      const todayEnd   = new Date(now); todayEnd.setHours(23,59,59,999);
+      // tomorrow window
+      const tomStart = new Date(todayStart); tomStart.setDate(tomStart.getDate() + 1);
+      const tomEnd   = new Date(todayEnd);   tomEnd.setDate(tomEnd.getDate() + 1);
+
+      async function fetchWindow(tMin, tMax) {
+        const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
+          + '?singleEvents=true&orderBy=startTime'
+          + '&timeMin=' + encodeURIComponent(tMin.toISOString())
+          + '&timeMax=' + encodeURIComponent(tMax.toISOString())
+          + '&maxResults=10'
+          + '&timeZone=' + encodeURIComponent(tz);
+        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
+        if (!res.ok) return [];
+        const data = await res.json();
+        return (data.items || []).map(function(ev) {
+          const startRaw = ev.start && (ev.start.dateTime || ev.start.date);
+          let timeLabel = '';
+          if (ev.start && ev.start.dateTime) {
+            const d = new Date(ev.start.dateTime);
+            timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+          } else {
+            timeLabel = 'All day';
+          }
+          let duration = '';
+          if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
+            const mins = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
+            duration = mins >= 60 ? (mins / 60).toFixed(mins % 60 === 0 ? 0 : 1) + 'h' : mins + 'min';
+          }
+          return { time: timeLabel, title: ev.summary || '(No title)', duration };
+        });
+      }
+
+      const [todayEvts, tomEvts] = await Promise.all([
+        fetchWindow(todayStart, todayEnd),
+        fetchWindow(tomStart, tomEnd)
+      ]);
+      _calendarEvents = { today: todayEvts, tomorrow: tomEvts };
     } catch (_) {}
   }
 
@@ -757,11 +832,33 @@ body {
       });
     }
 
+    // Calendar events
+    if (_calendarEvents.today.length || _calendarEvents.tomorrow.length) {
+      p += '\nCALENDAR:';
+      if (_calendarEvents.today.length) {
+        p += '\n  Today:';
+        _calendarEvents.today.forEach(function(ev) {
+          p += '\n    ' + ev.time + ' — ' + ev.title + (ev.duration ? ' (' + ev.duration + ')' : '');
+        });
+      } else {
+        p += '\n  Today: nothing scheduled';
+      }
+      if (_calendarEvents.tomorrow.length) {
+        p += '\n  Tomorrow:';
+        _calendarEvents.tomorrow.forEach(function(ev) {
+          p += '\n    ' + ev.time + ' — ' + ev.title + (ev.duration ? ' (' + ev.duration + ')' : '');
+        });
+      } else {
+        p += '\n  Tomorrow: nothing scheduled';
+      }
+    }
+
+    // Unread emails
     if (_cachedGmailEmails.length) {
-      p += '\nRECENT UNREAD EMAILS (inbox):';
+      p += '\nUNREAD EMAILS:';
       _cachedGmailEmails.forEach(function(e) {
-        p += `\n  From: ${e.sender} | Subject: ${e.subject}`;
-        if (e.snippet) p += `\n  Preview: ${e.snippet}`;
+        p += '\n  [id:' + (e.id || '?') + '] From: ' + e.sender + ' | Subject: ' + e.subject;
+        if (e.snippet) p += '\n  Preview: ' + e.snippet;
       });
     }
 
@@ -772,6 +869,7 @@ You can write directly to the app by embedding action tags in your response. Rul
 - Only use actions when the user explicitly asks you to change or update something.
 - Always explain what you are about to do in plain prose first, then include the action tag.
 - Never fabricate goal IDs — only use IDs from the LONG-TERM GOALS list above.
+- Never fabricate email IDs — only use IDs from the UNREAD EMAILS list above.
 - Never include multiple actions for the same tool in one response.
 
 Syntax: <action>{"tool": "tool_name", "params": {...}}</action>
@@ -787,6 +885,8 @@ Available tools:
     params: { id: string }
   add_calendar_event   — add an event to Google Calendar
     params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
+  mark_email_read      — mark an email as read in Gmail
+    params: { id: string }
 ===`;
     return p;
   }
@@ -942,7 +1042,34 @@ Available tools:
     if (tool === 'add_calendar_event') {
       return await addCalendarEvent(params);
     }
+    if (tool === 'mark_email_read') {
+      return await markEmailRead(params.id);
+    }
     return 'Unknown tool: ' + tool;
+  }
+
+  async function markEmailRead(msgId) {
+    const tok = _getGmailToken();
+    if (!tok) return 'Gmail not connected — sign in via the email page first.';
+    try {
+      const res = await fetch(
+        'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msgId + '/modify',
+        {
+          method: 'POST',
+          headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
+        }
+      );
+      if (!res.ok) return 'Gmail error ' + res.status + ' — could not mark as read.';
+      // Remove from local cache so it won't appear in future prompts
+      _cachedGmailEmails = _cachedGmailEmails.filter(function(e) { return e.id !== msgId; });
+      try {
+        const cache = JSON.parse(localStorage.getItem('axis_gmail_cache') || '[]');
+        const updated = cache.filter(function(e) { return e.id !== msgId; });
+        localStorage.setItem('axis_gmail_cache', JSON.stringify(updated));
+      } catch (_) {}
+      return 'Email marked as read.';
+    } catch (e) { return 'Gmail error: ' + e.message; }
   }
 
   // ── Action parser ─────────────────────────────────────────────────
@@ -1071,7 +1198,7 @@ Available tools:
     try {
       await streamClaude([{
         role: 'user',
-        content: 'Give me a 3-sentence daily briefing based on my data. Be specific and actionable. Start with the most important thing I should focus on today.'
+        content: 'Give me a 3-sentence daily briefing. Lead with the single most important thing for today — factoring in calendar events, pending goals, and any emails that connect to my priorities. Call out any scheduling conflicts or high-signal emails worth acting on. Be specific, reference actual times and names, and stay under 60 words.'
       }], function(accumulated) {
         if (!shown) {
           loadingEl.style.display = 'none';
@@ -1105,8 +1232,10 @@ Available tools:
   // ── Boot ──────────────────────────────────────────────────────────
   function boot() {
     document.getElementById('aiGreeting').textContent = getGreeting();
-    fetchGmailEmails();
-    loadBriefing();
+    // Load calendar and email context in parallel before the briefing
+    Promise.all([fetchCalendarEvents(), fetchGmailEmails()]).then(function() {
+      loadBriefing();
+    });
 
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
