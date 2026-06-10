@@ -697,6 +697,163 @@ main {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.08); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.15); }
+
+/* ===== CALORIE TRACKER ===== */
+.cal-section { margin-top: 40px; }
+.cal-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 16px; padding: 22px 20px 18px; margin-bottom: 14px;
+}
+.cal-label {
+  font-size: 10px; letter-spacing: 0.20em; font-weight: 700;
+  color: var(--text-tertiary); margin-bottom: 12px; text-transform: uppercase;
+}
+.cal-kcal-display { display: flex; flex-direction: column; gap: 2px; margin-bottom: 14px; }
+.cal-kcal-big {
+  font-size: 56px; font-weight: 700; letter-spacing: -0.03em;
+  line-height: 1; color: #fff; font-variant-numeric: tabular-nums;
+}
+.cal-kcal-target { font-size: 15px; color: rgba(255,255,255,0.4); font-weight: 500; margin-top: 4px; }
+.cal-bar-row { margin-bottom: 10px; }
+.cal-bar-label {
+  display: flex; justify-content: space-between;
+  font-size: 11px; color: rgba(255,255,255,0.4);
+  margin-bottom: 4px; font-family: var(--font-mono); font-variant-numeric: tabular-nums;
+}
+.cal-bar-track { height: 8px; border-radius: 4px; background: rgba(255,255,255,0.06); overflow: hidden; }
+.cal-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; min-width: 0; }
+.cal-bar-fill.kcal { background: linear-gradient(90deg, #2de8a2, #22c97e); }
+.cal-bar-fill.protein { background: #7dd3fc; }
+.cal-bar-fill.carbs { background: #fbbf24; }
+.cal-bar-fill.fat { background: #f87171; }
+.cal-macro-pills { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 14px; }
+.cal-macro-pill {
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px; padding: 8px 10px; text-align: center;
+}
+.cal-macro-pill-val { font-size: 18px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; line-height: 1.2; }
+.cal-macro-pill-label {
+  font-size: 10px; color: rgba(255,255,255,0.4); font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 0.10em; margin-top: 3px;
+}
+.cal-tabs {
+  display: flex; gap: 4px;
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px; padding: 3px; margin-bottom: 14px;
+}
+.cal-tab {
+  flex: 1; padding: 9px; border: none; background: transparent;
+  color: rgba(255,255,255,0.4); border-radius: 7px;
+  font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: background 0.15s, color 0.15s;
+}
+.cal-tab.active { background: linear-gradient(180deg, #fff 0%, #e8e5dd 100%); color: #0a0a0b; }
+.cal-input {
+  width: 100%; font-size: 16px; padding: 10px 12px;
+  border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(0,0,0,0.28); color: #fff; font-family: inherit;
+  outline: none; box-sizing: border-box; -moz-appearance: textfield;
+}
+.cal-input::placeholder { color: rgba(255,255,255,0.3); }
+.cal-input:focus { border-color: rgba(45,232,162,0.4); box-shadow: 0 0 0 2px rgba(45,232,162,0.08); }
+.cal-input::-webkit-outer-spin-button, .cal-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.cal-search-wrap { position: relative; }
+.cal-search-results {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+  background: #1a1a1e; border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px; padding: 4px; max-height: 280px; overflow-y: auto; z-index: 110;
+}
+.cal-search-result {
+  display: flex; flex-direction: column; gap: 2px; padding: 10px 12px;
+  border-radius: 7px; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-search-result:hover { background: rgba(255,255,255,0.05); }
+.cal-search-result-name { font-size: 13px; font-weight: 600; color: #fff; }
+.cal-search-result-meta { font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--font-mono); }
+.cal-portion-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,0.06); }
+.cal-selected-food { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 10px; }
+.cal-portion-input-row { display: flex; gap: 8px; }
+.cal-portion-input-row .cal-input { flex: 1; }
+.cal-log-btn {
+  padding: 10px 18px; border: none; border-radius: 10px;
+  background: linear-gradient(180deg, #fff 0%, #e8e5dd 100%);
+  color: #0a0a0b; font-weight: 700; font-size: 14px; font-family: inherit;
+  cursor: pointer; white-space: nowrap;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.30);
+  -webkit-tap-highlight-color: transparent;
+}
+.cal-portion-preview {
+  font-size: 12px; color: rgba(255,255,255,0.5); font-family: var(--font-mono);
+  margin-top: 8px; font-variant-numeric: tabular-nums;
+}
+.cal-photo-label {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 28px 20px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px;
+  cursor: pointer; color: rgba(255,255,255,0.5); font-size: 14px; font-weight: 600;
+  -webkit-tap-highlight-color: transparent; transition: border-color 0.2s, background 0.2s;
+  text-align: center;
+}
+.cal-photo-label:hover { border-color: rgba(45,232,162,0.4); background: rgba(45,232,162,0.04); }
+.cal-camera-icon { font-size: 36px; line-height: 1; }
+.cal-photo-status {
+  font-size: 13px; color: rgba(255,255,255,0.5); text-align: center;
+  padding: 10px 0; font-family: var(--font-mono);
+}
+.cal-photo-preview-img {
+  width: 100%; max-height: 180px; object-fit: cover;
+  border-radius: 10px; margin-top: 10px; display: block;
+}
+.cal-photo-result {
+  margin-top: 12px; padding: 14px;
+  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+}
+.cal-photo-result-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.cal-photo-result-macros {
+  display: flex; gap: 12px; flex-wrap: wrap;
+  font-size: 12px; font-family: var(--font-mono); color: rgba(255,255,255,0.6);
+}
+.cal-photo-result-confidence { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 6px; font-style: italic; }
+.cal-photo-log-btn {
+  margin-top: 10px; width: 100%; padding: 11px; border-radius: 10px;
+  background: rgba(45,232,162,0.12); color: #2de8a2;
+  border: 1px solid rgba(45,232,162,0.3);
+  font-weight: 700; font-size: 14px; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.cal-meal-log { display: flex; flex-direction: column; gap: 6px; }
+.cal-meal-empty { font-size: 13px; color: rgba(255,255,255,0.25); font-style: italic; padding: 4px 2px; }
+.cal-meal-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 10px;
+}
+.cal-meal-info { flex: 1; min-width: 0; }
+.cal-meal-name { font-size: 13px; font-weight: 600; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cal-meal-meta { font-size: 11px; color: rgba(255,255,255,0.4); font-family: var(--font-mono); margin-top: 2px; font-variant-numeric: tabular-nums; }
+.cal-meal-kcal { font-size: 15px; font-weight: 700; color: #2de8a2; font-family: var(--font-mono); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+.cal-meal-del { background: transparent; border: none; color: rgba(255,255,255,0.25); font-size: 18px; cursor: pointer; padding: 2px 6px; -webkit-tap-highlight-color: transparent; flex-shrink: 0; line-height: 1; }
+.cal-meal-del:hover { color: #ff8a8a; }
+#calSetModalBg {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.65); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
+  z-index: 100; align-items: center; justify-content: center; padding: 20px;
+  padding-bottom: max(20px, env(safe-area-inset-bottom));
+  padding-top: max(20px, env(safe-area-inset-top));
+}
+#calSetModalBg.show { display: flex; }
+#calSetModalBg .modal {
+  width: 100%; max-width: 480px;
+  background: rgba(18,18,20,0.85);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.12);
+  box-shadow: 0 -4px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.10);
+  border-radius: 16px; padding: 22px;
+  max-height: calc(88vh - env(safe-area-inset-bottom)); overflow-y: auto; color: #fff;
+}
+#calSetModalBg .modal h3 { margin: 0 0 16px; font-size: 17px; font-weight: 700; }
+@media (max-width: 480px) { .cal-kcal-big { font-size: 44px; } }
 </style>
 <link rel="stylesheet" href="/animations.css">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -745,6 +902,104 @@ main {
       </div>
     </div>
   </div>
+
+  <!-- ===== CALORIE TRACKER ===== -->
+  <section id="calorie" class="cal-section">
+    <div class="section-title">
+      Calorie Tracker
+      <button class="water-icon-btn" id="calSettingsBtn" title="Calorie targets" aria-label="Calorie targets">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </button>
+    </div>
+
+    <!-- Daily Summary Card -->
+    <div class="cal-card">
+      <div class="cal-label">TODAY'S CALORIES</div>
+      <div class="cal-kcal-display">
+        <span class="cal-kcal-big" id="calKcalBig">0</span>
+        <span class="cal-kcal-target" id="calKcalTarget">/ 2000 kcal target</span>
+      </div>
+      <div class="cal-bar-row">
+        <div class="cal-bar-label"><span>Calories</span><span id="calKcalLabel">0 / 2000 kcal</span></div>
+        <div class="cal-bar-track"><div class="cal-bar-fill kcal" id="calKcalBar" style="width:0%"></div></div>
+      </div>
+      <div class="cal-bar-row">
+        <div class="cal-bar-label"><span>Protein</span><span id="calProteinLabel">0 / 150g</span></div>
+        <div class="cal-bar-track"><div class="cal-bar-fill protein" id="calProteinBar" style="width:0%"></div></div>
+      </div>
+      <div class="cal-bar-row">
+        <div class="cal-bar-label"><span>Carbs</span><span id="calCarbsLabel">0 / 250g</span></div>
+        <div class="cal-bar-track"><div class="cal-bar-fill carbs" id="calCarbsBar" style="width:0%"></div></div>
+      </div>
+      <div class="cal-bar-row">
+        <div class="cal-bar-label"><span>Fat</span><span id="calFatLabel">0 / 65g</span></div>
+        <div class="cal-bar-track"><div class="cal-bar-fill fat" id="calFatBar" style="width:0%"></div></div>
+      </div>
+      <div class="cal-macro-pills">
+        <div class="cal-macro-pill">
+          <div class="cal-macro-pill-val" id="calProteinVal">0g</div>
+          <div class="cal-macro-pill-label">Protein</div>
+        </div>
+        <div class="cal-macro-pill">
+          <div class="cal-macro-pill-val" id="calCarbsVal">0g</div>
+          <div class="cal-macro-pill-label">Carbs</div>
+        </div>
+        <div class="cal-macro-pill">
+          <div class="cal-macro-pill-val" id="calFatVal">0g</div>
+          <div class="cal-macro-pill-label">Fat</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log Food Card -->
+    <div class="cal-card">
+      <div class="cal-label">LOG FOOD</div>
+      <div class="cal-tabs">
+        <button class="cal-tab active" id="calTabSearch">Search</button>
+        <button class="cal-tab" id="calTabPhoto">📷 Photo</button>
+      </div>
+
+      <!-- Search panel -->
+      <div id="calPanelSearch">
+        <div class="cal-search-wrap">
+          <input type="text" id="calSearchInput" class="cal-input" placeholder="Search food (e.g. chicken breast)…" autocomplete="off" spellcheck="false">
+          <div id="calSearchResults" class="cal-search-results" hidden></div>
+        </div>
+        <div id="calPortionRow" class="cal-portion-row" hidden>
+          <div class="cal-selected-food" id="calSelectedFoodName"></div>
+          <div class="cal-portion-input-row">
+            <input type="number" id="calPortionG" class="cal-input" placeholder="Grams" min="1" max="9999" value="100" inputmode="numeric">
+            <button id="calLogFoodBtn" class="cal-log-btn">Log</button>
+          </div>
+          <div class="cal-portion-preview" id="calPortionPreview"></div>
+        </div>
+      </div>
+
+      <!-- Photo panel -->
+      <div id="calPanelPhoto" hidden>
+        <label for="calPhotoInput" class="cal-photo-label">
+          <span class="cal-camera-icon">📷</span>
+          <span>Tap to take a photo or choose from gallery</span>
+        </label>
+        <input type="file" id="calPhotoInput" accept="image/*" style="display:none">
+        <div id="calPhotoStatus" class="cal-photo-status" hidden></div>
+        <img id="calPhotoPreviewImg" class="cal-photo-preview-img" alt="" hidden>
+        <div id="calPhotoResult" class="cal-photo-result" hidden></div>
+      </div>
+    </div>
+
+    <!-- Meal log -->
+    <div class="cal-card">
+      <div class="cal-label">TODAY'S MEALS</div>
+      <div id="calMealLog" class="cal-meal-log"></div>
+    </div>
+
+    <!-- 7-day chart -->
+    <div class="cal-card">
+      <div class="cal-label">LAST 7 DAYS</div>
+      <div class="wchart" id="calChart"></div>
+    </div>
+  </section>
 
   <section id="water" class="water-section">
     <div class="section-title">
@@ -833,6 +1088,51 @@ main {
       <div class="wmodal-actions">
         <button class="wbtn-secondary" id="waterSetResetData" style="color:#ff8a8a;border-color:rgba(255,138,138,0.3)">Reset water data</button>
         <button class="wbtn-primary" id="waterSetClose">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Calorie targets modal -->
+  <div id="calSetModalBg">
+    <div class="modal">
+      <h3>Calorie Targets</h3>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:18px;line-height:1.5">
+        Set your daily nutrition goals. Leave blank to use estimated values from your profile.
+      </div>
+      <div class="wset-section">
+        <h4>Daily targets</h4>
+        <div class="wfield-row">
+          <div class="wfield">
+            <label>Calories (kcal)</label>
+            <input type="number" id="setCalKcal" min="500" max="10000" step="50">
+          </div>
+          <div class="wfield">
+            <label>Protein (g)</label>
+            <input type="number" id="setCalProtein" min="0" max="500" step="5">
+          </div>
+        </div>
+        <div class="wfield-row">
+          <div class="wfield">
+            <label>Carbs (g)</label>
+            <input type="number" id="setCalCarbs" min="0" max="1000" step="5">
+          </div>
+          <div class="wfield">
+            <label>Fat (g)</label>
+            <input type="number" id="setCalFat" min="0" max="500" step="5">
+          </div>
+        </div>
+      </div>
+      <div class="wset-section">
+        <h4>Claude API key (for photo analysis)</h4>
+        <div class="wfield">
+          <label>API Key</label>
+          <input type="text" id="setCalApiKey" placeholder="sk-ant-…" style="font-family:var(--font-mono);font-size:13px">
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5">Stored locally only — never synced to the cloud.</div>
+      </div>
+      <div class="wmodal-actions">
+        <button class="wbtn-secondary" id="calSetCancel">Cancel</button>
+        <button class="wbtn-primary" id="calSetSave">Save</button>
       </div>
     </div>
   </div>
@@ -1371,7 +1671,7 @@ main {
   const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const APP_KEY = 'health-stack';
-  function pcKeyInScope(k) { return typeof k === 'string' && (k.indexOf('stack:') === 0 || k === 'po_water_v1'); }
+  function pcKeyInScope(k) { return typeof k === 'string' && (k.indexOf('stack:') === 0 || k === 'po_water_v1' || k.indexOf('calorie_') === 0); }
 
   let pcSupa = null;
   let pcPushTimer = null;
@@ -1977,6 +2277,483 @@ main {
   wSafeLoad();
   wSyncGymWeight();
   wRender();
+})();
+
+// ============================================================
+// CALORIE TRACKER
+// ============================================================
+(function () {
+  'use strict';
+
+  const CAL_TARGETS_KEY = 'calorie_targets_v1';
+  const CAL_API_KEY_LS  = 'cal_api_key'; // intentionally NOT prefixed 'calorie_' — keeps key off cloud sync
+
+  /* ---- date (midnight boundary for calories) ---- */
+  function calDateStr(date) {
+    const d = date || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  }
+  function calLogKey(ds) { return `calorie_log_${ds || calDateStr()}`; }
+
+  /* ---- targets ---- */
+  function calLoadTargets() {
+    try { const t = JSON.parse(localStorage.getItem(CAL_TARGETS_KEY)); if (t && typeof t === 'object') return t; } catch {}
+    return null;
+  }
+  function calEstimateTargets() {
+    try {
+      const raw = localStorage.getItem('dash_weight');
+      const lbs = raw ? parseFloat(JSON.parse(raw)) : NaN;
+      const sex = localStorage.getItem('dash_sex') || 'm';
+      if (!isNaN(lbs) && lbs > 0) {
+        const kg = lbs / 2.205;
+        const isMale = sex !== 'female' && sex !== 'f';
+        const rawKcal = kg * (isMale ? 36 : 33);
+        const kcal = Math.max(1500, Math.min(4000, Math.round(rawKcal / 50) * 50));
+        const protein = Math.round(kg * 1.6 / 5) * 5;
+        const fat = Math.round(kcal * 0.28 / 9 / 5) * 5;
+        const carbs = Math.max(50, Math.round((kcal - protein * 4 - fat * 9) / 4 / 5) * 5);
+        return { kcal, protein, carbs, fat };
+      }
+    } catch {}
+    return { kcal: 2000, protein: 150, carbs: 250, fat: 65 };
+  }
+  function calGetTargets() { return calLoadTargets() || calEstimateTargets(); }
+  function calSaveTargets(t) {
+    localStorage.setItem(CAL_TARGETS_KEY, JSON.stringify(t));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch {}
+  }
+
+  /* ---- log ---- */
+  function calGetLog(ds) {
+    try { const v = JSON.parse(localStorage.getItem(calLogKey(ds))); return Array.isArray(v) ? v : []; } catch { return []; }
+  }
+  function calSaveLog(log, ds) {
+    localStorage.setItem(calLogKey(ds), JSON.stringify(log));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch {}
+  }
+
+  /* ---- api key ---- */
+  function calGetApiKey() { try { return localStorage.getItem(CAL_API_KEY_LS) || ''; } catch { return ''; } }
+  function calSaveApiKey(k) { try { localStorage.setItem(CAL_API_KEY_LS, k); } catch {} }
+
+  /* ---- maths ---- */
+  function calSum(log) {
+    return log.reduce((acc, e) => {
+      acc.kcal    += e.kcal    || 0;
+      acc.protein += e.protein || 0;
+      acc.carbs   += e.carbs   || 0;
+      acc.fat     += e.fat     || 0;
+      return acc;
+    }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  }
+
+  /* ---- escape ---- */
+  function escCal(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /* ---- render summary ---- */
+  function calRenderSummary() {
+    const log = calGetLog();
+    const t = calGetTargets();
+    const tot = calSum(log);
+    const pct = (val, max) => max > 0 ? Math.min(100, (val / max) * 100).toFixed(1) + '%' : '0%';
+
+    document.getElementById('calKcalBig').textContent   = Math.round(tot.kcal).toLocaleString();
+    document.getElementById('calKcalTarget').textContent = `/ ${t.kcal.toLocaleString()} kcal target`;
+
+    document.getElementById('calKcalLabel').textContent    = `${Math.round(tot.kcal)} / ${t.kcal} kcal`;
+    document.getElementById('calKcalBar').style.width       = pct(tot.kcal, t.kcal);
+    document.getElementById('calProteinLabel').textContent = `${Math.round(tot.protein)}g / ${t.protein}g`;
+    document.getElementById('calProteinBar').style.width    = pct(tot.protein, t.protein);
+    document.getElementById('calCarbsLabel').textContent   = `${Math.round(tot.carbs)}g / ${t.carbs}g`;
+    document.getElementById('calCarbsBar').style.width      = pct(tot.carbs, t.carbs);
+    document.getElementById('calFatLabel').textContent     = `${Math.round(tot.fat)}g / ${t.fat}g`;
+    document.getElementById('calFatBar').style.width        = pct(tot.fat, t.fat);
+
+    document.getElementById('calProteinVal').textContent = `${Math.round(tot.protein)}g`;
+    document.getElementById('calCarbsVal').textContent   = `${Math.round(tot.carbs)}g`;
+    document.getElementById('calFatVal').textContent     = `${Math.round(tot.fat)}g`;
+  }
+
+  /* ---- render meal log ---- */
+  function calRenderMealLog() {
+    const log = calGetLog();
+    const el  = document.getElementById('calMealLog');
+    if (!log.length) {
+      el.innerHTML = '<div class="cal-meal-empty">No meals logged yet — search or use the camera to add one.</div>';
+      return;
+    }
+    el.innerHTML = log.slice().reverse().map((entry, ri) => {
+      const realIdx = log.length - 1 - ri;
+      const time = entry.time
+        ? new Date(entry.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        : '';
+      const macros = `${Math.round(entry.protein || 0)}g P · ${Math.round(entry.carbs || 0)}g C · ${Math.round(entry.fat || 0)}g F`;
+      return `<div class="cal-meal-row">
+        <div class="cal-meal-info">
+          <div class="cal-meal-name">${escCal(entry.name)}</div>
+          <div class="cal-meal-meta">${time ? time + ' · ' : ''}${macros}</div>
+        </div>
+        <span class="cal-meal-kcal">${Math.round(entry.kcal || 0)}</span>
+        <button class="cal-meal-del" data-idx="${realIdx}" aria-label="Delete">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- render chart ---- */
+  function calRenderChart() {
+    const t = calGetTargets();
+    const today = calDateStr();
+    const base  = new Date();
+    const days  = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(base);
+      d.setDate(base.getDate() - i);
+      const ds   = calDateStr(d);
+      const kcal = calSum(calGetLog(ds)).kcal;
+      days.push({ ds, label: d.toLocaleDateString('en-US', { weekday: 'short' }), kcal, isToday: ds === today });
+    }
+    const maxKcal = Math.max(t.kcal * 1.1, ...days.map(d => d.kcal), 100);
+    document.getElementById('calChart').innerHTML = days.map(d => {
+      const heightPct = maxKcal > 0 ? Math.min(100, (d.kcal / maxKcal) * 100).toFixed(1) : 0;
+      const pct = t.kcal > 0 ? d.kcal / t.kcal : 0;
+      const barClass = d.kcal === 0 ? 'wchart-bar empty'
+        : pct >= 1 ? 'wchart-bar hit'
+        : pct >= 0.8 ? 'wchart-bar near'
+        : 'wchart-bar miss';
+      const amtLabel = d.kcal >= 1000 ? (d.kcal / 1000).toFixed(1) + 'k' : (d.kcal > 0 ? Math.round(d.kcal) + '' : '');
+      return `<div class="wchart-col">
+        <div class="wchart-amt">${amtLabel}</div>
+        <div class="wchart-bar-wrap"><div class="${barClass}" style="height:${heightPct}%"></div></div>
+        <div class="wchart-day${d.isToday ? ' today' : ''}">${d.label}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function calFullRender() {
+    calRenderSummary();
+    calRenderMealLog();
+    calRenderChart();
+  }
+
+  /* ====== SEARCH (Open Food Facts) ====== */
+  let calSearchTimer = null;
+  let calSelectedFood = null;
+
+  async function calSearchFood(q) {
+    if (!q.trim()) { document.getElementById('calSearchResults').hidden = true; return; }
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments`;
+    try {
+      const res  = await fetch(url);
+      const data = await res.json();
+      calRenderSearchResults(data.products || []);
+    } catch { document.getElementById('calSearchResults').hidden = true; }
+  }
+
+  function calRenderSearchResults(products) {
+    const el    = document.getElementById('calSearchResults');
+    const valid = products.filter(p => {
+      if (!p.product_name) return false;
+      const n = p.nutriments || {};
+      return (n['energy-kcal_100g'] != null) || (n['energy_100g'] != null);
+    }).slice(0, 6);
+    if (!valid.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = valid.map((p) => {
+      const n    = p.nutriments || {};
+      const kcal = Math.round(n['energy-kcal_100g'] != null ? n['energy-kcal_100g'] : (n['energy_100g'] || 0) / 4.184);
+      const pro  = Math.round((n['proteins_100g']       || 0) * 10) / 10;
+      const carb = Math.round((n['carbohydrates_100g']  || 0) * 10) / 10;
+      const fat  = Math.round((n['fat_100g']            || 0) * 10) / 10;
+      const brand = p.brands ? ` · ${p.brands.split(',')[0].trim()}` : '';
+      return `<div class="cal-search-result"
+          data-name="${escCal(p.product_name)}"
+          data-kcal="${kcal}" data-pro="${pro}" data-carb="${carb}" data-fat="${fat}">
+        <div class="cal-search-result-name">${escCal(p.product_name)}</div>
+        <div class="cal-search-result-meta">${kcal} kcal · ${pro}g P · ${carb}g C · ${fat}g F per 100g${brand}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function calSelectFood(el) {
+    calSelectedFood = {
+      name: el.dataset.name,
+      kcal: parseFloat(el.dataset.kcal),
+      pro:  parseFloat(el.dataset.pro),
+      carb: parseFloat(el.dataset.carb),
+      fat:  parseFloat(el.dataset.fat),
+    };
+    document.getElementById('calSelectedFoodName').textContent = calSelectedFood.name;
+    document.getElementById('calPortionG').value = '100';
+    document.getElementById('calPortionRow').hidden = false;
+    document.getElementById('calSearchResults').hidden = true;
+    document.getElementById('calSearchInput').value = calSelectedFood.name;
+    calUpdatePreview();
+    document.getElementById('calPortionG').focus();
+  }
+
+  function calUpdatePreview() {
+    if (!calSelectedFood) return;
+    const g = parseFloat(document.getElementById('calPortionG').value) || 0;
+    const f = g / 100;
+    const kcal = Math.round(calSelectedFood.kcal * f);
+    const pro  = Math.round(calSelectedFood.pro  * f * 10) / 10;
+    const carb = Math.round(calSelectedFood.carb * f * 10) / 10;
+    const fat  = Math.round(calSelectedFood.fat  * f * 10) / 10;
+    document.getElementById('calPortionPreview').textContent =
+      `${g}g → ${kcal} kcal · ${pro}g protein · ${carb}g carbs · ${fat}g fat`;
+  }
+
+  function calLogFood() {
+    if (!calSelectedFood) return;
+    const g = parseFloat(document.getElementById('calPortionG').value);
+    if (!g || g <= 0) return;
+    const f = g / 100;
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name:    calSelectedFood.name + (g !== 100 ? ` (${g}g)` : ''),
+      time:    Date.now(),
+      kcal:    Math.round(calSelectedFood.kcal * f),
+      protein: Math.round(calSelectedFood.pro  * f * 10) / 10,
+      carbs:   Math.round(calSelectedFood.carb * f * 10) / 10,
+      fat:     Math.round(calSelectedFood.fat  * f * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    calSelectedFood = null;
+    document.getElementById('calSearchInput').value = '';
+    document.getElementById('calPortionRow').hidden = true;
+    document.getElementById('calPortionPreview').textContent = '';
+    calFullRender();
+  }
+
+  /* ====== PHOTO ANALYSIS (Claude vision) ====== */
+  let calPhotoEstimate = null;
+
+  async function calAnalyzePhoto(base64, mimeType) {
+    const apiKey = calGetApiKey();
+    if (!apiKey) {
+      calShowPhotoStatus('⚠ Set your Claude API key in Calorie Settings (gear icon) to use photo analysis.');
+      return;
+    }
+    calShowPhotoStatus('⏳ Analysing your meal…');
+    document.getElementById('calPhotoResult').hidden = true;
+
+    const prompt = `Analyse this meal photo and estimate its nutritional content. Return ONLY a JSON object:
+{
+  "name": "brief meal description (e.g. 'Grilled chicken with rice and salad')",
+  "kcal": total estimated calories as number,
+  "protein": estimated protein in grams as number,
+  "carbs": estimated carbohydrates in grams as number,
+  "fat": estimated fat in grams as number,
+  "confidence": "short note on confidence, e.g. 'Medium — portion size estimated from typical serving'"
+}
+Be realistic. Return valid JSON only, no other text.`;
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+        },
+        body: JSON.stringify({
+          model: 'claude-opus-4-8',
+          max_tokens: 512,
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+              { type: 'text',  text: prompt }
+            ]
+          }]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${res.status}`);
+      }
+      const data = await res.json();
+      const text = data.content?.[0]?.text || '';
+      const match = text.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON in response');
+      const result = JSON.parse(match[0]);
+      calShowPhotoStatus('');
+      calShowPhotoResult(result);
+    } catch (e) {
+      calShowPhotoStatus(`Error: ${e.message}`);
+    }
+  }
+
+  function calShowPhotoStatus(msg) {
+    const el = document.getElementById('calPhotoStatus');
+    if (!msg) { el.hidden = true; return; }
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function calShowPhotoResult(result) {
+    calPhotoEstimate = result;
+    const el = document.getElementById('calPhotoResult');
+    el.hidden = false;
+    el.innerHTML = `
+      <div class="cal-photo-result-name">${escCal(result.name || 'Estimated meal')}</div>
+      <div class="cal-photo-result-macros">
+        <span>${Math.round(result.kcal    || 0)} kcal</span>
+        <span>${Math.round(result.protein || 0)}g protein</span>
+        <span>${Math.round(result.carbs   || 0)}g carbs</span>
+        <span>${Math.round(result.fat     || 0)}g fat</span>
+      </div>
+      ${result.confidence ? `<div class="cal-photo-result-confidence">${escCal(result.confidence)}</div>` : ''}
+      <button class="cal-photo-log-btn" id="calPhotoLogBtn">Log this meal</button>`;
+    document.getElementById('calPhotoLogBtn').addEventListener('click', calLogPhotoEstimate);
+  }
+
+  function calLogPhotoEstimate() {
+    if (!calPhotoEstimate) return;
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name:    calPhotoEstimate.name || 'Photo meal',
+      time:    Date.now(),
+      kcal:    Math.round(calPhotoEstimate.kcal    || 0),
+      protein: Math.round((calPhotoEstimate.protein || 0) * 10) / 10,
+      carbs:   Math.round((calPhotoEstimate.carbs   || 0) * 10) / 10,
+      fat:     Math.round((calPhotoEstimate.fat     || 0) * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    calPhotoEstimate = null;
+    document.getElementById('calPhotoResult').hidden   = true;
+    document.getElementById('calPhotoPreviewImg').hidden = true;
+    calShowPhotoStatus('');
+    calFullRender();
+  }
+
+  /* ====== SETTINGS ====== */
+  function calOpenSettings() {
+    const t = calGetTargets();
+    document.getElementById('setCalKcal').value    = t.kcal;
+    document.getElementById('setCalProtein').value = t.protein;
+    document.getElementById('setCalCarbs').value   = t.carbs;
+    document.getElementById('setCalFat').value     = t.fat;
+    document.getElementById('setCalApiKey').value  = calGetApiKey();
+    document.getElementById('calSetModalBg').classList.add('show');
+  }
+
+  function calSaveSettings() {
+    const kcal    = parseInt(document.getElementById('setCalKcal').value,    10);
+    const protein = parseInt(document.getElementById('setCalProtein').value, 10);
+    const carbs   = parseInt(document.getElementById('setCalCarbs').value,   10);
+    const fat     = parseInt(document.getElementById('setCalFat').value,     10);
+    if (!isNaN(kcal) && kcal >= 500) {
+      calSaveTargets({
+        kcal,
+        protein: isNaN(protein) ? 150 : protein,
+        carbs:   isNaN(carbs)   ? 250 : carbs,
+        fat:     isNaN(fat)     ? 65  : fat,
+      });
+    }
+    calSaveApiKey(document.getElementById('setCalApiKey').value.trim());
+    document.getElementById('calSetModalBg').classList.remove('show');
+    calFullRender();
+  }
+
+  /* ====== EVENT WIRING ====== */
+  // Tabs
+  document.getElementById('calTabSearch').addEventListener('click', () => {
+    document.getElementById('calTabSearch').classList.add('active');
+    document.getElementById('calTabPhoto').classList.remove('active');
+    document.getElementById('calPanelSearch').hidden = false;
+    document.getElementById('calPanelPhoto').hidden  = true;
+  });
+  document.getElementById('calTabPhoto').addEventListener('click', () => {
+    document.getElementById('calTabPhoto').classList.add('active');
+    document.getElementById('calTabSearch').classList.remove('active');
+    document.getElementById('calPanelPhoto').hidden  = false;
+    document.getElementById('calPanelSearch').hidden = true;
+  });
+
+  // Search
+  document.getElementById('calSearchInput').addEventListener('input', (e) => {
+    clearTimeout(calSearchTimer);
+    const q = e.target.value.trim();
+    if (!q) { document.getElementById('calSearchResults').hidden = true; return; }
+    calSearchTimer = setTimeout(() => calSearchFood(q), 400);
+  });
+  document.getElementById('calSearchResults').addEventListener('click', (e) => {
+    const r = e.target.closest('.cal-search-result');
+    if (r) calSelectFood(r);
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#calPanelSearch')) document.getElementById('calSearchResults').hidden = true;
+  });
+
+  // Portion
+  document.getElementById('calPortionG').addEventListener('input', calUpdatePreview);
+  document.getElementById('calLogFoodBtn').addEventListener('click', calLogFood);
+  document.getElementById('calPortionG').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calLogFood();
+  });
+
+  // Photo
+  document.getElementById('calPhotoInput').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mimeType = file.type || 'image/jpeg';
+    const imgEl = document.getElementById('calPhotoPreviewImg');
+    imgEl.src    = URL.createObjectURL(file);
+    imgEl.hidden = false;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target.result.split(',')[1];
+      await calAnalyzePhoto(base64, mimeType);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  // Meal log delete
+  document.getElementById('calMealLog').addEventListener('click', (e) => {
+    const btn = e.target.closest('.cal-meal-del');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.idx, 10);
+    const log = calGetLog();
+    if (idx >= 0 && idx < log.length) {
+      log.splice(idx, 1);
+      calSaveLog(log);
+      calFullRender();
+    }
+  });
+
+  // Settings
+  document.getElementById('calSettingsBtn').addEventListener('click', calOpenSettings);
+  document.getElementById('calSetSave').addEventListener('click', calSaveSettings);
+  document.getElementById('calSetCancel').addEventListener('click', () => {
+    document.getElementById('calSetModalBg').classList.remove('show');
+  });
+  document.getElementById('calSetModalBg').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('calSetModalBg'))
+      document.getElementById('calSetModalBg').classList.remove('show');
+  });
+
+  // Re-render when profile changes (weight/sex affects estimated targets)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'dash_weight' || e.key === 'dash_sex') calRenderSummary();
+  });
+
+  // Midnight date-change guard
+  setInterval(calFullRender, 60000);
+
+  calFullRender();
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
