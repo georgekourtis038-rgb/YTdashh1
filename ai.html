@@ -35,7 +35,6 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-text-size-adjust: 100%;
 }
-
 body {
   padding-bottom: calc(84px + env(safe-area-inset-bottom));
 }
@@ -47,7 +46,14 @@ body {
   padding: max(110px, calc(env(safe-area-inset-top) + 80px)) 20px 24px;
 }
 
-/* ── Header ── */
+/* ── Header row ── */
+.ai-toprow {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+.ai-head-text { flex: 1; }
 .ai-eyebrow {
   font-size: 11px;
   letter-spacing: 4px;
@@ -55,97 +61,29 @@ body {
   text-transform: uppercase;
   font-weight: 700;
   opacity: 0.85;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
-
 .ai-greeting {
   font-size: 26px;
   font-weight: 700;
   color: #fff;
   letter-spacing: -0.02em;
-  margin-bottom: 24px;
 }
 
-/* ── Briefing card ── */
-.briefing-card {
+/* ── Header icon buttons ── */
+.ai-icon-btn {
+  width: 38px; height: 38px;
+  border-radius: 10px;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 28px;
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-
-.briefing-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.briefing-icon {
-  font-size: 13px;
-}
-
-.briefing-title {
-  font-size: 11px;
-  letter-spacing: 2px;
   color: var(--label);
-  text-transform: uppercase;
-  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+  margin-top: 2px;
 }
-
-.briefing-loading {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--subtle);
-  font-size: 13px;
-}
-
-.dot-pulse {
-  display: flex;
-  gap: 4px;
-  align-items: center;
-}
-
-.dot-pulse span {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--mint-dim);
-  animation: dotPulse 1.2s ease-in-out infinite;
-  will-change: transform, opacity;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-}
-.dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
-.dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
-
-@keyframes dotPulse {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8) translateZ(0); }
-  40%            { opacity: 1;   transform: scale(1)   translateZ(0); }
-}
-
-.briefing-text {
-  font-size: 15px;
-  line-height: 1.65;
-  color: rgba(255,255,255,0.85);
-}
-
-.briefing-no-key {
-  font-size: 13px;
-  color: var(--subtle);
-  line-height: 1.55;
-}
-
-.briefing-no-key code {
-  color: var(--mint);
-  font-family: var(--font-mono);
-  font-size: 12px;
-}
+.ai-icon-btn:hover, .ai-icon-btn:active { background: rgba(255,255,255,0.08); color: #fff; }
 
 /* ── Chat thread ── */
 .chat-thread {
@@ -163,6 +101,7 @@ body {
   backface-visibility: hidden;
   animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
 }
+.msg.msg-static { animation: none; }
 
 @keyframes msgIn {
   from { opacity: 0; transform: translateY(10px) translateZ(0); }
@@ -178,14 +117,12 @@ body {
   font-size: 15px;
   line-height: 1.55;
 }
-
 .msg-user .msg-bubble {
   background: rgba(45,232,162,0.12);
   border: 1px solid rgba(45,232,162,0.28);
   color: #fff;
   border-bottom-right-radius: 4px;
 }
-
 .msg-ai .msg-bubble {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
@@ -193,105 +130,89 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* ── Typing indicator ── */
-.msg-typing .msg-bubble { padding: 14px 18px; }
-
-.typing-dots {
+/* ── Briefing message ── */
+.msg-briefing-header {
   display: flex;
-  gap: 4px;
   align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.msg-briefing-icon { font-size: 12px; }
+.msg-briefing-label {
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--mint);
+  text-transform: uppercase;
+  font-weight: 700;
+  opacity: 0.8;
 }
 
+/* ── Typing indicator ── */
+.msg-typing .msg-bubble { padding: 14px 18px; }
+.typing-dots { display: flex; gap: 4px; align-items: center; }
 .typing-dots span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
   background: var(--mint-dim);
   animation: dotPulse 1.2s ease-in-out infinite;
   will-change: transform, opacity;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
 }
 .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
 .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes dotPulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8) translateZ(0); }
+  40%            { opacity: 1;   transform: scale(1)   translateZ(0); }
+}
+
+/* ── Date separator ── */
+.chat-date-sep {
+  display: flex; align-items: center; gap: 10px;
+  margin: 8px 0; color: var(--subtle); font-size: 11px;
+  letter-spacing: 1px; text-transform: uppercase;
+}
+.chat-date-sep::before, .chat-date-sep::after {
+  content: ''; flex: 1; height: 1px;
+  background: var(--card-border);
+}
 
 /* ── Chat input bar (liquid glass) ── */
 .chat-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  position: fixed; bottom: 0; left: 0; right: 0;
   padding: 10px 16px max(14px, calc(env(safe-area-inset-bottom) + 6px));
   background: rgba(8,12,11,0.85);
   -webkit-backdrop-filter: blur(20px) saturate(140%);
   backdrop-filter: blur(20px) saturate(140%);
   border-top: 1px solid rgba(255,255,255,0.1);
-  display: flex;
-  align-items: center;
-  gap: 10px;
+  display: flex; align-items: center; gap: 10px;
   z-index: 30;
 }
-
 .chat-input {
   flex: 1;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
   border-radius: 12px;
   padding: 12px 16px;
-  font-size: 16px;
+  font-size: 16px; /* 16px prevents iOS zoom */
   font-family: var(--font);
   color: #fff;
   outline: none;
-  -webkit-appearance: none;
-  appearance: none;
+  -webkit-appearance: none; appearance: none;
   transition: border-color 0.2s ease;
 }
-
 .chat-input::placeholder { color: var(--subtle); }
 .chat-input:focus { border-color: rgba(45,232,162,0.4); }
-
 .chat-send-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
+  width: 44px; height: 44px; border-radius: 12px;
   background: rgba(45,232,162,0.1);
   border: 2px solid var(--mint);
   color: var(--mint);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s ease, transform 0.1s ease;
 }
-
-.chat-send-btn:active { background: rgba(45,232,162,0.22); transform: scale(0.93); }
+.chat-send-btn:active { background: rgba(45,232,162,0.22); transform: scale(0.93) translateZ(0); }
 .chat-send-btn:disabled { opacity: 0.35; pointer-events: none; }
-
-/* ── Page entry animations ── */
-.ai-eyebrow  { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-.ai-greeting { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.10s both; }
-.briefing-card { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.18s both; }
-
-@keyframes revealUp {
-  from { opacity: 0; transform: translateY(40px) translateZ(0); }
-  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
-}
-
-
-/* ── Briefing refresh button ── */
-.briefing-header { justify-content: flex-start; }
-.briefing-refresh-btn {
-  margin-left: auto; width: 26px; height: 26px;
-  border: none; background: transparent; color: var(--mint);
-  opacity: 0.5; cursor: pointer; border-radius: 6px; padding: 0;
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
-}
-.briefing-refresh-btn:hover { opacity: 1; }
-.briefing-refresh-btn.spinning svg { animation: refreshSpin 0.65s linear; }
-@keyframes refreshSpin { to { transform: rotate(360deg); } }
 
 /* ── Streaming cursor ── */
 .streaming::after {
@@ -310,31 +231,125 @@ body {
 
 /* ── Action confirmation cards ── */
 .action-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
+  display: flex; align-items: flex-start; gap: 10px;
   padding: 11px 15px;
   background: rgba(45,232,162,0.07);
   border: 1px solid rgba(45,232,162,0.24);
-  border-radius: 12px;
-  border-bottom-left-radius: 4px;
+  border-radius: 12px; border-bottom-left-radius: 4px;
   animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  align-self: flex-start;
-  max-width: 85%;
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  align-self: flex-start; max-width: 85%;
 }
-.action-card-check {
-  color: var(--mint);
-  font-size: 13px;
+.action-card-check { color: var(--mint); font-size: 13px; flex-shrink: 0; margin-top: 2px; }
+.action-card-text  { font-size: 13px; color: rgba(45,232,162,0.88); line-height: 1.45; }
+
+/* ── Page entry animations ── */
+.ai-toprow { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(40px) translateZ(0); }
+  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
+}
+
+/* ────────────────────────────────────────────────────────────────
+   SIDEBAR
+   ──────────────────────────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  -webkit-tap-highlight-color: transparent;
+}
+.sidebar-overlay.open { display: block; }
+
+.chat-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: min(300px, 85vw);
+  background: #0d1210;
+  border-right: 1px solid rgba(255,255,255,0.08);
+  z-index: 201;
+  display: flex; flex-direction: column;
+  transform: translateX(-100%) translateZ(0);
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  /* No overflow:hidden on glass-adjacent elements */
+}
+.chat-sidebar.open { transform: translateX(0) translateZ(0); }
+
+.sidebar-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: max(20px, calc(env(safe-area-inset-top) + 16px)) 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
   flex-shrink: 0;
-  margin-top: 2px;
 }
-.action-card-text {
-  font-size: 13px;
-  color: rgba(45,232,162,0.88);
-  line-height: 1.45;
+.sidebar-title {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--label);
+}
+.sidebar-close {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: transparent; border: none;
+  color: var(--subtle); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.sidebar-close:hover { color: #fff; }
+
+.sidebar-list {
+  flex: 1; overflow-y: auto; padding: 8px 0;
+  overscroll-behavior: contain;
+}
+.sidebar-empty {
+  padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
+}
+.sidebar-row {
+  width: 100%; padding: 12px 16px;
+  background: transparent; border: none;
+  text-align: left; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  border-radius: 0;
+  transition: background 0.12s;
+  display: flex; flex-direction: column; gap: 3px;
+}
+.sidebar-row:hover  { background: rgba(255,255,255,0.04); }
+.sidebar-row:active { background: rgba(255,255,255,0.07); }
+.sidebar-row.active { background: rgba(45,232,162,0.06); border-left: 2px solid var(--mint); }
+.sidebar-row-date {
+  font-size: 10px; font-weight: 600; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--label);
+}
+.sidebar-row-preview {
+  font-size: 13px; color: rgba(255,255,255,0.65);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sidebar-row.active .sidebar-row-date    { color: var(--mint); opacity: 0.8; }
+.sidebar-row.active .sidebar-row-preview { color: rgba(255,255,255,0.85); }
+
+.sidebar-new-btn {
+  margin: 10px 12px;
+  padding: 11px; border-radius: 10px;
+  background: rgba(45,232,162,0.08);
+  border: 1px solid rgba(45,232,162,0.2);
+  color: var(--mint); font-size: 13px; font-weight: 600;
+  font-family: var(--font); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.sidebar-new-btn:active { background: rgba(45,232,162,0.15); }
+
+/* ── Briefing loading state inside thread ── */
+.briefing-loading-row {
+  align-self: flex-start; max-width: 85%;
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  background: var(--card-bg); border: 1px solid var(--card-border);
+  border-radius: 16px; border-bottom-left-radius: 4px;
+  color: var(--subtle); font-size: 13px;
+  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -348,25 +363,38 @@ body {
 </head>
 <body>
 
-<div class="ai-shell">
-  <p class="ai-eyebrow">Axis AI</p>
-  <h1 class="ai-greeting" id="aiGreeting">Good morning</h1>
+<!-- Sidebar overlay -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 
-  <div class="briefing-card">
-    <div class="briefing-header">
-      <span class="briefing-icon">⚡</span>
-      <span class="briefing-title">Daily Briefing</span>
-      <button class="briefing-refresh-btn" id="briefingRefresh" aria-label="Refresh briefing" title="Regenerate">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <path d="M12.5 2.5v3h-3M1.5 11.5v-3h3M2.1 5.5a5.5 5.5 0 0 1 10 1M11.9 8.5a5.5 5.5 0 0 1-10 1" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </button>
+<!-- Sidebar -->
+<aside class="chat-sidebar" id="chatSidebar" aria-label="Past conversations">
+  <div class="sidebar-header">
+    <span class="sidebar-title">Conversations</span>
+    <button class="sidebar-close" id="sidebarClose" aria-label="Close">✕</button>
+  </div>
+  <div class="sidebar-list" id="sidebarList"></div>
+  <button class="sidebar-new-btn" id="sidebarNewBtn">+ New conversation</button>
+</aside>
+
+<!-- Main shell -->
+<div class="ai-shell">
+  <div class="ai-toprow">
+    <button class="ai-icon-btn" id="sidebarToggle" aria-label="Conversations">
+      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
+        <rect y="0" width="16" height="2" rx="1" fill="currentColor"/>
+        <rect y="5" width="12" height="2" rx="1" fill="currentColor"/>
+        <rect y="10" width="8" height="2" rx="1" fill="currentColor"/>
+      </svg>
+    </button>
+    <div class="ai-head-text">
+      <p class="ai-eyebrow">Axis AI</p>
+      <h1 class="ai-greeting" id="aiGreeting">Good morning</h1>
     </div>
-    <div class="briefing-loading" id="briefingLoading">
-      <div class="dot-pulse"><span></span><span></span><span></span></div>
-      <span>Analyzing your day…</span>
-    </div>
-    <p id="briefingText" style="display:none"></p>
+    <button class="ai-icon-btn" id="newChatBtn" aria-label="New conversation" title="New conversation">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+    </button>
   </div>
 
   <div class="chat-thread" id="chatThread"></div>
@@ -377,7 +405,7 @@ body {
     placeholder="Ask anything about your day…"
     autocomplete="off" enterkeyhint="send">
   <button id="chatSend" class="chat-send-btn" type="button" aria-label="Send">
-    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
       <path d="M9 15V3M9 3L4 8M9 3L14 8" stroke="currentColor" stroke-width="2.2"
         stroke-linecap="round" stroke-linejoin="round"/>
     </svg>
@@ -388,18 +416,21 @@ body {
 (function () {
   'use strict';
 
-  // ── Storage helpers ─────────────────────────────────────────────
-  function lsGet(k) {
-    try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; }
-  }
-  function lsRaw(k) {
-    try { return localStorage.getItem(k); } catch (_) { return null; }
+  // ── Storage helpers ──────────────────────────────────────────────
+  function lsGet(k)    { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } }
+  function lsRaw(k)    { try { return localStorage.getItem(k); }            catch (_) { return null; } }
+  function lsSet(k, v) {
+    try {
+      const s = JSON.stringify(v);
+      localStorage.setItem(k, s);
+      window.dispatchEvent(new StorageEvent('storage', { key: k, newValue: s, storageArea: localStorage }));
+      if (window._pcTriggerSync) window._pcTriggerSync(k);
+    } catch (_) {}
   }
 
-  // ── Supabase briefing sync ───────────────────────────────────────
+  // ── Supabase ─────────────────────────────────────────────────────
   const _SUPA_URL  = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const _SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
-  const _BRIEF_ROW = 'briefing';
   let _supaClient  = null;
 
   function _getSupa() {
@@ -409,57 +440,43 @@ body {
     return _supaClient;
   }
 
-  async function _fetchRemoteBriefing() {
-    const supa = _getSupa();
-    if (!supa) return null;
-    try {
-      const { data, error } = await supa
-        .from('app_state').select('data').eq('key', _BRIEF_ROW).maybeSingle();
-      if (error || !data || !data.data) return null;
-      return data.data;
-    } catch (_) { return null; }
-  }
-
-  async function _pushBriefingToSupabase(obj) {
+  async function _supaUpsert(key, data) {
     const supa = _getSupa();
     if (!supa) return;
     try {
       await supa.from('app_state').upsert(
-        { key: _BRIEF_ROW, data: obj, updated_at: new Date().toISOString() },
+        { key, data, updated_at: new Date().toISOString() },
         { onConflict: 'key' }
       );
     } catch (_) {}
   }
 
-  // ── Date helpers (6 AM day boundary) ────────────────────────────
-  function pad(n) { return String(n).padStart(2, '0'); }
-  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  async function _supaFetch(key) {
+    const supa = _getSupa();
+    if (!supa) return null;
+    try {
+      const { data, error } = await supa.from('app_state').select('data').eq('key', key).maybeSingle();
+      if (error || !data || !data.data) return null;
+      return data.data;
+    } catch (_) { return null; }
+  }
 
-  function activeDate() {
-    const d = new Date();
-    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
-    return fmt(d);
-  }
-  function tomorrowDate() {
-    const d = new Date();
-    if (d.getHours() >= 6) d.setDate(d.getDate() + 1);
-    return fmt(d);
-  }
-  function calendarToday() { return fmt(new Date()); }
-  function todayStr()      { return fmt(new Date()); }
+  // ── Date helpers (6 AM day boundary) ────────────────────────────
+  function pad(n)      { return String(n).padStart(2, '0'); }
+  function fmt(d)      { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function todayStr()  { return fmt(new Date()); }
+  function activeDate(){ const d = new Date(); if (d.getHours() < 6) d.setDate(d.getDate() - 1); return fmt(d); }
+  function tomorrowDate(){ const d = new Date(); if (d.getHours() >= 6) d.setDate(d.getDate() + 1); return fmt(d); }
+  function calendarToday(){ return fmt(new Date()); }
 
   // ── Profile ──────────────────────────────────────────────────────
   function getFirstName() {
     const s = lsGet('settings') || {};
     if (s.firstName) return s.firstName;
     const raw = lsRaw('dash_name') || '';
-    if (raw) {
-      const sp = raw.indexOf(' ');
-      return sp >= 0 ? raw.slice(0, sp) : raw;
-    }
+    if (raw) { const sp = raw.indexOf(' '); return sp >= 0 ? raw.slice(0, sp) : raw; }
     return '';
   }
-
   function getGreeting() {
     const h = new Date().getHours();
     const name = getFirstName();
@@ -469,69 +486,50 @@ body {
 
   // ── Data collectors ──────────────────────────────────────────────
   function getWaterData() {
-    const state = lsGet('po_water_v1') || {};
-    const today = calendarToday();
+    const state  = lsGet('po_water_v1') || {};
+    const today  = calendarToday();
     const doneMl = ((state.history || {})[today]) || 0;
     let targetMl = 2500;
     try {
-      const raw = lsGet('dash_weight');
-      const lbs = parseFloat(raw);
+      const lbs = parseFloat(lsGet('dash_weight'));
       if (!isNaN(lbs) && lbs > 0) {
-        const kg = lbs / 2.205;
+        const kg  = lbs / 2.205;
         const sex = lsRaw('dash_sex') || 'm';
         const adj = (sex === 'female' || sex === 'f') ? 0 : 200;
-        targetMl = Math.max(2000, Math.min(6000, Math.round(((kg * 35) + adj) / 50) * 50));
+        targetMl  = Math.max(2000, Math.min(6000, Math.round(((kg * 35) + adj) / 50) * 50));
       }
     } catch (_) {}
     return { doneMl, targetMl };
   }
-
-  function getGoalData(dateKey) {
-    return lsGet('goals:' + dateKey) || [];
-  }
-
-  function getStreak() {
-    const s = lsGet('goal_streak_v1') || {};
-    return typeof s.count === 'number' ? s.count : 0;
-  }
-
+  function getGoalData(dateKey) { return lsGet('goals:' + dateKey) || []; }
+  function getStreak() { const s = lsGet('goal_streak_v1') || {}; return typeof s.count === 'number' ? s.count : 0; }
   function getWeightInfo() {
-    const raw = lsGet('dash_weight');
-    const latestLbs = raw != null ? parseFloat(raw) : null;
+    const latestLbs = lsGet('dash_weight') != null ? parseFloat(lsGet('dash_weight')) : null;
     let trendStr = null;
     try {
-      const gymState = lsGet('po_gym_v1') || {};
-      const log = gymState.weightLog;
+      const log = (lsGet('po_gym_v1') || {}).weightLog;
       if (Array.isArray(log) && log.length > 1) {
         const recent = log.slice(-7);
-        const delta = recent[recent.length - 1].weight - recent[0].weight;
-        if (!isNaN(delta)) {
-          trendStr = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' lbs over last ' + recent.length + ' entries';
-        }
+        const delta  = recent[recent.length - 1].weight - recent[0].weight;
+        if (!isNaN(delta)) trendStr = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' lbs over last ' + recent.length + ' entries';
       }
     } catch (_) {}
     return { latestLbs, trendStr };
   }
-
-  function getLtGoals() {
-    try { return JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; }
-  }
-
+  function getLtGoals() { try { return JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; } }
   function getGymSplitToday() {
     try {
       const cycle = lsGet('dash_gym_cycle');
       if (cycle && cycle.type === 'cycle' && Array.isArray(cycle.days) && cycle.days.length && cycle.startDate) {
         const today = new Date(); today.setHours(0,0,0,0);
         const start = new Date(cycle.startDate + 'T00:00:00'); start.setHours(0,0,0,0);
-        const diff = Math.max(0, Math.round((today - start) / 86400000));
+        const diff  = Math.max(0, Math.round((today - start) / 86400000));
         return cycle.days[diff % cycle.days.length] || null;
       }
       const split = lsGet('dash_gym_split') || {};
-      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-      return split[days[new Date().getDay()]] || null;
+      return split[['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]] || null;
     } catch (_) { return null; }
   }
-
   function getGymSessionsPerWeek() {
     try {
       const cycle = lsGet('dash_gym_cycle');
@@ -544,101 +542,74 @@ body {
       return count || null;
     } catch (_) { return null; }
   }
-
   function getWorkoutHistory() {
     try {
       const s = lsGet('po_coach_v1');
       if (!s || !Array.isArray(s.exercises) || !s.logs) return [];
-      const cutoff = new Date();
-      cutoff.setDate(cutoff.getDate() - 7);
-      cutoff.setHours(0, 0, 0, 0);
+      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7); cutoff.setHours(0,0,0,0);
       const bySess = {};
       s.exercises.forEach(function(ex) {
         (s.logs[ex.id] || []).forEach(function(l) {
-          const key = l.sid ? l.sid.slice(0, 10) : (l.date || '').slice(0, 10);
-          if (!key) return;
-          if (new Date(key + 'T00:00:00') < cutoff) return;
+          const key = l.sid ? l.sid.slice(0,10) : (l.date||'').slice(0,10);
+          if (!key || new Date(key+'T00:00:00') < cutoff) return;
           if (!bySess[key]) bySess[key] = [];
-          bySess[key].push({ ex: ex, log: l });
+          bySess[key].push({ ex, log: l });
         });
       });
-      return Object.entries(bySess)
-        .sort(function(a, b) { return b[0].localeCompare(a[0]); })
-        .map(function(entry) {
-          const dateKey = entry[0], sets = entry[1];
-          const byEx = {};
-          sets.forEach(function(item) {
-            if (!byEx[item.ex.id]) byEx[item.ex.id] = { name: item.ex.name, sets: [] };
-            byEx[item.ex.id].sets.push({ reps: item.log.reps, weight: item.log.weight, bw: item.ex.bw });
-          });
-          const exercises = Object.values(byEx);
-          const totalVol = exercises.reduce(function(sum, e) {
-            return sum + e.sets.reduce(function(s2, set) { return s2 + (set.weight || 0) * (set.reps || 0); }, 0);
-          }, 0);
-          return { date: dateKey, exercises: exercises, totalVol: Math.round(totalVol), units: s.units || 'kg' };
+      return Object.entries(bySess).sort(function(a,b){ return b[0].localeCompare(a[0]); }).map(function(entry) {
+        const [dateKey, sets] = entry;
+        const byEx = {};
+        sets.forEach(function(item) {
+          if (!byEx[item.ex.id]) byEx[item.ex.id] = { name: item.ex.name, sets: [] };
+          byEx[item.ex.id].sets.push({ reps: item.log.reps, weight: item.log.weight, bw: item.ex.bw });
         });
+        const exercises  = Object.values(byEx);
+        const totalVol   = exercises.reduce(function(sum, e) {
+          return sum + e.sets.reduce(function(s2, set) { return s2 + (set.weight||0)*(set.reps||0); }, 0);
+        }, 0);
+        return { date: dateKey, exercises, totalVol: Math.round(totalVol), units: s.units || 'kg' };
+      });
     } catch (_) { return []; }
   }
-
   function getNutritionTargets() {
     try {
       const weightLbs = parseFloat(lsRaw('dash_weight'));
       const heightCm  = parseFloat(lsRaw('dash_height'));
       const age       = parseFloat(lsRaw('dash_age'));
       const sex       = (lsRaw('dash_sex') || '').toLowerCase();
-
-      if (isNaN(weightLbs) || weightLbs <= 0 || isNaN(heightCm) || heightCm <= 0 || isNaN(age) || age <= 0) return null;
-
-      const weightKg = weightLbs / 2.205;
-      const isFemale = sex === 'f' || sex === 'female';
-      const bmr = Math.round((10 * weightKg) + (6.25 * heightCm) - (5 * age) + (isFemale ? -161 : 5));
-
-      const sessions = getGymSessionsPerWeek() || 0;
+      if (isNaN(weightLbs)||weightLbs<=0||isNaN(heightCm)||heightCm<=0||isNaN(age)||age<=0) return null;
+      const weightKg  = weightLbs / 2.205;
+      const isFemale  = sex==='f'||sex==='female';
+      const bmr       = Math.round((10*weightKg)+(6.25*heightCm)-(5*age)+(isFemale?-161:5));
+      const sessions  = getGymSessionsPerWeek() || 0;
       let multiplier, activityLabel;
-      if (sessions >= 5)      { multiplier = 1.725; activityLabel = 'active';   }
-      else if (sessions >= 3) { multiplier = 1.55;  activityLabel = 'moderate'; }
-      else if (sessions >= 1) { multiplier = 1.375; activityLabel = 'light';    }
-      else                    { multiplier = 1.2;   activityLabel = 'sedentary';}
-
-      const tdee = Math.round(bmr * multiplier);
-
-      let recommendedCals = tdee;
-      let deficitNote = null;
-
+      if (sessions>=5)      { multiplier=1.725; activityLabel='active'; }
+      else if (sessions>=3) { multiplier=1.55;  activityLabel='moderate'; }
+      else if (sessions>=1) { multiplier=1.375; activityLabel='light'; }
+      else                  { multiplier=1.2;   activityLabel='sedentary'; }
+      const tdee  = Math.round(bmr * multiplier);
+      let recommendedCals = tdee, deficitNote = null;
       const goals = getLtGoals();
-      const weightGoal = goals.find(function(g) {
-        return g.category === 'weight' && g.targetValue != null && g.deadline;
-      });
-
+      const weightGoal = goals.find(function(g){ return g.category==='weight'&&g.targetValue!=null&&g.deadline; });
       if (weightGoal) {
-        const targetRaw = parseFloat(weightGoal.targetValue);
-        const targetLbs = (weightGoal.unit === 'kg') ? targetRaw * 2.205 : targetRaw;
+        const targetLbs = (weightGoal.unit==='kg') ? parseFloat(weightGoal.targetValue)*2.205 : parseFloat(weightGoal.targetValue);
         const lbsToLose = weightLbs - targetLbs;
         if (lbsToLose > 0.5) {
-          const today = new Date(); today.setHours(0, 0, 0, 0);
-          const deadline = new Date(weightGoal.deadline + 'T00:00:00');
-          const daysLeft = Math.round((deadline - today) / 86400000);
+          const today = new Date(); today.setHours(0,0,0,0);
+          const daysLeft = Math.round((new Date(weightGoal.deadline+'T00:00:00') - today) / 86400000);
           if (daysLeft > 0) {
-            const rawDeficit = Math.round((lbsToLose * 3500) / daysLeft);
-            const dailyDeficit = Math.min(1000, rawDeficit);
+            const dailyDeficit = Math.min(1000, Math.round((lbsToLose*3500)/daysLeft));
             recommendedCals = tdee - dailyDeficit;
-            deficitNote = `${dailyDeficit} kcal/day deficit · lose ${lbsToLose.toFixed(1)} lbs by ${weightGoal.deadline} (${daysLeft} days remaining)`;
+            deficitNote = dailyDeficit + ' kcal/day deficit · lose ' + lbsToLose.toFixed(1) + ' lbs by ' + weightGoal.deadline + ' (' + daysLeft + ' days remaining)';
           }
         }
       }
-
-      const proteinMin = Math.round(weightLbs * 0.8);
-      const proteinMax = Math.round(weightLbs * 1.0);
-
-      return { bmr, tdee, multiplier, activityLabel, recommendedCals, deficitNote, proteinMin, proteinMax };
+      return { bmr, tdee, activityLabel, recommendedCals, deficitNote,
+               proteinMin: Math.round(weightLbs*0.8), proteinMax: Math.round(weightLbs*1.0) };
     } catch (_) { return null; }
   }
 
-  // ── Gmail inbox context ──────────────────────────────────────────
-  // Primary source: axis_gmail_cache written by email.html (includes message IDs).
-  // Fallback: live fetch if cache is absent.
-  let _cachedGmailEmails = []; // [{ id, sender, subject, snippet }]
-
+  // ── Google token helper ──────────────────────────────────────────
   function _getGmailToken() {
     try {
       const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
@@ -647,221 +618,155 @@ body {
     } catch (_) { return null; }
   }
 
+  // ── Gmail inbox context ──────────────────────────────────────────
+  let _cachedGmailEmails = []; // [{ id, sender, subject, snippet }]
+
   function loadGmailFromCache() {
     try {
       const cache = JSON.parse(localStorage.getItem('axis_gmail_cache') || 'null');
-      if (Array.isArray(cache) && cache.length) {
-        _cachedGmailEmails = cache.slice(0, 5);
-        return true;
-      }
+      if (Array.isArray(cache) && cache.length) { _cachedGmailEmails = cache.slice(0,5); return true; }
     } catch (_) {}
     return false;
   }
 
   async function fetchGmailEmails() {
-    // Prefer the pre-parsed cache from email.html
     if (loadGmailFromCache()) return;
-    // Fallback: live fetch
     const tok = _getGmailToken();
     if (!tok) return;
     try {
-      const listRes = await fetch(
-        'https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=5',
-        { headers: { 'Authorization': 'Bearer ' + tok } }
-      );
+      const listRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=5',
+        { headers: { 'Authorization': 'Bearer ' + tok } });
       if (!listRes.ok) return;
-      const listData = await listRes.json();
-      const msgs = listData.messages || [];
+      const msgs = (await listRes.json()).messages || [];
       const details = await Promise.all(msgs.map(function(m) {
-        return fetch(
-          'https://www.googleapis.com/gmail/v1/users/me/messages/' + m.id + '?format=metadata&metadataHeaders=From,Subject',
+        return fetch('https://www.googleapis.com/gmail/v1/users/me/messages/'+m.id+'?format=metadata&metadataHeaders=From,Subject',
           { headers: { 'Authorization': 'Bearer ' + tok } }
-        ).then(function(r) { return r.ok ? r.json() : null; }).catch(function() { return null; });
+        ).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
       }));
       _cachedGmailEmails = details.filter(Boolean).map(function(msg) {
-        const hdrs = (msg.payload && msg.payload.headers) || [];
-        const from = (hdrs.find(function(h) { return h.name === 'From'; }) || {}).value || '';
-        const subject = (hdrs.find(function(h) { return h.name === 'Subject'; }) || {}).value || '(No subject)';
-        const m2 = from.match(/^(.+?)\s*<[^>]+>$/);
-        const sender = m2 ? m2[1].replace(/^"|"$/g, '').trim() : from.split('@')[0];
-        return { id: msg.id, sender, subject, snippet: (msg.snippet || '').slice(0, 120) };
+        const hdrs    = (msg.payload && msg.payload.headers) || [];
+        const from    = (hdrs.find(function(h){ return h.name==='From'; }) || {}).value || '';
+        const subject = (hdrs.find(function(h){ return h.name==='Subject'; }) || {}).value || '(No subject)';
+        const m2      = from.match(/^(.+?)\s*<[^>]+>$/);
+        const sender  = m2 ? m2[1].replace(/^"|"$/g,'').trim() : from.split('@')[0];
+        return { id: msg.id, sender, subject, snippet: (msg.snippet||'').slice(0,120) };
       });
     } catch (_) {}
   }
 
   // ── Google Calendar context ───────────────────────────────────────
-  let _calendarEvents = { today: [], tomorrow: [] }; // [{ time, title, duration }]
+  let _calendarEvents = { today: [], tomorrow: [] };
 
   async function fetchCalendarEvents() {
     const tok = _getGmailToken();
     if (!tok) return;
     try {
-      const tz   = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const now  = new Date();
-      // today window: start of today → end of today
+      const tz       = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const now      = new Date();
       const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
       const todayEnd   = new Date(now); todayEnd.setHours(23,59,59,999);
-      // tomorrow window
-      const tomStart = new Date(todayStart); tomStart.setDate(tomStart.getDate() + 1);
-      const tomEnd   = new Date(todayEnd);   tomEnd.setDate(tomEnd.getDate() + 1);
+      const tomStart   = new Date(todayStart); tomStart.setDate(tomStart.getDate()+1);
+      const tomEnd     = new Date(todayEnd);   tomEnd.setDate(tomEnd.getDate()+1);
 
       async function fetchWindow(tMin, tMax) {
         const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
           + '?singleEvents=true&orderBy=startTime'
           + '&timeMin=' + encodeURIComponent(tMin.toISOString())
           + '&timeMax=' + encodeURIComponent(tMax.toISOString())
-          + '&maxResults=10'
-          + '&timeZone=' + encodeURIComponent(tz);
+          + '&maxResults=10&timeZone=' + encodeURIComponent(tz);
         const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
         if (!res.ok) return [];
-        const data = await res.json();
-        return (data.items || []).map(function(ev) {
-          const startRaw = ev.start && (ev.start.dateTime || ev.start.date);
-          let timeLabel = '';
+        return ((await res.json()).items || []).map(function(ev) {
+          let timeLabel = 'All day', duration = '';
           if (ev.start && ev.start.dateTime) {
             const d = new Date(ev.start.dateTime);
-            timeLabel = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-          } else {
-            timeLabel = 'All day';
+            timeLabel = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
           }
-          let duration = '';
           if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
             const mins = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
-            duration = mins >= 60 ? (mins / 60).toFixed(mins % 60 === 0 ? 0 : 1) + 'h' : mins + 'min';
+            duration   = mins >= 60 ? (mins/60).toFixed(mins%60===0?0:1)+'h' : mins+'min';
           }
           return { time: timeLabel, title: ev.summary || '(No title)', duration };
         });
       }
-
-      const [todayEvts, tomEvts] = await Promise.all([
-        fetchWindow(todayStart, todayEnd),
-        fetchWindow(tomStart, tomEnd)
-      ]);
+      const [todayEvts, tomEvts] = await Promise.all([fetchWindow(todayStart, todayEnd), fetchWindow(tomStart, tomEnd)]);
       _calendarEvents = { today: todayEvts, tomorrow: tomEvts };
     } catch (_) {}
   }
 
   // ── System prompt ────────────────────────────────────────────────
   function buildSystemPrompt() {
-    const today = activeDate();
-    const tomorrow = tomorrowDate();
-    const todayGoals = getGoalData(today);
-    const tomorrowGoals = getGoalData(tomorrow);
-    const water = getWaterData();
-    const streak = getStreak();
-    const wt = getWeightInfo();
-    const gymSplit = getGymSplitToday();
-    const gymSessions = getGymSessionsPerWeek();
-    const workouts = getWorkoutHistory();
-    const name = getFirstName();
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
-    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-
-    const doneGoals    = todayGoals.filter(g => g.done);
-    const pendingGoals = todayGoals.filter(g => !g.done);
+    const today        = activeDate();
+    const tomorrow     = tomorrowDate();
+    const todayGoals   = getGoalData(today);
+    const tomorrowGoals= getGoalData(tomorrow);
+    const water        = getWaterData();
+    const streak       = getStreak();
+    const wt           = getWeightInfo();
+    const gymSplit     = getGymSplitToday();
+    const gymSessions  = getGymSessionsPerWeek();
+    const workouts     = getWorkoutHistory();
+    const name         = getFirstName();
+    const now          = new Date();
+    const dateStr      = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
+    const timeStr      = now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+    const doneGoals    = todayGoals.filter(function(g){ return g.done; });
+    const pendingGoals = todayGoals.filter(function(g){ return !g.done; });
     const waterPct     = water.targetMl > 0 ? Math.round(water.doneMl / water.targetMl * 100) : 0;
 
-    let p = `You are Axis — ${name || 'the user'}'s personal assistant with full visibility into their health, fitness, and daily schedule. You operate like a trusted chief of staff: calm, composed, and precise. You deliver information clearly and directly, offer suggestions rather than commands, and anticipate needs before they are stated. You never use exclamation marks, motivational clichés, or coaching hype. You address the user by first name occasionally — not constantly. Your tone carries quiet authority and professional restraint. You are data-driven and specific, always referencing actual numbers. Responses are concise: two or three sentences for straightforward questions, a short paragraph for complex ones.
+    let p = 'You are Axis — ' + (name||'the user') + '\'s personal assistant with full visibility into their health, fitness, and daily schedule. You operate like a trusted chief of staff: calm, composed, and precise. You deliver information clearly and directly, offer suggestions rather than commands, and anticipate needs before they are stated. You never use exclamation marks, motivational clichés, or coaching hype. You address the user by first name occasionally — not constantly. Your tone carries quiet authority and professional restraint. You are data-driven and specific, always referencing actual numbers. Responses are concise: two or three sentences for straightforward questions, a short paragraph for complex ones.\n\n=== USER DATA (' + dateStr + ', ' + timeStr + ') ===';
 
-=== USER DATA (${dateStr}, ${timeStr}) ===`;
-
-    p += `\nGOALS TODAY: ${doneGoals.length}/${todayGoals.length} complete`;
-    if (doneGoals.length)    p += `\n  Completed: ${doneGoals.map(g => g.text).join(' | ')}`;
-    if (pendingGoals.length) p += `\n  Pending:   ${pendingGoals.map(g => g.text).join(' | ')}`;
+    p += '\nGOALS TODAY: ' + doneGoals.length + '/' + todayGoals.length + ' complete';
+    if (doneGoals.length)    p += '\n  Completed: ' + doneGoals.map(function(g){ return g.text; }).join(' | ');
+    if (pendingGoals.length) p += '\n  Pending:   ' + pendingGoals.map(function(g){ return g.text; }).join(' | ');
     if (!todayGoals.length)  p += '\n  (no goals set today)';
-
-    p += tomorrowGoals.length
-      ? `\nTOMORROW:   ${tomorrowGoals.map(g => g.text).join(' | ')}`
-      : '\nTOMORROW:   nothing planned yet';
-
-    p += `\nWATER:      ${water.doneMl}ml / ${water.targetMl}ml (${waterPct}%)`;
-    p += `\nSTREAK:     ${streak} day${streak !== 1 ? 's' : ''}`;
-
+    p += tomorrowGoals.length ? '\nTOMORROW:   ' + tomorrowGoals.map(function(g){ return g.text; }).join(' | ') : '\nTOMORROW:   nothing planned yet';
+    p += '\nWATER:      ' + water.doneMl + 'ml / ' + water.targetMl + 'ml (' + waterPct + '%)';
+    p += '\nSTREAK:     ' + streak + ' day' + (streak!==1?'s':'');
     if (gymSplit || gymSessions != null) {
-      let splitLine = gymSplit ? `\nGYM SPLIT:  ${gymSplit}` : '\nGYM SPLIT:  (not set for today)';
-      if (gymSessions != null) splitLine += ` · ${gymSessions}x/week`;
-      p += splitLine;
+      p += gymSplit ? '\nGYM SPLIT:  ' + gymSplit : '\nGYM SPLIT:  (not set for today)';
+      if (gymSessions != null) p += ' · ' + gymSessions + 'x/week';
     }
-
-    if (wt.latestLbs != null) {
-      p += `\nWEIGHT:     ${wt.latestLbs} lbs`;
-      if (wt.trendStr) p += ` (${wt.trendStr})`;
-    }
-
-    const age    = lsRaw('dash_age');
-    const sex    = lsRaw('dash_sex');
-    const height = lsRaw('dash_height');
-    if (age || sex || height) {
+    if (wt.latestLbs != null) { p += '\nWEIGHT:     ' + wt.latestLbs + ' lbs'; if (wt.trendStr) p += ' (' + wt.trendStr + ')'; }
+    const age = lsRaw('dash_age'), sex = lsRaw('dash_sex'), height = lsRaw('dash_height');
+    if (age||sex||height) {
       const parts = [];
-      if (age)    parts.push('age ' + age);
+      if (age)    parts.push('age '+age);
       if (sex)    parts.push(sex);
-      if (height) parts.push(height + ' cm');
-      p += `\nPROFILE:    ${parts.join(', ')}`;
+      if (height) parts.push(height+' cm');
+      p += '\nPROFILE:    ' + parts.join(', ');
     }
-
     const nutrition = getNutritionTargets();
     if (nutrition) {
-      p += `\nNUTRITION:  BMR ${nutrition.bmr} kcal · TDEE ${nutrition.tdee} kcal (${nutrition.activityLabel}, ${getGymSessionsPerWeek() || 0}x/week)`;
-      p += `\n  Calories: ${nutrition.recommendedCals} kcal/day`;
-      if (nutrition.deficitNote) p += ` — ${nutrition.deficitNote}`;
-      else p += ' — maintenance';
-      p += `\n  Protein:  ${nutrition.proteinMin}–${nutrition.proteinMax} g/day`;
+      p += '\nNUTRITION:  BMR ' + nutrition.bmr + ' kcal · TDEE ' + nutrition.tdee + ' kcal (' + nutrition.activityLabel + ', ' + (getGymSessionsPerWeek()||0) + 'x/week)';
+      p += '\n  Calories: ' + nutrition.recommendedCals + ' kcal/day' + (nutrition.deficitNote ? ' — '+nutrition.deficitNote : ' — maintenance');
+      p += '\n  Protein:  ' + nutrition.proteinMin + '–' + nutrition.proteinMax + ' g/day';
     }
-
     const ltGoals = getLtGoals();
     if (ltGoals.length) {
       p += '\nLONG-TERM GOALS:';
-      ltGoals.forEach(function(g) {
-        p += '\n  ' + g.title + ': target ' + g.targetValue + ' ' + g.unit +
-             (g.deadline ? ', deadline ' + g.deadline : '');
-      });
+      ltGoals.forEach(function(g){ p += '\n  [id:'+g.id+'] '+g.title+': target '+g.targetValue+' '+g.unit+(g.deadline?', deadline '+g.deadline:''); });
     }
-
     if (workouts.length) {
       p += '\nWORKOUT HISTORY (last 7 days):';
       workouts.forEach(function(w) {
-        const vol = w.totalVol > 0 ? `, ${w.totalVol.toLocaleString()} ${w.units} vol` : '';
-        p += `\n  ${w.date} — ${w.exercises.length} exercise${w.exercises.length !== 1 ? 's' : ''}${vol}`;
+        p += '\n  ' + w.date + ' — ' + w.exercises.length + ' exercise' + (w.exercises.length!==1?'s':'') + (w.totalVol>0?', '+w.totalVol.toLocaleString()+' '+w.units+' vol':'');
         w.exercises.forEach(function(e) {
-          const setsStr = e.sets.map(function(s) {
-            return s.weight ? `${s.weight}${w.units}×${s.reps}` : `${s.reps} reps`;
-          }).join(', ');
-          p += `\n    ${e.name}: ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''} — ${setsStr}`;
+          p += '\n    '+e.name+': '+e.sets.length+' set'+(e.sets.length!==1?'s':'')+' — '+e.sets.map(function(s){ return s.weight?s.weight+w.units+'×'+s.reps:s.reps+' reps'; }).join(', ');
         });
       });
     }
-
-    // Calendar events
     if (_calendarEvents.today.length || _calendarEvents.tomorrow.length) {
       p += '\nCALENDAR:';
-      if (_calendarEvents.today.length) {
-        p += '\n  Today:';
-        _calendarEvents.today.forEach(function(ev) {
-          p += '\n    ' + ev.time + ' — ' + ev.title + (ev.duration ? ' (' + ev.duration + ')' : '');
-        });
-      } else {
-        p += '\n  Today: nothing scheduled';
-      }
-      if (_calendarEvents.tomorrow.length) {
-        p += '\n  Tomorrow:';
-        _calendarEvents.tomorrow.forEach(function(ev) {
-          p += '\n    ' + ev.time + ' — ' + ev.title + (ev.duration ? ' (' + ev.duration + ')' : '');
-        });
-      } else {
-        p += '\n  Tomorrow: nothing scheduled';
-      }
+      p += _calendarEvents.today.length ? '\n  Today:' : '\n  Today: nothing scheduled';
+      _calendarEvents.today.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
+      p += _calendarEvents.tomorrow.length ? '\n  Tomorrow:' : '\n  Tomorrow: nothing scheduled';
+      _calendarEvents.tomorrow.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
     }
-
-    // Unread emails
     if (_cachedGmailEmails.length) {
       p += '\nUNREAD EMAILS:';
-      _cachedGmailEmails.forEach(function(e) {
-        p += '\n  [id:' + (e.id || '?') + '] From: ' + e.sender + ' | Subject: ' + e.subject;
-        if (e.snippet) p += '\n  Preview: ' + e.snippet;
-      });
+      _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
     }
-
     p += `\n===
 
 === TOOLS ===
@@ -892,36 +797,33 @@ Available tools:
   }
 
   // ── SSE streaming helper ─────────────────────────────────────────
-  // Calls /api/chat, parses SSE, fires onChunk(fullTextSoFar) on every
-  // text delta, and returns the completed full text when the stream ends.
   async function streamClaude(messages, onChunk) {
+    // Anthropic API requires messages to start with 'user'
+    const apiMessages = messages.slice();
+    if (apiMessages.length && apiMessages[0].role === 'assistant') {
+      apiMessages.unshift({ role: 'user', content: '[Continue from daily briefing]' });
+    }
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: buildSystemPrompt(), messages })
+      body: JSON.stringify({ system: buildSystemPrompt(), messages: apiMessages })
     });
     if (!res.ok) throw new Error('API ' + res.status);
-
-    const reader = res.body.getReader();
+    const reader  = res.body.getReader();
     const decoder = new TextDecoder();
-    let buf = '';
-    let full = '';
-
+    let buf = '', full = '';
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
       buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n');
-      buf = lines.pop(); // hold back any incomplete line
+      const lines = buf.split('\n'); buf = lines.pop();
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim();
-        if (!raw) continue;
+        const raw = line.slice(6).trim(); if (!raw) continue;
         try {
           const evt = JSON.parse(raw);
           if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
-            full += evt.delta.text;
-            onChunk(full);
+            full += evt.delta.text; onChunk(full);
           }
         } catch (_) {}
       }
@@ -929,89 +831,169 @@ Available tools:
     return full;
   }
 
-  // ── Chat state ────────────────────────────────────────────────────
-  const chatHistory = [];
+  // ── Session management ───────────────────────────────────────────
+  const SESSIONS_KEY = 'axis_chat_sessions';
+  const ACTIVE_KEY   = 'axis_active_chat_id';
 
-  // ── DOM helpers ───────────────────────────────────────────────────
-  function scrollToBottom() {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+  let chatHistory      = []; // [{ role, content }] — sent to API
+  let activeSessionId  = null;
+
+  function getSessions()       { return lsGet(SESSIONS_KEY) || []; }
+  function saveSessions(arr)   { try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(arr)); } catch(_) {} }
+  function genSessionId()      { return 'chat_' + Date.now(); }
+
+  function getPreview(messages) {
+    for (let i = 0; i < messages.length; i++) {
+      const m = messages[i];
+      if (m.content && m.content.trim() && !m.hidden) {
+        const txt = m.content.trim();
+        return txt.slice(0, 72) + (txt.length > 72 ? '…' : '');
+      }
+    }
+    return 'New conversation';
   }
 
-  function appendBubble(role, text) {
-    const thread = document.getElementById('chatThread');
-    const wrap = document.createElement('div');
-    wrap.className = 'msg msg-' + role;
+  function upsertSession(session) {
+    const sessions = getSessions();
+    const idx = sessions.findIndex(function(s){ return s.id === session.id; });
+    if (idx >= 0) sessions[idx] = session;
+    else sessions.unshift(session);
+    while (sessions.length > 30) sessions.pop(); // keep last 30
+    saveSessions(sessions);
+  }
+
+  function saveCurrentSession() {
+    if (!activeSessionId) return;
+    const sessions = getSessions();
+    const session  = sessions.find(function(s){ return s.id === activeSessionId; });
+    if (!session || !chatHistory.length) return;
+    session.messages = chatHistory.map(function(m){ return Object.assign({ ts: Date.now() }, m); });
+    session.preview  = getPreview(session.messages);
+    saveSessions(sessions);
+    _supaUpsert('chat_sessions', sessions);
+  }
+
+  // ── DOM helpers ──────────────────────────────────────────────────
+  function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+
+  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  function buildMsgEl(role, content, opts) {
+    opts = opts || {};
+    const wrap   = document.createElement('div');
     const bubble = document.createElement('div');
+    wrap.className   = 'msg msg-' + role + (opts.isStatic ? ' msg-static' : '');
     bubble.className = 'msg-bubble';
-    bubble.textContent = text;
+    if (opts.isBriefing) {
+      const header = document.createElement('div');
+      header.className = 'msg-briefing-header';
+      header.innerHTML = '<span class="msg-briefing-icon">⚡</span><span class="msg-briefing-label">Daily Briefing</span>';
+      bubble.appendChild(header);
+    }
+    const textNode = document.createElement('span');
+    textNode.textContent = content;
+    bubble.appendChild(textNode);
     wrap.appendChild(bubble);
-    thread.appendChild(wrap);
+    return { wrap, bubble, textNode };
+  }
+
+  function appendMsg(role, content, opts) {
+    const { wrap } = buildMsgEl(role, content, opts);
+    document.getElementById('chatThread').appendChild(wrap);
     scrollToBottom();
+    return wrap;
   }
 
   function appendTyping() {
     const thread = document.getElementById('chatThread');
-    const wrap = document.createElement('div');
-    wrap.className = 'msg msg-ai msg-typing';
+    const wrap   = document.createElement('div');
+    wrap.className = 'msg msg-ai msg-typing msg-static';
     wrap.innerHTML = '<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
     thread.appendChild(wrap);
     scrollToBottom();
     return wrap;
   }
 
-  // ── localStorage write with cross-page reactivity ────────────────
-  function lsSet(k, v) {
-    try {
-      const s = JSON.stringify(v);
-      localStorage.setItem(k, s);
-      window.dispatchEvent(new StorageEvent('storage', { key: k, newValue: s, storageArea: localStorage }));
-      if (window._pcTriggerSync) window._pcTriggerSync(k);
-    } catch (_) {}
+  function appendDateSep(dateStr) {
+    const sep = document.createElement('div');
+    sep.className   = 'chat-date-sep';
+    sep.textContent = dateStr;
+    document.getElementById('chatThread').appendChild(sep);
   }
 
-  // ── Action executors ──────────────────────────────────────────────
+  function appendActionCard(message) {
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
+    card.querySelector('.action-card-text').textContent = message;
+    document.getElementById('chatThread').appendChild(card);
+    scrollToBottom();
+  }
+
+  function renderThread(messages) {
+    const thread = document.getElementById('chatThread');
+    thread.innerHTML = '';
+    if (!messages || !messages.length) return;
+    const frag = document.createDocumentFragment();
+    let lastDate = '';
+    messages.forEach(function(m) {
+      if (m.hidden) return;
+      const dateKey = m.ts ? fmt(new Date(m.ts)) : '';
+      if (dateKey && dateKey !== lastDate) {
+        const sep = document.createElement('div');
+        sep.className   = 'chat-date-sep';
+        sep.textContent = new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+        frag.appendChild(sep);
+        lastDate = dateKey;
+      }
+      const { wrap } = buildMsgEl(m.role, m.content, { isStatic: true, isBriefing: m.briefing });
+      frag.appendChild(wrap);
+    });
+    thread.appendChild(frag);
+    scrollToBottom();
+  }
+
+  // ── Action executors ─────────────────────────────────────────────
   async function addCalendarEvent(params) {
-    const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
-    const tok = stored && stored.token;
-    if (!tok || Date.now() >= (stored.expiry || 0)) {
-      return 'Calendar not connected — sign in via the email page first.';
-    }
+    const tok = _getGmailToken();
+    if (!tok) return 'Calendar not connected — sign in via the email page first.';
     try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const start = params.time
-        ? new Date(params.date + 'T' + params.time + ':00')
-        : null;
-      const end = start
-        ? new Date(start.getTime() + (params.duration_minutes || 60) * 60000)
-        : null;
-      const eventBody = {
+      const tz    = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const start = params.time ? new Date(params.date+'T'+params.time+':00') : null;
+      const end   = start ? new Date(start.getTime()+(params.duration_minutes||60)*60000) : null;
+      const body  = {
         summary: params.title,
-        start: start
-          ? { dateTime: start.toISOString(), timeZone: tz }
-          : { date: params.date },
-        end: end
-          ? { dateTime: end.toISOString(), timeZone: tz }
-          : { date: params.date }
+        start: start ? { dateTime: start.toISOString(), timeZone: tz } : { date: params.date },
+        end:   end   ? { dateTime: end.toISOString(),   timeZone: tz } : { date: params.date }
       };
-      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-        method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-        body: JSON.stringify(eventBody)
-      });
-      if (!res.ok) return 'Calendar error ' + res.status + ' — check permissions.';
+      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      if (!res.ok) return 'Calendar error ' + res.status;
       return '"' + params.title + '" added to calendar on ' + params.date;
-    } catch (e) { return 'Calendar error: ' + e.message; }
+    } catch(e) { return 'Calendar error: ' + e.message; }
+  }
+
+  async function markEmailRead(msgId) {
+    const tok = _getGmailToken();
+    if (!tok) return 'Gmail not connected — sign in via the email page first.';
+    try {
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+msgId+'/modify',
+        { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
+          body: JSON.stringify({ removeLabelIds: ['UNREAD'] }) });
+      if (!res.ok) return 'Gmail error ' + res.status;
+      _cachedGmailEmails = _cachedGmailEmails.filter(function(e){ return e.id !== msgId; });
+      try {
+        const cache = JSON.parse(localStorage.getItem('axis_gmail_cache')||'[]');
+        localStorage.setItem('axis_gmail_cache', JSON.stringify(cache.filter(function(e){ return e.id !== msgId; })));
+      } catch(_) {}
+      return 'Email marked as read.';
+    } catch(e) { return 'Gmail error: ' + e.message; }
   }
 
   async function executeAction(tool, params) {
     if (tool === 'set_calorie_target') {
-      const cur = lsGet('calorie_targets_v1') || {};
-      lsSet('calorie_targets_v1', Object.assign({}, cur, params));
-      let msg = 'Calorie target set to ' + params.kcal + ' kcal/day';
-      if (params.protein) msg += ' · ' + params.protein + 'g protein';
-      if (params.carbs)   msg += ' · ' + params.carbs + 'g carbs';
-      if (params.fat)     msg += ' · ' + params.fat + 'g fat';
-      return msg;
+      lsSet('calorie_targets_v1', Object.assign(lsGet('calorie_targets_v1')||{}, params));
+      return 'Calorie target set to '+params.kcal+' kcal/day'+(params.protein?' · '+params.protein+'g protein':'')+(params.carbs?' · '+params.carbs+'g carbs':'')+(params.fat?' · '+params.fat+'g fat':'');
     }
     if (tool === 'set_water_target') {
       const state = lsGet('po_water_v1') || {};
@@ -1022,8 +1004,8 @@ Available tools:
     }
     if (tool === 'update_goal') {
       const goals = lsGet('axis_goals') || [];
-      const idx = goals.findIndex(function(g) { return g.id === params.id; });
-      if (idx === -1) return 'Goal not found (ID: ' + params.id + ')';
+      const idx   = goals.findIndex(function(g){ return g.id === params.id; });
+      if (idx===-1) return 'Goal not found: ' + params.id;
       if (params.title    != null) goals[idx].title       = params.title;
       if (params.target   != null) goals[idx].targetValue = params.target;
       if (params.deadline != null) goals[idx].deadline    = params.deadline;
@@ -1032,224 +1014,247 @@ Available tools:
     }
     if (tool === 'delete_goal') {
       const goals = lsGet('axis_goals') || [];
-      const idx = goals.findIndex(function(g) { return g.id === params.id; });
-      if (idx === -1) return 'Goal not found (ID: ' + params.id + ')';
+      const idx   = goals.findIndex(function(g){ return g.id === params.id; });
+      if (idx===-1) return 'Goal not found: ' + params.id;
       const title = goals[idx].title;
       goals.splice(idx, 1);
       lsSet('axis_goals', goals);
       return 'Goal "' + title + '" deleted';
     }
-    if (tool === 'add_calendar_event') {
-      return await addCalendarEvent(params);
-    }
-    if (tool === 'mark_email_read') {
-      return await markEmailRead(params.id);
-    }
+    if (tool === 'add_calendar_event') return await addCalendarEvent(params);
+    if (tool === 'mark_email_read')    return await markEmailRead(params.id);
     return 'Unknown tool: ' + tool;
   }
 
-  async function markEmailRead(msgId) {
-    const tok = _getGmailToken();
-    if (!tok) return 'Gmail not connected — sign in via the email page first.';
-    try {
-      const res = await fetch(
-        'https://gmail.googleapis.com/gmail/v1/users/me/messages/' + msgId + '/modify',
-        {
-          method: 'POST',
-          headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ removeLabelIds: ['UNREAD'] })
-        }
-      );
-      if (!res.ok) return 'Gmail error ' + res.status + ' — could not mark as read.';
-      // Remove from local cache so it won't appear in future prompts
-      _cachedGmailEmails = _cachedGmailEmails.filter(function(e) { return e.id !== msgId; });
-      try {
-        const cache = JSON.parse(localStorage.getItem('axis_gmail_cache') || '[]');
-        const updated = cache.filter(function(e) { return e.id !== msgId; });
-        localStorage.setItem('axis_gmail_cache', JSON.stringify(updated));
-      } catch (_) {}
-      return 'Email marked as read.';
-    } catch (e) { return 'Gmail error: ' + e.message; }
-  }
-
-  // ── Action parser ─────────────────────────────────────────────────
   function parseActions(text) {
     const actions = [];
-    const clean = text.replace(/<action>([\s\S]*?)<\/action>/g, function(_, inner) {
-      try {
-        const parsed = JSON.parse(inner.trim());
-        if (parsed.tool && parsed.params) actions.push(parsed);
-      } catch (_) {}
+    const clean   = text.replace(/<action>([\s\S]*?)<\/action>/g, function(_, inner) {
+      try { const p = JSON.parse(inner.trim()); if (p.tool && p.params) actions.push(p); } catch(_) {}
       return '';
     }).replace(/\n{3,}/g, '\n\n').trim();
     return { clean, actions };
   }
 
-  function appendActionCard(message) {
-    const thread = document.getElementById('chatThread');
-    const card = document.createElement('div');
-    card.className = 'action-card';
-    card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
-    card.querySelector('.action-card-text').textContent = message;
-    thread.appendChild(card);
-    scrollToBottom();
-  }
-
-  // ── Send ──────────────────────────────────────────────────────────
+  // ── Send message ─────────────────────────────────────────────────
   async function sendMessage(text) {
     text = text.trim();
     if (!text) return;
-
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
     input.value   = '';
-    input.disabled   = true;
-    sendBtn.disabled = true;
+    input.disabled = true; sendBtn.disabled = true;
 
-    chatHistory.push({ role: 'user', content: text });
-    appendBubble('user', text);
+    const userMsg = { role: 'user', content: text };
+    chatHistory.push(userMsg);
+    appendMsg('user', text);
 
-    // Typing indicator — replaced by streaming bubble on first token
     const typingEl = appendTyping();
-    const thread = document.getElementById('chatThread');
-    const aiWrap = document.createElement('div');
-    aiWrap.className = 'msg msg-ai';
-    const aiBubble = document.createElement('div');
-    aiBubble.className = 'msg-bubble streaming';
-    aiWrap.appendChild(aiBubble);
+    const thread   = document.getElementById('chatThread');
+    const { wrap: aiWrap, bubble: aiBubble, textNode: aiText } = buildMsgEl('ai', '');
+    aiBubble.classList.add('streaming');
     let attached = false;
 
     try {
-      const full = await streamClaude([...chatHistory], function (accumulated) {
-        if (!attached) {
-          typingEl.remove();
-          thread.appendChild(aiWrap);
-          attached = true;
-        }
-        aiBubble.textContent = accumulated;
+      const full = await streamClaude(chatHistory.slice(), function(accumulated) {
+        if (!attached) { typingEl.remove(); thread.appendChild(aiWrap); attached = true; }
+        aiText.textContent = accumulated;
         scrollToBottom();
       });
       aiBubble.classList.remove('streaming');
-      if (!attached) {
-        typingEl.remove();
-        appendBubble('ai', 'No response received.');
-      } else {
-        // Parse and strip action tags before displaying
+      if (!attached) { typingEl.remove(); appendMsg('ai', 'No response received.'); }
+      else {
         const { clean, actions } = parseActions(full);
-        if (clean !== full) aiBubble.textContent = clean;
+        if (clean !== full) aiText.textContent = clean;
         chatHistory.push({ role: 'assistant', content: full });
-        // Execute actions and show confirmation cards
+        saveCurrentSession();
         for (const action of actions) {
-          const result = await executeAction(action.tool, action.params);
-          appendActionCard(result);
+          appendActionCard(await executeAction(action.tool, action.params));
         }
       }
     } catch (_) {
       aiBubble.classList.remove('streaming');
       typingEl.remove();
       if (attached) aiWrap.remove();
-      appendBubble('ai', 'Something went wrong — check your connection or try again.');
+      chatHistory.pop(); // remove the user msg we optimistically added
+      appendMsg('ai', 'Something went wrong — check your connection or try again.');
     } finally {
-      input.disabled   = false;
-      sendBtn.disabled = false;
-      input.focus();
+      input.disabled = false; sendBtn.disabled = false; input.focus();
     }
   }
 
-  // ── Daily briefing (cached per day) ─────────────────────────────
-  async function loadBriefing(forceRefresh) {
-    const loadingEl  = document.getElementById('briefingLoading');
-    const textEl     = document.getElementById('briefingText');
-    const refreshBtn = document.getElementById('briefingRefresh');
+  // ── Briefing ─────────────────────────────────────────────────────
+  async function ensureBriefingForToday() {
+    // Check if today's briefing already exists in this session
+    const sessions = getSessions();
+    const session  = sessions.find(function(s){ return s.id === activeSessionId; });
+    if (session && session.briefingDate === todayStr()) return;
 
-    // Serve from cache if available and not forcing
-    if (!forceRefresh) {
-      // Supabase first — ensures all devices show the same briefing for the day
-      const remote = await _fetchRemoteBriefing();
-      if (remote && remote.date === todayStr() && remote.text) {
-        try { localStorage.setItem('axis_briefing_cache', JSON.stringify(remote)); } catch(_) {}
-        loadingEl.style.display = 'none';
-        textEl.className = 'briefing-text';
-        textEl.textContent = remote.text;
-        textEl.style.display = '';
-        return;
-      }
-      // Local fallback (offline or Supabase unavailable)
-      try {
-        const cache = JSON.parse(localStorage.getItem('axis_briefing_cache') || 'null');
-        if (cache && cache.date === todayStr() && cache.text) {
-          loadingEl.style.display = 'none';
-          textEl.className = 'briefing-text';
-          textEl.textContent = cache.text;
-          textEl.style.display = '';
-          return;
-        }
-      } catch(_) {}
-    }
+    // Show loading row
+    const thread   = document.getElementById('chatThread');
+    const loadRow  = document.createElement('div');
+    loadRow.className = 'briefing-loading-row';
+    loadRow.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span>Preparing your briefing…</span>';
+    thread.appendChild(loadRow);
+    scrollToBottom();
 
-    // Generate fresh
-    loadingEl.style.display = '';
-    textEl.style.display = 'none';
-    textEl.classList.remove('streaming');
-    if (refreshBtn) { refreshBtn.classList.add('spinning'); refreshBtn.disabled = true; }
+    const { wrap: bWrap, bubble: bBubble, textNode: bText } = buildMsgEl('ai', '', { isBriefing: true });
+    bBubble.classList.add('streaming');
 
-    let shown = false;
-    let fullText = '';
+    let briefingFull = '';
     try {
       await streamClaude([{
         role: 'user',
-        content: 'Give me a 3-sentence daily briefing. Lead with the single most important thing for today — factoring in calendar events, pending goals, and any emails that connect to my priorities. Call out any scheduling conflicts or high-signal emails worth acting on. Be specific, reference actual times and names, and stay under 60 words.'
+        content: 'Give me a concise daily briefing. Lead with the single most important thing for today — factoring in calendar events, pending goals, and any emails that connect to my priorities. Call out scheduling conflicts or high-signal emails worth acting on. Be specific, reference actual times and names. Stay under 60 words.'
       }], function(accumulated) {
-        if (!shown) {
-          loadingEl.style.display = 'none';
-          textEl.className = 'briefing-text streaming';
-          textEl.style.display = '';
-          shown = true;
-        }
-        textEl.textContent = accumulated;
-        fullText = accumulated;
+        if (!loadRow.parentNode) return;
+        loadRow.remove();
+        if (!bWrap.parentNode) thread.appendChild(bWrap);
+        bText.textContent = accumulated;
+        briefingFull      = accumulated;
+        scrollToBottom();
       });
-      textEl.classList.remove('streaming');
-      if (!shown) throw new Error('empty');
-      // Cache for today — save to both localStorage and Supabase
-      const _briefingObj = { date: todayStr(), text: fullText };
-      try { localStorage.setItem('axis_briefing_cache', JSON.stringify(_briefingObj)); } catch(_) {}
-      _pushBriefingToSupabase(_briefingObj);
-    } catch (_) {
-      loadingEl.style.display = 'none';
-      textEl.classList.remove('streaming');
-      textEl.className = 'briefing-no-key';
-      textEl.textContent = 'Could not load briefing — check your connection or try again.';
-      textEl.style.display = '';
-    } finally {
-      if (refreshBtn) {
-        refreshBtn.disabled = false;
-        setTimeout(function() { refreshBtn.classList.remove('spinning'); }, 700);
+      bBubble.classList.remove('streaming');
+      if (!briefingFull) throw new Error('empty');
+
+      // Add briefing to chatHistory as assistant turn
+      chatHistory.unshift({ role: 'assistant', content: briefingFull, briefing: true });
+
+      // Update session
+      const sessions2 = getSessions();
+      const s2 = sessions2.find(function(s){ return s.id === activeSessionId; });
+      if (s2) {
+        s2.briefingDate = todayStr();
+        s2.messages     = chatHistory.map(function(m){ return Object.assign({ ts: Date.now() }, m); });
+        s2.preview      = briefingFull.slice(0,72) + (briefingFull.length>72?'…':'');
+        saveSessions(sessions2);
+        _supaUpsert('chat_sessions', sessions2);
       }
+      // Also cache for legacy uses and push notification checks
+      const obj = { date: todayStr(), text: briefingFull };
+      try { localStorage.setItem('axis_briefing_cache', JSON.stringify(obj)); } catch(_) {}
+      _supaUpsert('briefing', obj);
+
+    } catch (_) {
+      if (loadRow.parentNode) loadRow.remove();
+      bBubble.classList.remove('streaming');
+      if (!bWrap.parentNode) thread.appendChild(bWrap);
+      bText.textContent = 'Could not load briefing — check your connection or try again.';
     }
+
+    renderSidebar();
   }
 
-  // ── Boot ──────────────────────────────────────────────────────────
-  function boot() {
-    document.getElementById('aiGreeting').textContent = getGreeting();
-    // Load calendar and email context in parallel before the briefing
-    Promise.all([fetchCalendarEvents(), fetchGmailEmails()]).then(function() {
-      loadBriefing();
-    });
+  // ── New chat ─────────────────────────────────────────────────────
+  async function newChat() {
+    saveCurrentSession();
+    const id = genSessionId();
+    activeSessionId = id;
+    localStorage.setItem(ACTIVE_KEY, id);
+    chatHistory = [];
+    upsertSession({ id, createdAt: new Date().toISOString(), briefingDate: null, messages: [], preview: 'New conversation' });
+    document.getElementById('chatThread').innerHTML = '';
+    closeSidebar();
+    await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
+    await ensureBriefingForToday();
+    renderSidebar();
+  }
 
+  // ── Load session ─────────────────────────────────────────────────
+  function loadSession(id) {
+    saveCurrentSession();
+    activeSessionId = id;
+    localStorage.setItem(ACTIVE_KEY, id);
+    const session = getSessions().find(function(s){ return s.id === id; });
+    if (!session) return;
+    chatHistory = (session.messages || []).filter(function(m){ return !m.hidden; }).map(function(m){ return { role: m.role, content: m.content, briefing: m.briefing }; });
+    renderThread(session.messages || []);
+    closeSidebar();
+    renderSidebar();
+  }
+
+  // ── Sidebar ──────────────────────────────────────────────────────
+  function renderSidebar() {
+    const list     = document.getElementById('sidebarList');
+    list.innerHTML = '';
+    const sessions = getSessions().slice().sort(function(a, b){ return b.createdAt.localeCompare(a.createdAt); });
+    if (!sessions.length) {
+      list.innerHTML = '<p class="sidebar-empty">No past conversations</p>';
+      return;
+    }
+    sessions.forEach(function(s) {
+      const row      = document.createElement('button');
+      row.className  = 'sidebar-row' + (s.id === activeSessionId ? ' active' : '');
+      const d        = new Date(s.createdAt);
+      const dateLabel= d.toLocaleDateString('en-US', { month:'short', day:'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
+      row.innerHTML  = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>' +
+                       '<span class="sidebar-row-preview">' + escHtml(s.preview || 'New conversation') + '</span>';
+      row.addEventListener('click', function(){ loadSession(s.id); });
+      list.appendChild(row);
+    });
+  }
+
+  function openSidebar() {
+    renderSidebar();
+    document.getElementById('chatSidebar').classList.add('open');
+    document.getElementById('sidebarOverlay').classList.add('open');
+  }
+  function closeSidebar() {
+    document.getElementById('chatSidebar').classList.remove('open');
+    document.getElementById('sidebarOverlay').classList.remove('open');
+  }
+
+  // ── Boot ─────────────────────────────────────────────────────────
+  async function boot() {
+    document.getElementById('aiGreeting').textContent = getGreeting();
+
+    // Fetch calendar + email context before building briefing
+    await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
+
+    // Sync sessions from Supabase (cross-device)
+    const remoteSessions = await _supaFetch('chat_sessions');
+    if (Array.isArray(remoteSessions) && remoteSessions.length) {
+      // Merge: keep any local sessions not in remote, then save merged set
+      const local    = getSessions();
+      const remoteIds = new Set(remoteSessions.map(function(s){ return s.id; }));
+      const merged   = remoteSessions.concat(local.filter(function(s){ return !remoteIds.has(s.id); }));
+      merged.sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
+      while (merged.length > 30) merged.pop();
+      saveSessions(merged);
+    }
+
+    // Restore or create active session
+    let activeId = localStorage.getItem(ACTIVE_KEY);
+    let session  = activeId ? getSessions().find(function(s){ return s.id === activeId; }) : null;
+    if (!session) {
+      activeId = genSessionId();
+      session  = { id: activeId, createdAt: new Date().toISOString(), briefingDate: null, messages: [], preview: 'New conversation' };
+      upsertSession(session);
+      localStorage.setItem(ACTIVE_KEY, activeId);
+    }
+    activeSessionId = session.id;
+
+    // Restore messages into thread
+    if (session.messages && session.messages.length) {
+      chatHistory = session.messages.filter(function(m){ return !m.hidden; }).map(function(m){ return { role: m.role, content: m.content, briefing: m.briefing }; });
+      renderThread(session.messages);
+    }
+
+    // Generate briefing if not yet done today
+    await ensureBriefingForToday();
+    renderSidebar();
+
+    // Wire UI
     const input   = document.getElementById('chatInput');
     const sendBtn = document.getElementById('chatSend');
-
-    const refreshBtn = document.getElementById('briefingRefresh');
-    if (refreshBtn) refreshBtn.addEventListener('click', function() { loadBriefing(true); });
-
-    sendBtn.addEventListener('click', function () { sendMessage(input.value); });
-    input.addEventListener('keydown', function (e) {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage(input.value);
-      }
+    sendBtn.addEventListener('click', function(){ sendMessage(input.value); });
+    input.addEventListener('keydown', function(e){
+      if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input.value); }
     });
+    document.getElementById('sidebarToggle').addEventListener('click', openSidebar);
+    document.getElementById('sidebarClose').addEventListener('click',  closeSidebar);
+    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
+    document.getElementById('newChatBtn').addEventListener('click', newChat);
+    document.getElementById('sidebarNewBtn').addEventListener('click', newChat);
   }
 
   if (document.readyState === 'loading') {

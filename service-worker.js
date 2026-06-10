@@ -143,6 +143,21 @@ function runCheck() {
     broadcastSent('sixpm_water', today);
   }
 
+  // Morning briefing: fires at wake time, opens ai.html
+  if (nowMins >= wakeMins && nowMins < wakeMins + 10 && sent.morning_briefing !== today) {
+    sent.morning_briefing = today;
+    promises.push(
+      self.registration.showNotification('Good morning ⚡', {
+        body:  'Your daily briefing is ready.',
+        icon:  '/icon.svg',
+        badge: '/badge.svg',
+        tag:   'morning-briefing',
+        data:  { url: '/ai.html' },
+      })
+    );
+    broadcastSent('morning_briefing', today);
+  }
+
   // Weight reminder: offsetMins after wake, within 90-min window
   if (weightP.enabled !== false) {
     var weightAt = wakeMins + (typeof weightP.offsetMins === 'number' ? weightP.offsetMins : 30);

@@ -177,6 +177,13 @@
       );
     }
 
+    // Morning briefing: fires at wake time, opens ai.html
+    var wakeAt = getWakeMins();
+    if (nowMins >= wakeAt && nowMins < wakeAt + 10 && !wasSentToday('morning_briefing')) {
+      markSent('morning_briefing');
+      notify('Good morning ⚡', 'Your daily briefing is ready.', 'morning-briefing', '/ai.html');
+    }
+
     // Weight reminder: offsetMins after wake, within 90-min window
     if (prefs.weight.enabled) {
       var wAt = getWakeMins() + prefs.weight.offsetMins;
