@@ -696,6 +696,81 @@ body::after {
   cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
 
+/* ── Goal critique modal ── */
+.critique-modal-bg {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.76);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  z-index: 1000; display: none;
+  align-items: flex-end; justify-content: center;
+}
+.critique-modal-bg.open { display: flex; }
+.critique-modal {
+  background: #111318; border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 24px 24px 0 0;
+  padding: 24px 20px max(28px, calc(env(safe-area-inset-bottom) + 20px));
+  width: 100%; max-width: 540px; max-height: 85vh;
+  overflow-y: auto; overscroll-behavior: contain;
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  animation: critiqueSlide 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+@keyframes critiqueSlide {
+  from { transform: translateY(60px) translateZ(0); opacity: 0; }
+  to   { transform: translateY(0)    translateZ(0); opacity: 1; }
+}
+.critique-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+}
+.critique-icon {
+  width: 32px; height: 32px; border-radius: 10px;
+  background: rgba(242,192,99,0.12); border: 1px solid rgba(242,192,99,0.28);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; flex-shrink: 0;
+}
+.critique-title {
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
+}
+.critique-body {
+  font-size: 14px; line-height: 1.65; color: var(--text-secondary);
+  min-height: 60px; margin-bottom: 20px;
+}
+.critique-loading {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-tertiary); font-size: 13px;
+}
+.critique-dot-pulse { display: flex; gap: 4px; align-items: center; }
+.critique-dot-pulse span {
+  width: 5px; height: 5px; border-radius: 50%;
+  background: rgba(242,192,99,0.5);
+  animation: cdotPulse 1.2s ease-in-out infinite;
+  will-change: transform,opacity; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+}
+.critique-dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
+.critique-dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
+@keyframes cdotPulse {
+  0%,80%,100% { opacity:0.3; transform:scale(0.8) translateZ(0); }
+  40%          { opacity:1;   transform:scale(1)   translateZ(0); }
+}
+.critique-btns { display: flex; flex-direction: column; gap: 8px; }
+.critique-btn {
+  width: 100%; padding: 13px; border-radius: 12px; font-family: var(--font);
+  font-size: 14px; font-weight: 600; cursor: pointer;
+  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+  border: none; text-align: center;
+}
+.critique-btn:active { opacity: 0.75; }
+.critique-btn-keep {
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-secondary);
+}
+.critique-btn-suggest {
+  background: linear-gradient(180deg,#FFFFFF 0%,#E8E5DD 100%); color: #111;
+}
+.critique-btn-adjust {
+  background: transparent; border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-tertiary); font-size: 13px; font-weight: 500; padding: 10px;
+}
+
 </style>
 <link rel="stylesheet" href="/animations.css">
 </head>
@@ -843,6 +918,28 @@ body::after {
     <div class="ltg-modal-btns">
       <button type="button" class="ltg-btn-cancel" id="ltgCancelBtn">Cancel</button>
       <button type="button" class="ltg-btn-save"   id="ltgSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Goal Critique Modal -->
+<div class="critique-modal-bg" id="critiqueModalBg">
+  <div class="critique-modal">
+    <div class="critique-header">
+      <div class="critique-icon">⚠️</div>
+      <div class="critique-title">Goal Check</div>
+    </div>
+    <div class="critique-body" id="critiqueBody">
+      <div class="critique-loading" id="critiqueLoading">
+        <div class="critique-dot-pulse"><span></span><span></span><span></span></div>
+        <span>Analyzing goal…</span>
+      </div>
+      <span id="critiqueText" style="display:none"></span>
+    </div>
+    <div class="critique-btns">
+      <button type="button" class="critique-btn critique-btn-suggest" id="critiqueBtnSuggest">Use suggested timeline</button>
+      <button type="button" class="critique-btn critique-btn-keep"    id="critiqueBtnKeep">Keep anyway</button>
+      <button type="button" class="critique-btn critique-btn-adjust"  id="critiqueBtnAdjust">Adjust goal</button>
     </div>
   </div>
 </div>
@@ -1623,6 +1720,139 @@ body::after {
     }
   }
 
+  // ── Goal critique helpers ─────────────────────────────────────────
+  let _pendingGoalData = null; // { goals, newGoal, isEdit, editIdx }
+  let _suggestedDeadline = null;
+
+  function calcWeightLossRate(targetLbs, deadlineStr) {
+    const currentLbs = parseFloat(localStorage.getItem('dash_weight'));
+    if (isNaN(currentLbs) || !deadlineStr) return null;
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const deadline = new Date(deadlineStr + 'T00:00:00');
+    const days     = Math.round((deadline - today) / 86400000);
+    if (days <= 0) return null;
+    const lbsToLose = currentLbs - targetLbs;
+    if (lbsToLose <= 0) return null;
+    return { rate: lbsToLose / (days / 7), lbsToLose, days, currentLbs };
+  }
+
+  function critiqueCheck(cat, target, unit, deadline) {
+    // Only flag new weight-loss goals with a deadline
+    if (cat !== 'weight' || !deadline) return null;
+    const targetLbs = (unit === 'kg') ? target * 2.205 : target;
+    const info = calcWeightLossRate(targetLbs, deadline);
+    if (!info) return null;
+    const flags = [];
+    if (info.rate > 1.5) flags.push({ type: 'rate', rate: info.rate, lbsToLose: info.lbsToLose, days: info.days });
+    if (info.days < 14 && info.lbsToLose > 2) flags.push({ type: 'short', days: info.days, lbsToLose: info.lbsToLose });
+    if (!flags.length) return null;
+    // Compute a healthier suggested deadline (1 lb/week)
+    const saferDays = Math.ceil((info.lbsToLose / 1.0) * 7);
+    const suggested = new Date(); suggested.setDate(suggested.getDate() + saferDays);
+    const pad = n => String(n).padStart(2,'0');
+    _suggestedDeadline = suggested.getFullYear() + '-' + pad(suggested.getMonth()+1) + '-' + pad(suggested.getDate());
+    return { flags, info, suggested: _suggestedDeadline };
+  }
+
+  async function loadCritiqueMessage(cat, target, unit, deadline, critiqueData) {
+    const loadingEl = document.getElementById('critiqueLoading');
+    const textEl    = document.getElementById('critiqueText');
+    loadingEl.style.display = '';
+    textEl.style.display    = 'none';
+    textEl.textContent      = '';
+
+    const info = critiqueData.info;
+    const prompt = `A user is setting a weight loss goal: lose ${info.lbsToLose.toFixed(1)} lbs in ${info.days} days (${info.rate.toFixed(2)} lbs/week from ${info.currentLbs} lbs). Safe maximum is 1–1.5 lbs/week. Write 2 concise sentences: (1) state the specific concern with the actual rate, (2) suggest a healthier timeline of ${_suggestedDeadline}. No clichés, no exclamation marks. Be direct.`;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+      });
+      if (!res.ok) throw new Error('API ' + res.status);
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '', full = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const evt = JSON.parse(line.slice(6).trim());
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+              full += evt.delta.text;
+              loadingEl.style.display = 'none';
+              textEl.style.display    = '';
+              textEl.textContent      = full;
+            }
+          } catch(_) {}
+        }
+      }
+      if (!full) throw new Error('empty');
+    } catch(_) {
+      loadingEl.style.display = 'none';
+      textEl.style.display    = '';
+      textEl.textContent      = `This goal requires ${critiqueData.info.rate.toFixed(1)} lbs/week — above the safe 1–1.5 lbs/week range. A healthier target date would be ${_suggestedDeadline}.`;
+    }
+  }
+
+  function commitGoalSave(data) {
+    const { goals, isEdit, editIdx, newGoal } = data;
+    if (isEdit) {
+      const cat = document.getElementById('ltgCat').value;
+      if (cat === 'custom' || cat === 'fitness') {
+        const cv = parseFloat(document.getElementById('ltgCurVal').value);
+        if (!isNaN(cv)) goals[editIdx].currentValue = cv;
+      }
+    } else {
+      goals.push(newGoal);
+    }
+    saveGoals(goals);
+    closeModal();
+    render();
+  }
+
+  function openCritiqueModal(cat, target, unit, deadline, pendingData) {
+    _pendingGoalData = pendingData;
+    document.getElementById('critiqueModalBg').classList.add('open');
+    const critiqueData = critiqueCheck(cat, target, unit, deadline);
+    loadCritiqueMessage(cat, target, unit, deadline, critiqueData);
+    document.getElementById('critiqueBtnSuggest').onclick = function() {
+      // Apply suggested deadline to the pending goal data
+      if (_pendingGoalData.isEdit) {
+        _pendingGoalData.goals[_pendingGoalData.editIdx].deadline = _suggestedDeadline;
+      } else {
+        _pendingGoalData.newGoal.deadline = _suggestedDeadline;
+      }
+      closeCritiqueModal();
+      commitGoalSave(_pendingGoalData);
+    };
+    document.getElementById('critiqueBtnKeep').onclick = function() {
+      closeCritiqueModal();
+      commitGoalSave(_pendingGoalData);
+    };
+    document.getElementById('critiqueBtnAdjust').onclick = function() {
+      closeCritiqueModal();
+      // Re-open the goal modal so user can adjust
+      const editIdx = _pendingGoalData.isEdit ? _pendingGoalData.editIdx : null;
+      openModal(editIdx);
+    };
+  }
+
+  function closeCritiqueModal() {
+    document.getElementById('critiqueModalBg').classList.remove('open');
+    _pendingGoalData = null;
+  }
+
+  document.getElementById('critiqueModalBg').addEventListener('click', function(e) {
+    if (e.target === this) closeCritiqueModal();
+  });
+
+  // ── Save goal (with critique gate) ───────────────────────────────
   function saveGoal() {
     const title  = document.getElementById('ltgTitle').value.trim();
     const target = parseFloat(document.getElementById('ltgTarget').value);
@@ -1632,14 +1862,14 @@ body::after {
     const idxStr = document.getElementById('ltgEditIdx').value;
     if (!title)        { alert('Enter a title.');        return; }
     if (isNaN(target)) { alert('Enter a target value.'); return; }
+
     const goals = getGoals();
+    let pendingData;
+
     if (idxStr !== '') {
       const i = parseInt(idxStr);
       Object.assign(goals[i], { category:cat, title, targetValue:target, unit, deadline:dl });
-      if (cat === 'custom' || cat === 'fitness') {
-        const cv = parseFloat(document.getElementById('ltgCurVal').value);
-        if (!isNaN(cv)) goals[i].currentValue = cv;
-      }
+      pendingData = { goals, isEdit:true, editIdx:i, newGoal:null };
     } else {
       const newG = { id:'ltg_'+Date.now(), category:cat, title, targetValue:target, unit, deadline:dl,
                      startDate:todayStr(), createdAt:Date.now() };
@@ -1650,11 +1880,16 @@ body::after {
         newG.currentValue = isNaN(cv) ? null : cv;
         newG.startValue   = isNaN(cv) ? target : cv;
       }
-      goals.push(newG);
+      pendingData = { goals, isEdit:false, editIdx:null, newGoal:newG };
     }
-    saveGoals(goals);
-    closeModal();
-    render();
+
+    // Show critique modal if the goal triggers a flag
+    const flagged = critiqueCheck(cat, target, unit, dl);
+    if (flagged) {
+      openCritiqueModal(cat, target, unit, dl, pendingData);
+    } else {
+      commitGoalSave(pendingData);
+    }
   }
 
   function deleteGoal(i) {

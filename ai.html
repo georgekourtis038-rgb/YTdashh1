@@ -308,6 +308,35 @@ body {
   50%       { opacity: 0; }
 }
 
+/* ── Action confirmation cards ── */
+.action-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 15px;
+  background: rgba(45,232,162,0.07);
+  border: 1px solid rgba(45,232,162,0.24);
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  align-self: flex-start;
+  max-width: 85%;
+}
+.action-card-check {
+  color: var(--mint);
+  font-size: 13px;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.action-card-text {
+  font-size: 13px;
+  color: rgba(45,232,162,0.88);
+  line-height: 1.45;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -736,7 +765,29 @@ body {
       });
     }
 
-    p += '\n===';
+    p += `\n===
+
+=== TOOLS ===
+You can write directly to the app by embedding action tags in your response. Rules:
+- Only use actions when the user explicitly asks you to change or update something.
+- Always explain what you are about to do in plain prose first, then include the action tag.
+- Never fabricate goal IDs — only use IDs from the LONG-TERM GOALS list above.
+- Never include multiple actions for the same tool in one response.
+
+Syntax: <action>{"tool": "tool_name", "params": {...}}</action>
+
+Available tools:
+  set_calorie_target   — set daily calorie and macro targets
+    params: { kcal: number, protein?: number, carbs?: number, fat?: number }
+  set_water_target     — update daily water intake target
+    params: { target_ml: number }
+  update_goal          — edit an existing long-term goal
+    params: { id: string, title?: string, target?: number, deadline?: string }
+  delete_goal          — remove a long-term goal
+    params: { id: string }
+  add_calendar_event   — add an event to Google Calendar
+    params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
+===`;
     return p;
   }
 
@@ -808,6 +859,115 @@ body {
     return wrap;
   }
 
+  // ── localStorage write with cross-page reactivity ────────────────
+  function lsSet(k, v) {
+    try {
+      const s = JSON.stringify(v);
+      localStorage.setItem(k, s);
+      window.dispatchEvent(new StorageEvent('storage', { key: k, newValue: s, storageArea: localStorage }));
+      if (window._pcTriggerSync) window._pcTriggerSync(k);
+    } catch (_) {}
+  }
+
+  // ── Action executors ──────────────────────────────────────────────
+  async function addCalendarEvent(params) {
+    const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+    const tok = stored && stored.token;
+    if (!tok || Date.now() >= (stored.expiry || 0)) {
+      return 'Calendar not connected — sign in via the email page first.';
+    }
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const start = params.time
+        ? new Date(params.date + 'T' + params.time + ':00')
+        : null;
+      const end = start
+        ? new Date(start.getTime() + (params.duration_minutes || 60) * 60000)
+        : null;
+      const eventBody = {
+        summary: params.title,
+        start: start
+          ? { dateTime: start.toISOString(), timeZone: tz }
+          : { date: params.date },
+        end: end
+          ? { dateTime: end.toISOString(), timeZone: tz }
+          : { date: params.date }
+      };
+      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventBody)
+      });
+      if (!res.ok) return 'Calendar error ' + res.status + ' — check permissions.';
+      return '"' + params.title + '" added to calendar on ' + params.date;
+    } catch (e) { return 'Calendar error: ' + e.message; }
+  }
+
+  async function executeAction(tool, params) {
+    if (tool === 'set_calorie_target') {
+      const cur = lsGet('calorie_targets_v1') || {};
+      lsSet('calorie_targets_v1', Object.assign({}, cur, params));
+      let msg = 'Calorie target set to ' + params.kcal + ' kcal/day';
+      if (params.protein) msg += ' · ' + params.protein + 'g protein';
+      if (params.carbs)   msg += ' · ' + params.carbs + 'g carbs';
+      if (params.fat)     msg += ' · ' + params.fat + 'g fat';
+      return msg;
+    }
+    if (tool === 'set_water_target') {
+      const state = lsGet('po_water_v1') || {};
+      if (!state.settings) state.settings = {};
+      state.settings.targetMl = params.target_ml;
+      lsSet('po_water_v1', state);
+      return 'Water target updated to ' + params.target_ml + ' ml/day';
+    }
+    if (tool === 'update_goal') {
+      const goals = lsGet('axis_goals') || [];
+      const idx = goals.findIndex(function(g) { return g.id === params.id; });
+      if (idx === -1) return 'Goal not found (ID: ' + params.id + ')';
+      if (params.title    != null) goals[idx].title       = params.title;
+      if (params.target   != null) goals[idx].targetValue = params.target;
+      if (params.deadline != null) goals[idx].deadline    = params.deadline;
+      lsSet('axis_goals', goals);
+      return 'Goal "' + goals[idx].title + '" updated';
+    }
+    if (tool === 'delete_goal') {
+      const goals = lsGet('axis_goals') || [];
+      const idx = goals.findIndex(function(g) { return g.id === params.id; });
+      if (idx === -1) return 'Goal not found (ID: ' + params.id + ')';
+      const title = goals[idx].title;
+      goals.splice(idx, 1);
+      lsSet('axis_goals', goals);
+      return 'Goal "' + title + '" deleted';
+    }
+    if (tool === 'add_calendar_event') {
+      return await addCalendarEvent(params);
+    }
+    return 'Unknown tool: ' + tool;
+  }
+
+  // ── Action parser ─────────────────────────────────────────────────
+  function parseActions(text) {
+    const actions = [];
+    const clean = text.replace(/<action>([\s\S]*?)<\/action>/g, function(_, inner) {
+      try {
+        const parsed = JSON.parse(inner.trim());
+        if (parsed.tool && parsed.params) actions.push(parsed);
+      } catch (_) {}
+      return '';
+    }).replace(/\n{3,}/g, '\n\n').trim();
+    return { clean, actions };
+  }
+
+  function appendActionCard(message) {
+    const thread = document.getElementById('chatThread');
+    const card = document.createElement('div');
+    card.className = 'action-card';
+    card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
+    card.querySelector('.action-card-text').textContent = message;
+    thread.appendChild(card);
+    scrollToBottom();
+  }
+
   // ── Send ──────────────────────────────────────────────────────────
   async function sendMessage(text) {
     text = text.trim();
@@ -847,7 +1007,15 @@ body {
         typingEl.remove();
         appendBubble('ai', 'No response received.');
       } else {
+        // Parse and strip action tags before displaying
+        const { clean, actions } = parseActions(full);
+        if (clean !== full) aiBubble.textContent = clean;
         chatHistory.push({ role: 'assistant', content: full });
+        // Execute actions and show confirmation cards
+        for (const action of actions) {
+          const result = await executeAction(action.tool, action.params);
+          appendActionCard(result);
+        }
       }
     } catch (_) {
       aiBubble.classList.remove('streaming');
