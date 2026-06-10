@@ -534,8 +534,8 @@ html, body {
 
   <div class="auth-card" id="authCard" style="display:none">
     <div class="auth-icon">📅</div>
-    <div class="auth-title" id="authTitle">Connect Google Calendar</div>
-    <div class="auth-body" id="authBody">Sign in with Google to see your events in Axis and create new ones that sync back.</div>
+    <div class="auth-title" id="authTitle">Connect Google Account</div>
+    <div class="auth-body" id="authBody">Sign in with Google to see your Calendar events and Gmail inbox in Axis.</div>
     <button class="auth-btn" id="authBtn">
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.015 17.64 11.708 17.64 9.2z" fill="#4285F4"/>
@@ -543,7 +543,7 @@ html, body {
         <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.547 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
         <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
       </svg>
-      Connect Google Calendar
+      Sign in with Google
     </button>
   </div>
 
@@ -616,7 +616,7 @@ html, body {
 const GOOGLE_CLIENT_ID = '199459906303-10ecosetgbh9tucisnoufu942dkoj13k.apps.googleusercontent.com';
 
 // -------------------------------------------------------
-const SCOPES = 'https://www.googleapis.com/auth/calendar';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly';
 const API = 'https://www.googleapis.com/calendar/v3';
 
 const GC_COLORS = {
@@ -695,7 +695,7 @@ function showSetupCard() {
   card.style.display = '';
   document.getElementById('authTitle').textContent = 'Google Calendar Setup';
   document.getElementById('authBody').textContent =
-    'Add your Google OAuth Client ID to the GOOGLE_CLIENT_ID constant at the top of calendar.html to enable Calendar sync.';
+    'Add your Google OAuth Client ID to the GOOGLE_CLIENT_ID constant at the top of calendar.html to enable Calendar and Gmail sync.';
   document.getElementById('authBtn').style.display = 'none';
 }
 

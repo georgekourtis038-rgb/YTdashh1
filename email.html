@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0f0e">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="axis-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Axis — Email</title>
+<script src="topbar.js" defer></script>
+<style>
+:root {
+  --bg: #0a0f0e;
+  --mint: #2de8a2;
+  --mint-dim: rgba(45,232,162,0.12);
+  --mint-border: rgba(45,232,162,0.4);
+  --card-bg: rgba(255,255,255,0.04);
+  --card-border: rgba(255,255,255,0.08);
+  --text-primary: #FAFAFA;
+  --text-secondary: rgba(255,255,255,0.6);
+  --text-tertiary: rgba(255,255,255,0.3);
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--font);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+.em-page {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 12px 16px 120px;
+}
+
+/* Search */
+.em-search-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+.em-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.35;
+  pointer-events: none;
+}
+.em-search {
+  width: 100%;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  padding: 12px 14px 12px 42px;
+  color: var(--text-primary);
+  font-size: 16px;
+  font-family: var(--font);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.2s;
+}
+.em-search::placeholder { color: var(--text-tertiary); }
+.em-search:focus { border-color: var(--mint-border); }
+
+/* Filter tabs */
+.em-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.em-tab {
+  padding: 7px 16px;
+  border-radius: 999px;
+  border: 1px solid var(--card-border);
+  background: var(--card-bg);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+  font-family: var(--font);
+}
+.em-tab.active {
+  background: var(--mint-dim);
+  border-color: var(--mint-border);
+  color: var(--mint);
+}
+
+/* Auth card */
+.auth-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 28px 20px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+.auth-icon { font-size: 36px; margin-bottom: 12px; }
+.auth-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+.auth-body {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.65;
+  margin-bottom: 20px;
+  max-width: 290px;
+  margin-left: auto;
+  margin-right: auto;
+}
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 24px;
+  background: var(--mint-dim);
+  border: 1.5px solid var(--mint);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  font-family: var(--font);
+}
+.auth-btn:active { background: rgba(45,232,162,0.22); }
+
+/* Section header */
+.em-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.em-section-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.em-unread-badge {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--mint);
+  background: var(--mint-dim);
+  border: 1px solid var(--mint-border);
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* Email list */
+.em-list {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.em-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.1s;
+  position: relative;
+}
+.em-row:last-child { border-bottom: none; }
+.em-row:active { background: rgba(255,255,255,0.04); }
+
+.em-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--mint);
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+.em-unread-dot.hidden { background: transparent; }
+
+.em-row-body { flex: 1; min-width: 0; }
+.em-row-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+.em-sender {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  min-width: 0;
+}
+.em-row.unread .em-sender {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+.em-time {
+  font-size: 11px;
+  color: var(--text-tertiary);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+.em-subject {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 3px;
+}
+.em-row.unread .em-subject {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.em-snippet {
+  font-size: 12px;
+  color: var(--text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.em-labels {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 5px;
+}
+.em-chip {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  color: var(--text-tertiary);
+}
+
+/* Empty / loading states */
+.em-state {
+  text-align: center;
+  padding: 32px 16px;
+  color: var(--text-tertiary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+/* Spinner */
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid rgba(45,232,162,0.2);
+  border-top-color: var(--mint);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+  margin: 0 auto 12px;
+}
+@keyframes spin { to { transform: rotate(360deg) translateZ(0); } }
+
+/* Detail sheet */
+.sheet-bg {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 50;
+}
+.sheet-bg.show { display: block; }
+.email-sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  background: #141c1a;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-bottom: none;
+  border-radius: 20px 20px 0 0;
+  padding: 0 20px max(28px, env(safe-area-inset-bottom));
+  z-index: 51;
+  max-height: 82vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.16,1,0.3,1);
+  will-change: transform;
+  backface-visibility: hidden;
+}
+.sheet-bg.show .email-sheet { transform: translateY(0); }
+
+.sheet-handle {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 2px;
+  margin: 12px auto 16px;
+}
+.sheet-subject {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+  line-height: 1.3;
+}
+.sheet-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.sheet-meta-row {
+  display: flex;
+  gap: 8px;
+  font-size: 13px;
+}
+.sheet-meta-label {
+  color: var(--text-tertiary);
+  min-width: 36px;
+  flex-shrink: 0;
+}
+.sheet-meta-val {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+.sheet-body {
+  font-size: 14px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-top: 12px;
+}
+.sheet-labels {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .email-sheet { transition: none; }
+  .spinner { animation: none; }
+}
+</style>
+</head>
+<body>
+<div class="em-page" id="emPage">
+
+  <div class="em-search-wrap">
+    <svg class="em-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+    <input type="search" class="em-search" id="emSearch" placeholder="Search mail…" autocomplete="off" autocorrect="off" spellcheck="false">
+  </div>
+
+  <div class="em-tabs" id="emTabs">
+    <button class="em-tab active" data-filter="all">All</button>
+    <button class="em-tab" data-filter="unread">Unread</button>
+    <button class="em-tab" data-filter="important">Important</button>
+  </div>
+
+  <div class="auth-card" id="authCard" style="display:none">
+    <div class="auth-icon">✉️</div>
+    <div class="auth-title">Connect Gmail</div>
+    <div class="auth-body">Sign in with Google to view your inbox in Axis. Also unlocks Calendar sync.</div>
+    <button class="auth-btn" id="authBtn">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908C16.658 14.015 17.64 11.708 17.64 9.2z" fill="#4285F4"/>
+        <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332C2.438 15.983 5.482 18 9 18z" fill="#34A853"/>
+        <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707s.102-1.167.282-1.707V4.961H.957C.347 6.174 0 7.547 0 9s.348 2.826.957 4.039l3.007-2.332z" fill="#FBBC05"/>
+        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.438 2.017.957 4.961L3.964 7.293C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+      </svg>
+      Sign in with Google
+    </button>
+  </div>
+
+  <div id="emStateWrap"></div>
+
+  <div class="em-section-header" id="emSectionHeader" style="display:none">
+    <span class="em-section-label">Inbox</span>
+    <span class="em-unread-badge" id="emUnreadBadge" style="display:none"></span>
+  </div>
+
+  <div class="em-list" id="emList" style="display:none"></div>
+
+</div>
+
+<!-- Email detail sheet -->
+<div class="sheet-bg" id="sheetBg">
+  <div class="email-sheet" id="emailSheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-subject" id="sheetSubject"></div>
+    <div class="sheet-labels" id="sheetLabels"></div>
+    <div class="sheet-meta" id="sheetMeta"></div>
+    <div class="sheet-body" id="sheetBody"></div>
+  </div>
+</div>
+
+<script>
+// =================================================================
+// Uses same GOOGLE_CLIENT_ID and token as calendar.html
+// Scopes include calendar + gmail.readonly
+// =================================================================
+const GOOGLE_CLIENT_ID = '199459906303-10ecosetgbh9tucisnoufu942dkoj13k.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly';
+const GMAIL_API = 'https://www.googleapis.com/gmail/v1/users/me';
+
+let accessToken = null;
+let tokenClient = null;
+let gisReady = false;
+let allEmails = [];     // full fetched list (metadata)
+let activeFilter = 'all';
+let searchQuery = '';
+let openEmail = null;   // full message being shown in sheet
+
+// -------------------------------------------------------
+// Auth
+// -------------------------------------------------------
+function onGISLoad() {
+  gisReady = true;
+  if (!GOOGLE_CLIENT_ID) { showAuthCard('Setup required', 'Add your GOOGLE_CLIENT_ID to email.html.'); return; }
+  const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+  const tok = stored && stored.token;
+  const expiry = stored && stored.expiry || 0;
+  if (tok && Date.now() < expiry) {
+    accessToken = tok;
+    loadInbox();
+  } else {
+    showAuthCard();
+  }
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: GOOGLE_CLIENT_ID,
+    scope: SCOPES,
+    callback: onToken,
+  });
+}
+
+function showAuthCard(title, body) {
+  document.getElementById('authCard').style.display = '';
+  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emList').style.display = 'none';
+}
+
+function authenticate() {
+  if (!gisReady) { return; }
+  if (!tokenClient) return;
+  tokenClient.requestAccessToken({ prompt: '' });
+}
+
+function onToken(resp) {
+  if (resp.error) return;
+  accessToken = resp.access_token;
+  const ttl = ((resp.expires_in || 3600) * 1000) - 60000;
+  localStorage.setItem('google_calendar_token', JSON.stringify({ token: accessToken, expiry: Date.now() + ttl }));
+  document.getElementById('authCard').style.display = 'none';
+  loadInbox();
+}
+
+// -------------------------------------------------------
+// Gmail API helpers
+// -------------------------------------------------------
+async function gmailFetch(path, opts) {
+  if (!accessToken) return null;
+  const res = await fetch(GMAIL_API + path, {
+    ...opts,
+    headers: { 'Authorization': 'Bearer ' + accessToken, ...(opts && opts.headers || {}) },
+  });
+  if (res.status === 401 || res.status === 403) {
+    accessToken = null;
+    localStorage.removeItem('google_calendar_token');
+    showAuthCard();
+    return null;
+  }
+  if (!res.ok) return null;
+  return res.json();
+}
+
+// -------------------------------------------------------
+// Inbox load
+// -------------------------------------------------------
+async function loadInbox() {
+  const stateWrap = document.getElementById('emStateWrap');
+  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Loading inbox…</div>';
+  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emList').style.display = 'none';
+
+  const q = 'in:inbox';
+  const listData = await gmailFetch(`/messages?q=${encodeURIComponent(q)}&maxResults=40`);
+  if (!listData) return;
+
+  const ids = (listData.messages || []).map(m => m.id);
+  if (!ids.length) {
+    stateWrap.innerHTML = '<div class="em-state">Your inbox is empty.</div>';
+    return;
+  }
+
+  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Fetching messages…</div>';
+
+  const metas = await Promise.all(ids.map(id =>
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`)
+      .catch(() => null)
+  ));
+
+  allEmails = metas.filter(Boolean);
+  stateWrap.innerHTML = '';
+  renderList();
+}
+
+// -------------------------------------------------------
+// Search (hits Gmail API)
+// -------------------------------------------------------
+async function runSearch(q) {
+  const stateWrap = document.getElementById('emStateWrap');
+  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Searching…</div>';
+  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emList').style.display = 'none';
+
+  const listData = await gmailFetch(`/messages?q=${encodeURIComponent(q)}&maxResults=30`);
+  if (!listData) return;
+
+  const ids = (listData.messages || []).map(m => m.id);
+  if (!ids.length) {
+    stateWrap.innerHTML = `<div class="em-state">No results for "${esc(q)}".</div>`;
+    return;
+  }
+
+  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Loading results…</div>';
+  const metas = await Promise.all(ids.map(id =>
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`).catch(() => null)
+  ));
+  allEmails = metas.filter(Boolean);
+  stateWrap.innerHTML = '';
+  renderList();
+}
+
+// -------------------------------------------------------
+// Render helpers
+// -------------------------------------------------------
+const LABEL_MAP = {
+  IMPORTANT:            { label: 'Important', color: '#F6BF26' },
+  STARRED:              { label: 'Starred',   color: '#F6BF26' },
+  CATEGORY_PROMOTIONS:  { label: 'Promotions',color: null },
+  CATEGORY_SOCIAL:      { label: 'Social',    color: null },
+  CATEGORY_UPDATES:     { label: 'Updates',   color: null },
+  CATEGORY_FORUMS:      { label: 'Forums',    color: null },
+};
+const HIDE_LABELS = new Set(['INBOX','UNREAD','SENT','TRASH','DRAFT','SPAM']);
+
+function isUnread(msg) { return (msg.labelIds || []).includes('UNREAD'); }
+function isImportant(msg) { return (msg.labelIds || []).includes('IMPORTANT'); }
+
+function header(msg, name) {
+  const hdrs = (msg.payload && msg.payload.headers) || [];
+  return (hdrs.find(h => h.name === name) || {}).value || '';
+}
+
+function parseSender(from) {
+  const m = from.match(/^(.+?)\s*<[^>]+>$/);
+  if (m) return m[1].replace(/^"|"$/g, '').trim();
+  return from.split('@')[0];
+}
+
+function fmtDate(dateStr) {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d)) return '';
+  const now = new Date();
+  const sameDay = d.toDateString() === now.toDateString();
+  if (sameDay) return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const sameYear = d.getFullYear() === now.getFullYear();
+  if (sameYear) return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+  return d.toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' });
+}
+
+function visibleLabels(msg) {
+  return (msg.labelIds || [])
+    .filter(id => !HIDE_LABELS.has(id) && LABEL_MAP[id])
+    .map(id => LABEL_MAP[id]);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function filterEmails() {
+  return allEmails.filter(msg => {
+    if (activeFilter === 'unread' && !isUnread(msg)) return false;
+    if (activeFilter === 'important' && !isImportant(msg)) return false;
+    return true;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('emList');
+  const header_ = document.getElementById('emSectionHeader');
+  const badge = document.getElementById('emUnreadBadge');
+
+  const visible = filterEmails();
+  const unreadCount = allEmails.filter(isUnread).length;
+
+  if (unreadCount > 0) {
+    badge.textContent = unreadCount + ' unread';
+    badge.style.display = '';
+  } else {
+    badge.style.display = 'none';
+  }
+  header_.style.display = '';
+
+  if (!visible.length) {
+    list.style.display = 'none';
+    document.getElementById('emStateWrap').innerHTML =
+      '<div class="em-state">No messages to show.</div>';
+    return;
+  }
+
+  document.getElementById('emStateWrap').innerHTML = '';
+  list.style.display = '';
+  list.innerHTML = visible.map((msg, i) => {
+    const unread = isUnread(msg);
+    const from   = header(msg, 'From');
+    const sender = parseSender(from);
+    const subject = header(msg, 'Subject') || '(No subject)';
+    const date = fmtDate(header(msg, 'Date'));
+    const snippet = msg.snippet || '';
+    const labels = visibleLabels(msg);
+
+    const chipHtml = labels.map(l =>
+      `<span class="em-chip"${l.color ? ` style="color:${l.color};border-color:${l.color}40"` : ''}>${esc(l.label)}</span>`
+    ).join('');
+
+    return `<div class="em-row${unread ? ' unread' : ''}" data-idx="${i}">
+      <div class="em-unread-dot${unread ? '' : ' hidden'}"></div>
+      <div class="em-row-body">
+        <div class="em-row-top">
+          <span class="em-sender">${esc(sender)}</span>
+          <span class="em-time">${esc(date)}</span>
+        </div>
+        <div class="em-subject">${esc(subject)}</div>
+        <div class="em-snippet">${esc(snippet)}</div>
+        ${chipHtml ? `<div class="em-labels">${chipHtml}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+
+  list.querySelectorAll('.em-row').forEach(row => {
+    row.addEventListener('click', () => openDetail(parseInt(row.dataset.idx)));
+  });
+}
+
+// -------------------------------------------------------
+// Email detail
+// -------------------------------------------------------
+async function openDetail(idx) {
+  const visible = filterEmails();
+  const msg = visible[idx];
+  if (!msg) return;
+
+  document.getElementById('sheetSubject').textContent = header(msg, 'Subject') || '(No subject)';
+
+  // Labels chips
+  const labels = visibleLabels(msg);
+  document.getElementById('sheetLabels').innerHTML = labels.map(l =>
+    `<span class="em-chip"${l.color ? ` style="color:${l.color};border-color:${l.color}40"` : ''}>${esc(l.label)}</span>`
+  ).join('');
+
+  // Meta
+  const from = header(msg, 'From');
+  const date = header(msg, 'Date');
+  document.getElementById('sheetMeta').innerHTML =
+    `<div class="sheet-meta-row"><span class="sheet-meta-label">From</span><span class="sheet-meta-val">${esc(from)}</span></div>` +
+    (date ? `<div class="sheet-meta-row"><span class="sheet-meta-label">Date</span><span class="sheet-meta-val">${esc(new Date(date).toLocaleString())}</span></div>` : '');
+
+  // Show sheet immediately with snippet, fetch full body async
+  document.getElementById('sheetBody').textContent = msg.snippet || '';
+  document.getElementById('sheetBg').classList.add('show');
+  document.body.style.overflow = 'hidden';
+
+  // Fetch full message
+  const full = await gmailFetch(`/messages/${msg.id}?format=full`);
+  if (full) {
+    const bodyText = extractBodyText(full.payload);
+    if (bodyText) document.getElementById('sheetBody').textContent = bodyText.trim();
+  }
+}
+
+function extractBodyText(payload) {
+  if (!payload) return '';
+
+  function decodeB64(data) {
+    if (!data) return '';
+    const s = data.replace(/-/g, '+').replace(/_/g, '/');
+    try { return decodeURIComponent(escape(atob(s))); } catch(_) {
+      try { return atob(s); } catch(_) { return ''; }
+    }
+  }
+
+  function stripHtml(html) {
+    const d = document.createElement('div');
+    d.innerHTML = html;
+    return d.textContent || '';
+  }
+
+  function walk(p) {
+    if (!p) return '';
+    if (p.body && p.body.data) {
+      const txt = decodeB64(p.body.data);
+      if (p.mimeType === 'text/plain') return txt;
+      if (p.mimeType === 'text/html') return stripHtml(txt);
+    }
+    if (p.parts) {
+      const plain = p.parts.find(x => x.mimeType === 'text/plain');
+      if (plain) { const r = walk(plain); if (r) return r; }
+      const html = p.parts.find(x => x.mimeType === 'text/html');
+      if (html) { const r = walk(html); if (r) return r; }
+      for (const part of p.parts) {
+        const r = walk(part);
+        if (r) return r;
+      }
+    }
+    return '';
+  }
+
+  return walk(payload);
+}
+
+function closeSheet() {
+  document.getElementById('sheetBg').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+// -------------------------------------------------------
+// Wire up
+// -------------------------------------------------------
+document.getElementById('authBtn').addEventListener('click', authenticate);
+
+document.getElementById('sheetBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('sheetBg')) closeSheet();
+});
+
+// Filter tabs
+document.getElementById('emTabs').addEventListener('click', e => {
+  const tab = e.target.closest('.em-tab');
+  if (!tab) return;
+  activeFilter = tab.dataset.filter;
+  document.querySelectorAll('.em-tab').forEach(t => t.classList.toggle('active', t === tab));
+  if (allEmails.length) renderList();
+});
+
+// Search with debounce
+let _searchTimer = null;
+document.getElementById('emSearch').addEventListener('input', e => {
+  clearTimeout(_searchTimer);
+  const q = e.target.value.trim();
+  if (!q) {
+    searchQuery = '';
+    if (allEmails.length) renderList();
+    return;
+  }
+  _searchTimer = setTimeout(() => {
+    if (!accessToken) return;
+    searchQuery = q;
+    runSearch('in:inbox ' + q);
+  }, 600);
+});
+
+document.getElementById('emSearch').addEventListener('keydown', e => {
+  if (e.key === 'Enter') {
+    clearTimeout(_searchTimer);
+    const q = e.target.value.trim();
+    if (q && accessToken) {
+      searchQuery = q;
+      runSearch('in:inbox ' + q);
+    }
+  }
+});
+</script>
+<script src="https://accounts.google.com/gsi/client" onload="onGISLoad()" async defer></script>
+</body>
+</html>

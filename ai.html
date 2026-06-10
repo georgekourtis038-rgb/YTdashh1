@@ -605,6 +605,38 @@ body {
     } catch (_) { return null; }
   }
 
+  // ── Gmail inbox context ──────────────────────────────────────────
+  let _cachedGmailEmails = [];
+
+  async function fetchGmailEmails() {
+    const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+    const tok = stored && stored.token;
+    if (!tok || Date.now() >= (stored.expiry || 0)) return;
+    try {
+      const listRes = await fetch(
+        'https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=10',
+        { headers: { 'Authorization': 'Bearer ' + tok } }
+      );
+      if (!listRes.ok) return;
+      const listData = await listRes.json();
+      const msgs = listData.messages || [];
+      const details = await Promise.all(msgs.map(m =>
+        fetch(
+          `https://www.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=metadata&metadataHeaders=From,Subject`,
+          { headers: { 'Authorization': 'Bearer ' + tok } }
+        ).then(r => r.ok ? r.json() : null).catch(() => null)
+      ));
+      _cachedGmailEmails = details.filter(Boolean).map(msg => {
+        const hdrs = (msg.payload && msg.payload.headers) || [];
+        const from = (hdrs.find(h => h.name === 'From') || {}).value || '';
+        const subject = (hdrs.find(h => h.name === 'Subject') || {}).value || '(No subject)';
+        const m = from.match(/^(.+?)\s*<[^>]+>$/);
+        const sender = m ? m[1].replace(/^"|"$/g, '').trim() : from.split('@')[0];
+        return { sender, subject, snippet: (msg.snippet || '').slice(0, 100) };
+      });
+    } catch (_) {}
+  }
+
   // ── System prompt ────────────────────────────────────────────────
   function buildSystemPrompt() {
     const today = activeDate();
@@ -693,6 +725,14 @@ body {
           }).join(', ');
           p += `\n    ${e.name}: ${e.sets.length} set${e.sets.length !== 1 ? 's' : ''} — ${setsStr}`;
         });
+      });
+    }
+
+    if (_cachedGmailEmails.length) {
+      p += '\nRECENT UNREAD EMAILS (inbox):';
+      _cachedGmailEmails.forEach(function(e) {
+        p += `\n  From: ${e.sender} | Subject: ${e.subject}`;
+        if (e.snippet) p += `\n  Preview: ${e.snippet}`;
       });
     }
 
@@ -897,6 +937,7 @@ body {
   // ── Boot ──────────────────────────────────────────────────────────
   function boot() {
     document.getElementById('aiGreeting').textContent = getGreeting();
+    fetchGmailEmails();
     loadBriefing();
 
     const input   = document.getElementById('chatInput');
