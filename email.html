@@ -418,7 +418,8 @@ html, body {
 <script>
 // =================================================================
 // Uses same GOOGLE_CLIENT_ID and token as calendar.html
-// Scopes include calendar + gmail.readonly
+// Scopes: calendar + gmail.readonly
+// IMPORTANT: Gmail API must also be enabled at console.cloud.google.com
 // =================================================================
 const GOOGLE_CLIENT_ID = '199459906303-10ecosetgbh9tucisnoufu942dkoj13k.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly';
@@ -427,24 +428,35 @@ const GMAIL_API = 'https://www.googleapis.com/gmail/v1/users/me';
 let accessToken = null;
 let tokenClient = null;
 let gisReady = false;
-let allEmails = [];     // full fetched list (metadata)
+let allEmails = [];
 let activeFilter = 'all';
 let searchQuery = '';
-let openEmail = null;   // full message being shown in sheet
 
 // -------------------------------------------------------
 // Auth
 // -------------------------------------------------------
 function onGISLoad() {
+  console.log('[Gmail] GIS library loaded');
   gisReady = true;
-  if (!GOOGLE_CLIENT_ID) { showAuthCard('Setup required', 'Add your GOOGLE_CLIENT_ID to email.html.'); return; }
+  if (!GOOGLE_CLIENT_ID) {
+    showState('<strong>Setup required</strong><br>Add GOOGLE_CLIENT_ID to email.html.');
+    return;
+  }
   const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+  if (stored) {
+    console.log('[Gmail] Stored token found — expires in',
+      Math.round(((stored.expiry || 0) - Date.now()) / 1000) + 's');
+  } else {
+    console.log('[Gmail] No stored token');
+  }
   const tok = stored && stored.token;
   const expiry = stored && stored.expiry || 0;
   if (tok && Date.now() < expiry) {
+    console.log('[Gmail] Token valid — loading inbox');
     accessToken = tok;
     loadInbox();
   } else {
+    console.log('[Gmail] Token missing or expired — showing auth card');
     showAuthCard();
   }
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -454,101 +466,213 @@ function onGISLoad() {
   });
 }
 
-function showAuthCard(title, body) {
+function showAuthCard() {
   document.getElementById('authCard').style.display = '';
+  document.getElementById('emStateWrap').innerHTML = '';
   document.getElementById('emSectionHeader').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 }
 
 function authenticate() {
-  if (!gisReady) { return; }
-  if (!tokenClient) return;
-  tokenClient.requestAccessToken({ prompt: '' });
+  if (!gisReady || !tokenClient) { console.warn('[Gmail] Auth called before GIS ready'); return; }
+  // Use 'consent' prompt so Google always shows the scope grant screen.
+  // This ensures gmail.readonly is included even if the user previously only granted calendar.
+  console.log('[Gmail] Requesting access token (prompt=consent)');
+  tokenClient.requestAccessToken({ prompt: 'consent' });
+}
+
+function reauthorize() {
+  console.log('[Gmail] Reauthorizing — clearing old token');
+  localStorage.removeItem('google_calendar_token');
+  accessToken = null;
+  document.getElementById('authCard').style.display = '';
+  authenticate();
 }
 
 function onToken(resp) {
-  if (resp.error) return;
+  console.log('[Gmail] Token response — error:', resp.error || 'none',
+    '| scope:', resp.scope || 'not returned', '| expires_in:', resp.expires_in);
+  if (resp.error) {
+    console.error('[Gmail] Auth failed:', resp.error, resp.error_description);
+    showState(`<strong style="color:rgba(255,200,120,0.95)">Sign-in error: ${esc(resp.error)}</strong><br>
+      <small style="opacity:.6">${esc(resp.error_description || '')}</small>`);
+    return;
+  }
+  if (resp.scope && !resp.scope.includes('gmail')) {
+    console.warn('[Gmail] Token granted WITHOUT gmail scope. Granted scopes:', resp.scope);
+    showState(`<strong style="color:rgba(255,200,120,0.95)">Gmail access not granted</strong><br>
+      The sign-in completed but Gmail permission was not included.<br>
+      <button onclick="reauthorize()" style="margin-top:12px;padding:10px 20px;background:var(--mint-dim);border:1.5px solid var(--mint);border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Grant Gmail Access</button><br>
+      <small style="opacity:.5;display:block;margin-top:6px">Granted scopes: ${esc(resp.scope)}</small>`);
+    return;
+  }
   accessToken = resp.access_token;
   const ttl = ((resp.expires_in || 3600) * 1000) - 60000;
-  localStorage.setItem('google_calendar_token', JSON.stringify({ token: accessToken, expiry: Date.now() + ttl }));
+  localStorage.setItem('google_calendar_token', JSON.stringify({
+    token: accessToken,
+    expiry: Date.now() + ttl,
+  }));
+  console.log('[Gmail] Token stored. Loading inbox…');
   document.getElementById('authCard').style.display = 'none';
+  document.getElementById('emStateWrap').innerHTML = '';
   loadInbox();
 }
 
 // -------------------------------------------------------
-// Gmail API helpers
+// Gmail API — returns data on success, { _error, _status, _message } on failure
 // -------------------------------------------------------
 async function gmailFetch(path, opts) {
-  if (!accessToken) return null;
-  const res = await fetch(GMAIL_API + path, {
-    ...opts,
-    headers: { 'Authorization': 'Bearer ' + accessToken, ...(opts && opts.headers || {}) },
-  });
-  if (res.status === 401 || res.status === 403) {
-    accessToken = null;
-    localStorage.removeItem('google_calendar_token');
-    showAuthCard();
-    return null;
+  if (!accessToken) {
+    console.warn('[Gmail] gmailFetch with no token');
+    return { _error: true, _status: 0, _message: 'Not authenticated' };
   }
-  if (!res.ok) return null;
-  return res.json();
+  const url = GMAIL_API + path;
+  console.log('[Gmail] →', path.split('?')[0], path.includes('?') ? '?' + path.split('?')[1].slice(0, 60) : '');
+  let res;
+  try {
+    res = await fetch(url, {
+      ...(opts || {}),
+      headers: { 'Authorization': 'Bearer ' + accessToken, ...((opts && opts.headers) || {}) },
+    });
+  } catch (err) {
+    console.error('[Gmail] Network error on', path, err);
+    return { _error: true, _status: 0, _message: 'Network error — ' + err.message };
+  }
+  console.log('[Gmail] ←', res.status, path.split('?')[0]);
+  if (!res.ok) {
+    let body = null;
+    try { body = await res.json(); } catch (_) {}
+    const msg = (body && body.error && body.error.message) || ('HTTP ' + res.status);
+    console.error('[Gmail] API error', res.status, msg, JSON.stringify(body));
+    if (res.status === 401) {
+      accessToken = null;
+      localStorage.removeItem('google_calendar_token');
+    }
+    return { _error: true, _status: res.status, _message: msg, _body: body };
+  }
+  const data = await res.json();
+  return data;
+}
+
+// -------------------------------------------------------
+// Error / state display
+// -------------------------------------------------------
+function showState(html) {
+  document.getElementById('emStateWrap').innerHTML = `<div class="em-state">${html}</div>`;
+}
+
+function showApiError(result, context) {
+  if (!result || !result._error) return;
+  const status = result._status;
+  const msg = result._message || 'Unknown error';
+  console.error('[Gmail] Displaying error for', context, '| status:', status, '| message:', msg);
+
+  if (status === 0) {
+    showState(`<strong style="color:rgba(255,200,120,0.95)">Network error</strong><br>
+      ${esc(msg)}<br><small style="opacity:.5">Check your connection and refresh.</small>`);
+    return;
+  }
+  if (status === 401) {
+    showAuthCard();
+    return;
+  }
+  if (status === 403) {
+    const bodyStr = JSON.stringify(result._body || '');
+    const isApiDisabled = msg.includes('disabled') || msg.includes('has not been used') ||
+      msg.includes('accessNotConfigured') || bodyStr.includes('SERVICE_DISABLED') ||
+      bodyStr.includes('accessNotConfigured');
+    if (isApiDisabled) {
+      showState(`<strong style="color:rgba(255,200,120,0.95)">Gmail API not enabled</strong><br>
+        The Gmail API must be enabled in your Google Cloud project.<br>
+        <a href="https://console.cloud.google.com/apis/library/gmail.googleapis.com" target="_blank"
+          style="color:var(--mint);text-decoration:underline">Enable Gmail API at console.cloud.google.com →</a><br>
+        <small style="opacity:.5;display:block;margin-top:6px">After enabling, refresh this page.<br>Error: ${esc(msg)}</small>`);
+    } else {
+      showState(`<strong style="color:rgba(255,200,120,0.95)">Gmail access not granted</strong><br>
+        Your current sign-in doesn't include Gmail permission.<br>
+        <button onclick="reauthorize()" style="margin-top:12px;padding:10px 20px;background:var(--mint-dim);border:1.5px solid var(--mint);border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Grant Gmail Access</button><br>
+        <small style="opacity:.5;display:block;margin-top:6px">Error: ${esc(msg)}</small>`);
+    }
+    return;
+  }
+  showState(`<strong style="color:rgba(255,200,120,0.95)">Failed to load ${esc(context)}</strong><br>
+    ${esc(msg)}<br><small style="opacity:.5">HTTP ${status}</small>`);
 }
 
 // -------------------------------------------------------
 // Inbox load
 // -------------------------------------------------------
 async function loadInbox() {
-  const stateWrap = document.getElementById('emStateWrap');
-  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Loading inbox…</div>';
+  showState('<div class="spinner"></div>Loading inbox…');
   document.getElementById('emSectionHeader').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 
-  const q = 'in:inbox';
-  const listData = await gmailFetch(`/messages?q=${encodeURIComponent(q)}&maxResults=40`);
-  if (!listData) return;
+  console.log('[Gmail] Fetching inbox message list…');
+  const listData = await gmailFetch('/messages?q=in%3Ainbox&maxResults=40');
+  if (listData && listData._error) { showApiError(listData, 'inbox'); return; }
+  if (!listData) { showState('Unexpected error — no response from Gmail.'); return; }
+
+  console.log('[Gmail] List response: resultSizeEstimate =', listData.resultSizeEstimate,
+    '| messages returned =', (listData.messages || []).length);
 
   const ids = (listData.messages || []).map(m => m.id);
   if (!ids.length) {
-    stateWrap.innerHTML = '<div class="em-state">Your inbox is empty.</div>';
+    document.getElementById('emSectionHeader').style.display = '';
+    showState('Your inbox is empty.');
     return;
   }
 
-  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Fetching messages…</div>';
+  showState('<div class="spinner"></div>Fetching ' + ids.length + ' messages…');
+  console.log('[Gmail] Fetching metadata for', ids.length, 'messages in parallel…');
 
   const metas = await Promise.all(ids.map(id =>
-    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`)
-      .catch(() => null)
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`).catch(err => {
+      console.error('[Gmail] Metadata fetch threw for', id, err);
+      return null;
+    })
   ));
 
-  allEmails = metas.filter(Boolean);
-  stateWrap.innerHTML = '';
+  const good = metas.filter(m => m && !m._error);
+  const errors = metas.filter(m => !m || m._error);
+  console.log('[Gmail] Metadata done — ok:', good.length, '| errors:', errors.length);
+  if (errors.length) console.warn('[Gmail] Failed messages:', errors.map(m => m && m._message));
+
+  if (!good.length) {
+    const firstErr = metas.find(m => m && m._error);
+    if (firstErr) { showApiError(firstErr, 'messages'); } else { showState('Could not load any messages.'); }
+    return;
+  }
+
+  allEmails = good;
+  document.getElementById('emStateWrap').innerHTML = '';
   renderList();
 }
 
 // -------------------------------------------------------
-// Search (hits Gmail API)
+// Search
 // -------------------------------------------------------
 async function runSearch(q) {
-  const stateWrap = document.getElementById('emStateWrap');
-  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Searching…</div>';
+  showState('<div class="spinner"></div>Searching…');
   document.getElementById('emSectionHeader').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 
+  console.log('[Gmail] Searching:', q);
   const listData = await gmailFetch(`/messages?q=${encodeURIComponent(q)}&maxResults=30`);
+  if (listData && listData._error) { showApiError(listData, 'search'); return; }
   if (!listData) return;
 
   const ids = (listData.messages || []).map(m => m.id);
   if (!ids.length) {
-    stateWrap.innerHTML = `<div class="em-state">No results for "${esc(q)}".</div>`;
+    showState(`No results for "<em>${esc(q)}</em>".`);
     return;
   }
 
-  stateWrap.innerHTML = '<div class="em-state"><div class="spinner"></div>Loading results…</div>';
+  showState('<div class="spinner"></div>Loading ' + ids.length + ' results…');
   const metas = await Promise.all(ids.map(id =>
     gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`).catch(() => null)
   ));
-  allEmails = metas.filter(Boolean);
-  stateWrap.innerHTML = '';
+  allEmails = metas.filter(m => m && !m._error);
+  document.getElementById('emStateWrap').innerHTML = '';
   renderList();
 }
 
