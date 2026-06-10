@@ -1122,14 +1122,6 @@ main {
           </div>
         </div>
       </div>
-      <div class="wset-section">
-        <h4>Claude API key (for photo analysis)</h4>
-        <div class="wfield">
-          <label>API Key</label>
-          <input type="text" id="setCalApiKey" placeholder="sk-ant-…" style="font-family:var(--font-mono);font-size:13px">
-        </div>
-        <div style="font-size:11px;color:rgba(255,255,255,0.35);margin-top:4px;line-height:1.5">Stored locally only — never synced to the cloud.</div>
-      </div>
       <div class="wmodal-actions">
         <button class="wbtn-secondary" id="calSetCancel">Cancel</button>
         <button class="wbtn-primary" id="calSetSave">Save</button>
@@ -2286,7 +2278,6 @@ main {
   'use strict';
 
   const CAL_TARGETS_KEY = 'calorie_targets_v1';
-  const CAL_API_KEY_LS  = 'cal_api_key'; // intentionally NOT prefixed 'calorie_' — keeps key off cloud sync
 
   /* ---- date (midnight boundary for calories) ---- */
   function calDateStr(date) {
@@ -2335,10 +2326,6 @@ main {
     localStorage.setItem(calLogKey(ds), JSON.stringify(log));
     try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch {}
   }
-
-  /* ---- api key ---- */
-  function calGetApiKey() { try { return localStorage.getItem(CAL_API_KEY_LS) || ''; } catch { return ''; } }
-  function calSaveApiKey(k) { try { localStorage.setItem(CAL_API_KEY_LS, k); } catch {} }
 
   /* ---- maths ---- */
   function calSum(log) {
@@ -2537,11 +2524,6 @@ main {
   let calPhotoEstimate = null;
 
   async function calAnalyzePhoto(base64, mimeType) {
-    const apiKey = calGetApiKey();
-    if (!apiKey) {
-      calShowPhotoStatus('⚠ Set your Claude API key in Calorie Settings (gear icon) to use photo analysis.');
-      return;
-    }
     calShowPhotoStatus('⏳ Analysing your meal…');
     document.getElementById('calPhotoResult').hidden = true;
 
@@ -2557,17 +2539,10 @@ main {
 Be realistic. Return valid JSON only, no other text.`;
 
     try {
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
+      const res = await fetch('/api/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          model: 'claude-opus-4-8',
-          max_tokens: 512,
           messages: [{
             role: 'user',
             content: [
@@ -2579,11 +2554,31 @@ Be realistic. Return valid JSON only, no other text.`;
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${res.status}`);
+        throw new Error(err.error || `Server error ${res.status}`);
       }
-      const data = await res.json();
-      const text = data.content?.[0]?.text || '';
-      const match = text.match(/\{[\s\S]*\}/);
+      // Consume SSE stream and collect text deltas
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6);
+          if (raw === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta')
+              fullText += evt.delta.text;
+          } catch {}
+        }
+      }
+      const match = fullText.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('No JSON in response');
       const result = JSON.parse(match[0]);
       calShowPhotoStatus('');
@@ -2645,7 +2640,6 @@ Be realistic. Return valid JSON only, no other text.`;
     document.getElementById('setCalProtein').value = t.protein;
     document.getElementById('setCalCarbs').value   = t.carbs;
     document.getElementById('setCalFat').value     = t.fat;
-    document.getElementById('setCalApiKey').value  = calGetApiKey();
     document.getElementById('calSetModalBg').classList.add('show');
   }
 
@@ -2662,7 +2656,6 @@ Be realistic. Return valid JSON only, no other text.`;
         fat:     isNaN(fat)     ? 65  : fat,
       });
     }
-    calSaveApiKey(document.getElementById('setCalApiKey').value.trim());
     document.getElementById('calSetModalBg').classList.remove('show');
     calFullRender();
   }
