@@ -673,8 +673,9 @@ function esc(s) {
 function onGISLoad() {
   gisReady = true;
   if (!GOOGLE_CLIENT_ID) { showSetupCard(); return; }
-  const tok    = sessionStorage.getItem('gcal_tok');
-  const expiry = parseInt(sessionStorage.getItem('gcal_exp') || '0');
+  const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
+  const tok    = stored && stored.token;
+  const expiry = stored && stored.expiry || 0;
   if (tok && Date.now() < expiry) {
     accessToken = tok;
     document.getElementById('authCard').style.display = 'none';
@@ -713,8 +714,7 @@ function onToken(resp) {
   if (resp.error) return;
   accessToken = resp.access_token;
   const ttl = ((resp.expires_in || 3600) * 1000) - 60000;
-  sessionStorage.setItem('gcal_tok', accessToken);
-  sessionStorage.setItem('gcal_exp', String(Date.now() + ttl));
+  localStorage.setItem('google_calendar_token', JSON.stringify({ token: accessToken, expiry: Date.now() + ttl }));
   document.getElementById('authCard').style.display = 'none';
   loadEvents();
 }
@@ -734,7 +734,7 @@ async function apiFetch(path, opts = {}) {
   });
   if (res.status === 401) {
     accessToken = null;
-    sessionStorage.removeItem('gcal_tok');
+    localStorage.removeItem('google_calendar_token');
     showLoginCard();
     return null;
   }
