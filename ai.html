@@ -341,6 +341,103 @@ body {
 }
 .sidebar-new-btn:active { background: rgba(45,232,162,0.15); }
 
+/* ── Memory panel ── */
+.memory-overlay {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 200;
+  -webkit-tap-highlight-color: transparent;
+}
+.memory-overlay.open { display: block; }
+
+.memory-panel {
+  position: fixed; top: 0; right: 0; bottom: 0;
+  width: min(320px, 90vw);
+  background: #0d1210;
+  border-left: 1px solid rgba(255,255,255,0.08);
+  z-index: 201;
+  display: flex; flex-direction: column;
+  transform: translateX(100%) translateZ(0);
+  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+}
+.memory-panel.open { transform: translateX(0) translateZ(0); }
+
+.memory-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: max(20px, calc(env(safe-area-inset-top) + 16px)) 16px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+}
+.memory-panel-title {
+  font-size: 12px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--label);
+}
+.memory-panel-close {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: transparent; border: none;
+  color: var(--subtle); font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.memory-panel-close:hover { color: #fff; }
+
+.memory-list {
+  flex: 1; overflow-y: auto; padding: 12px;
+  overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.memory-empty {
+  padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
+}
+.memory-chip {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 10px 12px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 12px;
+  font-size: 13px;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.4;
+}
+.memory-chip-text { flex: 1; }
+.memory-chip-del {
+  background: transparent; border: none;
+  color: var(--subtle); font-size: 14px; line-height: 1;
+  cursor: pointer; padding: 0; flex-shrink: 0;
+  margin-top: 1px;
+  -webkit-tap-highlight-color: transparent;
+  transition: color 0.15s;
+}
+.memory-chip-del:hover { color: rgba(255,80,80,0.8); }
+
+.memory-count-label {
+  padding: 0 12px 8px;
+  font-size: 11px; color: var(--subtle);
+  letter-spacing: 1px; text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.memory-clear-btn {
+  margin: 8px 12px 12px;
+  padding: 11px; border-radius: 10px;
+  background: rgba(255,80,80,0.06);
+  border: 1px solid rgba(255,80,80,0.18);
+  color: rgba(255,100,100,0.8); font-size: 13px; font-weight: 600;
+  font-family: var(--font); cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.memory-clear-btn:active { background: rgba(255,80,80,0.14); }
+.memory-clear-btn:disabled { opacity: 0.35; pointer-events: none; }
+
+/* ── Memory icon button active state ── */
+.ai-icon-btn.memory-active { color: var(--mint); border-color: rgba(45,232,162,0.3); }
+
 /* ── Briefing retry button ── */
 .briefing-retry-btn {
   display: inline-block;
@@ -398,6 +495,20 @@ body {
   <button class="sidebar-new-btn" id="sidebarNewBtn">+ New conversation</button>
 </aside>
 
+<!-- Memory panel overlay -->
+<div class="memory-overlay" id="memoryOverlay"></div>
+
+<!-- Memory panel -->
+<aside class="memory-panel" id="memoryPanel" aria-label="Memories">
+  <div class="memory-panel-header">
+    <span class="memory-panel-title">Memory</span>
+    <button class="memory-panel-close" id="memoryPanelClose" aria-label="Close">✕</button>
+  </div>
+  <div class="memory-count-label" id="memoryCountLabel"></div>
+  <div class="memory-list" id="memoryList"></div>
+  <button class="memory-clear-btn" id="memoryClearBtn">Clear all memories</button>
+</aside>
+
 <!-- Main shell -->
 <div class="ai-shell">
   <div class="ai-toprow">
@@ -412,6 +523,13 @@ body {
       <p class="ai-eyebrow">Axis AI</p>
       <h1 class="ai-greeting" id="aiGreeting">Good morning</h1>
     </div>
+    <button class="ai-icon-btn" id="memoryBtn" aria-label="Memories" title="Memories">
+      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+        <circle cx="7.5" cy="6" r="4.5" stroke="currentColor" stroke-width="1.6"/>
+        <path d="M5.5 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="currentColor" opacity=".4"/>
+        <path d="M4 11c.7-1.2 2-2 3.5-2s2.8.8 3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+      </svg>
+    </button>
     <button class="ai-icon-btn" id="newChatBtn" aria-label="New conversation" title="New conversation">
       <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
         <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -783,6 +901,12 @@ body {
       p += '\nUNREAD EMAILS:';
       _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
     }
+    const memories = getMemories();
+    if (memories.length) {
+      p += '\n\nMEMORY — Things I know about ' + (name || 'you') + ' from past conversations:';
+      memories.slice().sort(function(a,b){ return b.timestamp - a.timestamp; }).forEach(function(m){ p += '\n  • ' + m.fact; });
+    }
+
     p += `\n===
 
 === TOOLS ===
@@ -810,6 +934,143 @@ Available tools:
     params: { id: string }
 ===`;
     return p;
+  }
+
+  // ── Memory store ────────────────────────────────────────────────
+  const MEMORY_KEY     = 'axis_memory';
+  const MEMORY_MAX     = 100;
+
+  function getMemories() { return lsGet(MEMORY_KEY) || []; }
+
+  function saveMemories(arr) {
+    lsSet(MEMORY_KEY, arr);
+    _supaUpsert('axis_memory', arr);
+  }
+
+  function addMemories(facts, sourceChatId) {
+    if (!facts || !facts.length) return;
+    let memories = getMemories();
+    const now = Date.now();
+    for (const raw of facts) {
+      const fact = (raw || '').trim();
+      if (!fact) continue;
+      const factLower = fact.toLowerCase();
+      const dupIdx = memories.findIndex(function(m) {
+        const mLower = m.fact.toLowerCase();
+        return mLower.includes(factLower) || factLower.includes(mLower);
+      });
+      if (dupIdx >= 0) {
+        memories[dupIdx] = { fact, timestamp: now, source_chat_id: sourceChatId };
+      } else {
+        memories.push({ fact, timestamp: now, source_chat_id: sourceChatId });
+      }
+    }
+    // Cap at MEMORY_MAX — remove oldest by timestamp
+    if (memories.length > MEMORY_MAX) {
+      memories.sort(function(a, b) { return b.timestamp - a.timestamp; });
+      memories = memories.slice(0, MEMORY_MAX);
+    }
+    saveMemories(memories);
+    renderMemoryPanel();
+  }
+
+  function deleteMemory(idx) {
+    const memories = getMemories();
+    memories.splice(idx, 1);
+    saveMemories(memories);
+    renderMemoryPanel();
+  }
+
+  function clearAllMemories() {
+    saveMemories([]);
+    renderMemoryPanel();
+  }
+
+  // ── Memory extraction (background, after each AI turn) ──────────
+  async function extractMemories(userText, aiText, sessionId) {
+    const prompt = 'Extract any important personal facts worth remembering long-term from this single conversation exchange. Return ONLY a JSON array of short strings (max 15 words each). Examples: "User prefers morning workouts", "User runs Kourtis Construction with his brother", "User is cutting weight for summer". Return [] if nothing is worth remembering.\n\nUser: ' + userText.slice(0, 400) + '\nAssistant: ' + aiText.slice(0, 600);
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          system: 'You are a memory extraction assistant. You extract concise, durable personal facts from chat turns. Respond only with a JSON array of strings.',
+          messages: [{ role: 'user', content: prompt }],
+          max_tokens: 256
+        })
+      });
+      if (!res.ok) return;
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buf = '', full = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n'); buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6).trim(); if (!raw) continue;
+          try {
+            const evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') full += evt.delta.text;
+          } catch (_) {}
+        }
+      }
+      const match = full.match(/\[[\s\S]*\]/);
+      if (!match) return;
+      const facts = JSON.parse(match[0]);
+      if (Array.isArray(facts) && facts.length) addMemories(facts, sessionId);
+    } catch (_) {}
+  }
+
+  // ── Memory panel UI ──────────────────────────────────────────────
+  function renderMemoryPanel() {
+    const memories   = getMemories();
+    const list       = document.getElementById('memoryList');
+    const countLabel = document.getElementById('memoryCountLabel');
+    const clearBtn   = document.getElementById('memoryClearBtn');
+    if (!list) return;
+
+    countLabel.textContent = memories.length + ' / ' + MEMORY_MAX + ' memories stored';
+    clearBtn.disabled = memories.length === 0;
+    list.innerHTML = '';
+
+    if (!memories.length) {
+      list.innerHTML = '<p class="memory-empty">No memories yet. Axis will remember important things you share across conversations.</p>';
+      return;
+    }
+
+    // Show newest first
+    const sorted = memories.slice().sort(function(a, b) { return b.timestamp - a.timestamp; });
+    sorted.forEach(function(m, i) {
+      const realIdx = memories.indexOf(m);
+      const chip = document.createElement('div');
+      chip.className = 'memory-chip';
+      const txt = document.createElement('span');
+      txt.className   = 'memory-chip-text';
+      txt.textContent = m.fact;
+      const del = document.createElement('button');
+      del.className   = 'memory-chip-del';
+      del.textContent = '×';
+      del.setAttribute('aria-label', 'Delete memory');
+      del.addEventListener('click', function() { deleteMemory(realIdx); });
+      chip.appendChild(txt);
+      chip.appendChild(del);
+      list.appendChild(chip);
+    });
+  }
+
+  function openMemoryPanel() {
+    renderMemoryPanel();
+    document.getElementById('memoryPanel').classList.add('open');
+    document.getElementById('memoryOverlay').classList.add('open');
+    document.getElementById('memoryBtn').classList.add('memory-active');
+  }
+  function closeMemoryPanel() {
+    document.getElementById('memoryPanel').classList.remove('open');
+    document.getElementById('memoryOverlay').classList.remove('open');
+    document.getElementById('memoryBtn').classList.remove('memory-active');
   }
 
   // ── SSE streaming helper ─────────────────────────────────────────
@@ -1143,6 +1404,8 @@ Available tools:
         if (clean !== full) aiText.textContent = clean;
         chatHistory.push({ role: 'assistant', content: full, ts: Date.now() });
         saveCurrentSession();
+        // Background memory extraction — don't await, non-blocking
+        extractMemories(text, clean || full, activeSessionId);
         for (const action of actions) {
           appendActionCard(await executeAction(action.tool, action.params));
         }
@@ -1368,6 +1631,17 @@ Available tools:
 
     await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
 
+    // Sync memories from Supabase (cross-device)
+    const remoteMemories = await _supaFetch('axis_memory');
+    if (Array.isArray(remoteMemories) && remoteMemories.length) {
+      const local = getMemories();
+      const merged = remoteMemories.concat(local.filter(function(rm) {
+        return !remoteMemories.some(function(r) { return r.fact === rm.fact; });
+      }));
+      merged.sort(function(a, b) { return b.timestamp - a.timestamp; });
+      lsSet(MEMORY_KEY, merged.slice(0, MEMORY_MAX));
+    }
+
     // Sync sessions from Supabase (cross-device)
     const remoteSessions = await _supaFetch('chat_sessions');
     if (Array.isArray(remoteSessions) && remoteSessions.length) {
@@ -1417,6 +1691,12 @@ Available tools:
     document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
     document.getElementById('newChatBtn').addEventListener('click', newChat);
     document.getElementById('sidebarNewBtn').addEventListener('click', newChat);
+    document.getElementById('memoryBtn').addEventListener('click', openMemoryPanel);
+    document.getElementById('memoryPanelClose').addEventListener('click', closeMemoryPanel);
+    document.getElementById('memoryOverlay').addEventListener('click', closeMemoryPanel);
+    document.getElementById('memoryClearBtn').addEventListener('click', function() {
+      if (confirm('Clear all memories? This cannot be undone.')) clearAllMemories();
+    });
   }
 
   if (document.readyState === 'loading') {
