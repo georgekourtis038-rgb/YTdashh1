@@ -427,8 +427,6 @@ const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.
 const GMAIL_API = 'https://www.googleapis.com/gmail/v1/users/me';
 
 let accessToken = null;
-let tokenClient = null;
-let gisReady = false;
 let allEmails = [];
 let activeFilter = 'all';
 let searchQuery = '';
@@ -447,50 +445,20 @@ function authenticate() {
   GoogleAuth.signIn();
 }
 
-function reauthorize() {
-  console.log('[Gmail] Reauthorizing — clearing stored tokens');
-  GoogleAuth.signOut();
-  GoogleAuth.signIn();
-}
 
 GoogleAuth.init({
   onReady: function(tok) {
-    console.log('[Gmail] Stored token valid — loading inbox');
+    console.log('[Gmail] Token valid — loading inbox');
     accessToken = tok;
-    gisReady = true;
     document.getElementById('authCard').style.display = 'none';
     loadInbox();
   },
   onNeedAuth: function() {
-    // First-time sign-in: show the full auth card
-    console.log('[Gmail] No stored token — showing auth card');
-    gisReady = true;
+    console.log('[Gmail] No token — showing auth card');
     showAuthCard();
   },
-  onExpired: function() {
-    // Session expired: show inbox skeleton and let the re-auth banner handle it
-    console.log('[Gmail] Token expired — re-auth banner shown by GoogleAuth');
-    gisReady = true;
-    document.getElementById('authCard').style.display = 'none';
-    document.getElementById('emSectionHeader').style.display = '';
-    document.getElementById('emList').style.display = '';
-    showState('<span style="opacity:.5;font-size:13px">Sign in again to load your inbox.</span>');
-  },
-  onSignIn: function(tok, err) {
-    if (err) {
-      console.error('[Gmail] Auth error:', err);
-      showState('<strong style="color:rgba(255,200,120,0.95)">Sign-in error</strong><br>'
-        + '<small style="opacity:.6">' + esc(err) + '</small>');
-      return;
-    }
-    console.log('[Gmail] Signed in — loading inbox');
-    accessToken = tok;
-    document.getElementById('authCard').style.display = 'none';
-    document.getElementById('emStateWrap').innerHTML = '';
-    loadInbox();
-  },
   onSignOut: function() {
-    console.log('[Gmail] Signed out — showing auth card');
+    console.log('[Gmail] Signed out');
     accessToken = null;
     showAuthCard();
   },
@@ -898,6 +866,6 @@ document.getElementById('emSearch').addEventListener('keydown', e => {
   }
 });
 </script>
-<script src="https://accounts.google.com/gsi/client" onload="GoogleAuth._onGISReady()" async defer></script>
+<!-- GIS script removed — auth is now handled server-side via /api/google-callback -->
 </body>
 </html>

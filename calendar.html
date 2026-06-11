@@ -640,9 +640,7 @@ let todayStr  = dateFmt(_now);
 let selectedDate = todayStr;
 let events = {};          // 'YYYY-MM-DD' → GCal event[]
 let accessToken = null;
-let tokenClient = null;
 let isAllDay = false;
-let gisReady = false;
 let pendingEvt = null;    // event being shown in sheet
 
 // -------------------------------------------------------
@@ -691,26 +689,11 @@ function authenticate() {
 GoogleAuth.init({
   onReady: function(tok) {
     accessToken = tok;
-    gisReady = true;
     document.getElementById('authCard').style.display = 'none';
     loadEvents();
   },
   onNeedAuth: function() {
-    // First-time sign-in: show the full auth card
-    gisReady = true;
     showLoginCard();
-  },
-  onExpired: function() {
-    // Session expired: load what we can and let the re-auth banner handle it
-    gisReady = true;
-    document.getElementById('authCard').style.display = 'none';
-    loadEvents(); // will fail gracefully — banner is already shown by GoogleAuth
-  },
-  onSignIn: function(tok, err) {
-    if (err) { console.error('[Calendar] Auth error:', err); return; }
-    accessToken = tok;
-    document.getElementById('authCard').style.display = 'none';
-    loadEvents();
   },
   onSignOut: function() {
     accessToken = null;
@@ -1054,6 +1037,6 @@ document.getElementById('createModalBg').addEventListener('click', e => {
 })();
 </script>
 <!-- Google Identity Services — onload triggers auth init -->
-<script src="https://accounts.google.com/gsi/client" onload="GoogleAuth._onGISReady()" async defer></script>
+<!-- GIS script removed — auth is now handled server-side via /api/google-callback -->
 </body>
 </html>
