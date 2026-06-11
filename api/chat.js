@@ -34,15 +34,16 @@ module.exports = async function handler(req, res) {
     return res.status(400).json({ error: 'Failed to read request body' });
   }
 
-  let messages, system;
+  let messages, system, max_tokens;
   try {
-    ({ messages, system } = JSON.parse(bodyText));
+    ({ messages, system, max_tokens } = JSON.parse(bodyText));
   } catch (err) {
     console.error('[chat] JSON parse error:', err.message);
     return res.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  console.log('[chat] messages count:', Array.isArray(messages) ? messages.length : 'not array');
+  const resolvedMaxTokens = (typeof max_tokens === 'number' && max_tokens > 0) ? max_tokens : 1000;
+  console.log('[chat] messages count:', Array.isArray(messages) ? messages.length : 'not array', '| max_tokens:', resolvedMaxTokens);
 
   if (!Array.isArray(messages) || messages.length === 0) {
     return res.status(400).json({ error: 'messages array required' });
@@ -59,7 +60,7 @@ module.exports = async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-5',
-        max_tokens: 1000,
+        max_tokens: resolvedMaxTokens,
         system: system || '',
         messages,
         stream: true,

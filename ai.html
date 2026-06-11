@@ -902,10 +902,12 @@ body {
       _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
     }
     const memories = getMemories();
+    console.log('[memory] buildSystemPrompt: ' + memories.length + ' memories in store');
     if (memories.length) {
       p += '\n\nMEMORY — Things I know about ' + (name || 'you') + ' from past conversations:';
       memories.slice().sort(function(a,b){ return b.timestamp - a.timestamp; }).forEach(function(m){ p += '\n  • ' + m.fact; });
     }
+    console.log('[memory] system prompt length:', p.length, 'chars');
 
     p += `\n===
 
@@ -949,6 +951,7 @@ Available tools:
 
   function addMemories(facts, sourceChatId) {
     if (!facts || !facts.length) return;
+    console.log('[memory] addMemories called with', facts.length, 'fact(s), current store size:', getMemories().length);
     let memories = getMemories();
     const now = Date.now();
     for (const raw of facts) {
@@ -971,6 +974,7 @@ Available tools:
       memories = memories.slice(0, MEMORY_MAX);
     }
     saveMemories(memories);
+    console.log('[memory] saved', memories.length, 'total memories to localStorage. Verify: localStorage.getItem("axis_memory")');
     renderMemoryPanel();
   }
 
@@ -989,6 +993,7 @@ Available tools:
   // ── Memory extraction (background, after each AI turn) ──────────
   async function extractMemories(userText, aiText, sessionId) {
     const prompt = 'Extract any important personal facts worth remembering long-term from this single conversation exchange. Return ONLY a JSON array of short strings (max 15 words each). Examples: "User prefers morning workouts", "User runs Kourtis Construction with his brother", "User is cutting weight for summer". Return [] if nothing is worth remembering.\n\nUser: ' + userText.slice(0, 400) + '\nAssistant: ' + aiText.slice(0, 600);
+    console.log('[memory] extraction started — user:', userText.slice(0, 60), '…');
     try {
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -999,7 +1004,12 @@ Available tools:
           max_tokens: 256
         })
       });
-      if (!res.ok) return;
+      if (!res.ok) {
+        let detail = 'HTTP ' + res.status;
+        try { const j = await res.json(); detail += ' — ' + (j.error || JSON.stringify(j)); } catch(_) {}
+        console.error('[memory] extraction API error:', detail);
+        return;
+      }
       const reader  = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = '', full = '';
@@ -1017,11 +1027,26 @@ Available tools:
           } catch (_) {}
         }
       }
+      console.log('[memory] raw extraction response:', full.trim().slice(0, 300));
       const match = full.match(/\[[\s\S]*\]/);
-      if (!match) return;
-      const facts = JSON.parse(match[0]);
-      if (Array.isArray(facts) && facts.length) addMemories(facts, sessionId);
-    } catch (_) {}
+      if (!match) {
+        console.warn('[memory] no JSON array found in extraction response');
+        return;
+      }
+      let facts;
+      try { facts = JSON.parse(match[0]); } catch(e) {
+        console.error('[memory] JSON parse failed:', e.message, '— raw match:', match[0].slice(0, 100));
+        return;
+      }
+      if (!Array.isArray(facts) || !facts.length) {
+        console.log('[memory] nothing worth remembering in this turn');
+        return;
+      }
+      console.log('[memory] extracted', facts.length, 'fact(s):', facts);
+      addMemories(facts, sessionId);
+    } catch (err) {
+      console.error('[memory] extraction threw:', err && err.message ? err.message : String(err));
+    }
   }
 
   // ── Memory panel UI ──────────────────────────────────────────────
