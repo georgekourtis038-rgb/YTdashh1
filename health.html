@@ -787,40 +787,66 @@ main {
   font-size: 12px; color: rgba(255,255,255,0.5); font-family: var(--font-mono);
   margin-top: 8px; font-variant-numeric: tabular-nums;
 }
+/* ── Photo tab step-by-step flow ── */
 .cal-photo-label {
   display: flex; flex-direction: column; align-items: center; gap: 10px;
-  padding: 28px 20px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 12px;
+  padding: 32px 20px; border: 2px dashed rgba(255,255,255,0.1); border-radius: 14px;
   cursor: pointer; color: rgba(255,255,255,0.5); font-size: 14px; font-weight: 600;
   -webkit-tap-highlight-color: transparent; transition: border-color 0.2s, background 0.2s;
-  text-align: center;
+  text-align: center; user-select: none;
 }
-.cal-photo-label:hover { border-color: rgba(45,232,162,0.4); background: rgba(45,232,162,0.04); }
-.cal-camera-icon { font-size: 36px; line-height: 1; }
+.cal-photo-label:hover,
+.cal-photo-label.has-photo { border-color: rgba(45,232,162,0.35); background: rgba(45,232,162,0.04); }
+.cal-camera-icon { font-size: 40px; line-height: 1; }
+.cal-photo-sublabel { font-size: 11px; color: rgba(255,255,255,0.28); font-weight: 400; }
+.cal-photo-preview-img {
+  width: 100%; max-height: 220px; object-fit: cover;
+  border-radius: 12px; margin-top: 12px; display: block;
+}
+/* Find Calories button */
+.cal-find-cals-btn {
+  margin-top: 14px; width: 100%; padding: 14px; border-radius: 12px;
+  background: #2de8a2; color: #071a10;
+  border: none; font-weight: 800; font-size: 15px; font-family: inherit;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.2s, transform 0.1s; letter-spacing: 0.01em;
+}
+.cal-find-cals-btn:active { transform: scale(0.98); }
+.cal-find-cals-btn:disabled { opacity: 0.3; cursor: default; pointer-events: none; }
+/* Loading */
 .cal-photo-status {
   font-size: 13px; color: rgba(255,255,255,0.5); text-align: center;
-  padding: 10px 0; font-family: var(--font-mono);
+  padding: 14px 0; font-family: var(--font-mono);
 }
-.cal-photo-preview-img {
-  width: 100%; max-height: 180px; object-fit: cover;
-  border-radius: 10px; margin-top: 10px; display: block;
-}
+/* Results card */
 .cal-photo-result {
-  margin-top: 12px; padding: 14px;
-  background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px;
+  margin-top: 14px;
+  background: rgba(45,232,162,0.04); border: 1px solid rgba(45,232,162,0.2);
+  border-radius: 14px; overflow: hidden;
 }
-.cal-photo-result-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+.cal-photo-result-header { padding: 14px 16px 10px; border-bottom: 1px solid rgba(45,232,162,0.1); }
+.cal-photo-result-name { font-size: 14px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+.cal-photo-result-kcal { font-size: 30px; font-weight: 800; color: #2de8a2; line-height: 1; font-variant-numeric: tabular-nums; }
+.cal-photo-result-kcal-unit { font-size: 13px; font-weight: 500; color: rgba(45,232,162,0.65); margin-left: 3px; }
 .cal-photo-result-macros {
-  display: flex; gap: 12px; flex-wrap: wrap;
-  font-size: 12px; font-family: var(--font-mono); color: rgba(255,255,255,0.6);
+  display: flex; gap: 8px; padding: 10px 12px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
-.cal-photo-result-confidence { font-size: 11px; color: rgba(255,255,255,0.35); margin-top: 6px; font-style: italic; }
+.cal-photo-result-macro {
+  flex: 1; text-align: center;
+  background: rgba(255,255,255,0.04); border-radius: 9px; padding: 8px 4px;
+}
+.cal-photo-result-macro-val { font-size: 15px; font-weight: 700; color: #fff; font-variant-numeric: tabular-nums; }
+.cal-photo-result-macro-lbl { font-size: 10px; color: rgba(255,255,255,0.38); text-transform: uppercase; letter-spacing: 0.09em; margin-top: 2px; }
+.cal-photo-result-confidence { font-size: 11px; color: rgba(255,255,255,0.3); padding: 8px 16px 14px; font-style: italic; line-height: 1.4; }
 .cal-photo-log-btn {
-  margin-top: 10px; width: 100%; padding: 11px; border-radius: 10px;
-  background: rgba(45,232,162,0.12); color: #2de8a2;
-  border: 1px solid rgba(45,232,162,0.3);
+  display: block; margin: 0 12px 12px; width: calc(100% - 24px); padding: 12px;
+  border-radius: 10px; background: rgba(45,232,162,0.12); color: #2de8a2;
+  border: 1px solid rgba(45,232,162,0.28);
   font-weight: 700; font-size: 14px; font-family: inherit;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  cursor: pointer; -webkit-tap-highlight-color: transparent; transition: background 0.15s;
 }
+.cal-photo-log-btn:hover { background: rgba(45,232,162,0.2); }
 .cal-manual-grid {
   display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
 }
@@ -994,14 +1020,29 @@ main {
 
       <!-- Photo panel -->
       <div id="calPanelPhoto" hidden>
-        <label for="calPhotoInput" class="cal-photo-label">
+        <!-- Step 1: upload tap target -->
+        <label for="calPhotoInput" class="cal-photo-label" id="calPhotoLabel">
           <span class="cal-camera-icon">📷</span>
-          <span>Tap to take a photo or choose from gallery</span>
+          <span id="calPhotoLabelText">Tap to take photo or upload</span>
+          <span class="cal-photo-sublabel">JPEG · PNG · HEIC</span>
         </label>
         <input type="file" id="calPhotoInput" accept="image/*" style="display:none">
-        <div id="calPhotoStatus" class="cal-photo-status" hidden></div>
+
+        <!-- Step 2: preview (shown after photo selected) -->
         <img id="calPhotoPreviewImg" class="cal-photo-preview-img" alt="" hidden>
-        <textarea id="calPhotoContext" class="cal-input" rows="2" placeholder="Add context (optional) — e.g. 'large portion' or 'Chipotle chicken bowl'" style="display:none;resize:none;margin-top:10px;font-size:14px;line-height:1.4;"></textarea>
+
+        <!-- Step 3: context + button (shown after photo selected) -->
+        <div id="calPhotoStep2" hidden>
+          <textarea id="calPhotoContext" class="cal-input" rows="2"
+            placeholder="Describe the meal or add context (optional)"
+            style="resize:none;margin-top:10px;font-size:14px;line-height:1.45;"></textarea>
+          <button class="cal-find-cals-btn" id="calFindCalsBtn">Find Calories</button>
+        </div>
+
+        <!-- Loading state -->
+        <div id="calPhotoStatus" class="cal-photo-status" hidden></div>
+
+        <!-- Step 4: results card (shown after AI responds) -->
         <div id="calPhotoResult" class="cal-photo-result" hidden></div>
       </div>
 
@@ -2574,10 +2615,12 @@ main {
 
   /* ====== PHOTO ANALYSIS (Claude vision) ====== */
   let calPhotoEstimate = null;
+  let calPhotoPending  = null; // { base64, mimeType } waiting for "Find Calories" tap
 
   async function calAnalyzePhoto(base64, mimeType, context) {
-    calShowPhotoStatus('⏳ Analysing your meal…');
+    document.getElementById('calPhotoStep2').hidden  = true;
     document.getElementById('calPhotoResult').hidden = true;
+    calShowPhotoStatus('⏳ Analysing your meal…');
 
     const contextNote = context ? `\nAdditional context from the user: "${context}"` : '';
     const prompt = `Analyse this meal photo and estimate its nutritional content.${contextNote} Return ONLY a JSON object:
@@ -2637,7 +2680,9 @@ Be realistic. Return valid JSON only, no other text.`;
       calShowPhotoStatus('');
       calShowPhotoResult(result);
     } catch (e) {
-      calShowPhotoStatus(`Error: ${e.message}`);
+      // Re-show step2 so user can retry
+      document.getElementById('calPhotoStep2').hidden = false;
+      calShowPhotoStatus(`⚠️ ${e.message}`);
     }
   }
 
@@ -2653,16 +2698,42 @@ Be realistic. Return valid JSON only, no other text.`;
     const el = document.getElementById('calPhotoResult');
     el.hidden = false;
     el.innerHTML = `
-      <div class="cal-photo-result-name">${escCal(result.name || 'Estimated meal')}</div>
-      <div class="cal-photo-result-macros">
-        <span>${Math.round(result.kcal    || 0)} kcal</span>
-        <span>${Math.round(result.protein || 0)}g protein</span>
-        <span>${Math.round(result.carbs   || 0)}g carbs</span>
-        <span>${Math.round(result.fat     || 0)}g fat</span>
+      <div class="cal-photo-result-header">
+        <div class="cal-photo-result-name">${escCal(result.name || 'Estimated meal')}</div>
+        <div>
+          <span class="cal-photo-result-kcal">${Math.round(result.kcal || 0)}</span>
+          <span class="cal-photo-result-kcal-unit">kcal</span>
+        </div>
       </div>
-      ${result.confidence ? `<div class="cal-photo-result-confidence">${escCal(result.confidence)}</div>` : ''}
+      <div class="cal-photo-result-macros">
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.protein || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Protein</div>
+        </div>
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.carbs || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Carbs</div>
+        </div>
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.fat || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Fat</div>
+        </div>
+      </div>
+      ${result.confidence ? `<div class="cal-photo-result-confidence">🔍 ${escCal(result.confidence)}</div>` : ''}
       <button class="cal-photo-log-btn" id="calPhotoLogBtn">Log this meal</button>`;
     document.getElementById('calPhotoLogBtn').addEventListener('click', calLogPhotoEstimate);
+  }
+
+  function calResetPhotoPanel() {
+    calPhotoEstimate = null;
+    calPhotoPending  = null;
+    document.getElementById('calPhotoResult').hidden     = true;
+    document.getElementById('calPhotoPreviewImg').hidden = true;
+    document.getElementById('calPhotoStep2').hidden      = true;
+    document.getElementById('calPhotoContext').value     = '';
+    document.getElementById('calPhotoLabel').classList.remove('has-photo');
+    document.getElementById('calPhotoLabelText').textContent = 'Tap to take photo or upload';
+    calShowPhotoStatus('');
   }
 
   function calLogPhotoEstimate() {
@@ -2679,13 +2750,7 @@ Be realistic. Return valid JSON only, no other text.`;
     const log = calGetLog();
     log.push(entry);
     calSaveLog(log);
-    calPhotoEstimate = null;
-    document.getElementById('calPhotoResult').hidden   = true;
-    document.getElementById('calPhotoPreviewImg').hidden = true;
-    const ctxEl = document.getElementById('calPhotoContext');
-    ctxEl.value = '';
-    ctxEl.style.display = 'none';
-    calShowPhotoStatus('');
+    calResetPhotoPanel();
     calFullRender();
   }
 
@@ -2889,24 +2954,33 @@ Be realistic. Return valid JSON only, no other text.`;
     if (e.key === 'Enter') calDoAISearch();
   });
 
-  // Photo
-  document.getElementById('calPhotoInput').addEventListener('change', async (e) => {
+  // Photo — step 1: file selected → show preview + context + button
+  document.getElementById('calPhotoInput').addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (!file) return;
     const mimeType = file.type || 'image/jpeg';
-    const imgEl = document.getElementById('calPhotoPreviewImg');
-    imgEl.src    = URL.createObjectURL(file);
-    imgEl.hidden = false;
-    const ctxEl = document.getElementById('calPhotoContext');
-    ctxEl.style.display = '';
+    const imgEl   = document.getElementById('calPhotoPreviewImg');
+    imgEl.src     = URL.createObjectURL(file);
+    imgEl.hidden  = false;
+    document.getElementById('calPhotoStep2').hidden = false;
+    document.getElementById('calPhotoResult').hidden = true;
+    calShowPhotoStatus('');
+    const labelEl = document.getElementById('calPhotoLabel');
+    labelEl.classList.add('has-photo');
+    document.getElementById('calPhotoLabelText').textContent = 'Tap to change photo';
     const reader = new FileReader();
-    reader.onload = async (ev) => {
-      const base64 = ev.target.result.split(',')[1];
-      const context = ctxEl.value.trim();
-      await calAnalyzePhoto(base64, mimeType, context);
+    reader.onload = (ev) => {
+      calPhotoPending = { base64: ev.target.result.split(',')[1], mimeType };
     };
     reader.readAsDataURL(file);
     e.target.value = '';
+  });
+
+  // Photo — step 2: "Find Calories" tapped → send to AI
+  document.getElementById('calFindCalsBtn').addEventListener('click', async () => {
+    if (!calPhotoPending) return;
+    const context = document.getElementById('calPhotoContext').value.trim();
+    await calAnalyzePhoto(calPhotoPending.base64, calPhotoPending.mimeType, context);
   });
 
   // Meal log delete
