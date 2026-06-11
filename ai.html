@@ -1038,19 +1038,49 @@ Available tools:
     } catch(e) { return 'Gmail error: ' + e.message; }
   }
 
+  // ── Supabase sync after tool actions ────────────────────────────
+  // Mirrors the exact scope + row key that health.html and index.html use,
+  // so the cloud value is up-to-date before any page reload can overwrite it.
+  function _collectScope(scopeFn) {
+    const out = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!k || !scopeFn(k)) continue;
+      try { out[k] = JSON.parse(localStorage.getItem(k)); } catch(_) {}
+    }
+    return out;
+  }
+
+  async function syncAfterAction(tool) {
+    // health-stack scope  (same as health.html)
+    if (tool === 'set_water_target' || tool === 'set_calorie_target') {
+      const data = _collectScope(function(k){
+        return k === 'po_water_v1' || k.indexOf('calorie_') === 0 || k.indexOf('stack:') === 0;
+      });
+      await _supaUpsert('health-stack', data);
+    }
+    // goals scope  (same as index.html)
+    if (tool === 'update_goal' || tool === 'delete_goal') {
+      const data = _collectScope(function(k){
+        return k === 'axis_goals' || k === 'goal_streak_v1' || k.indexOf('goals:') === 0;
+      });
+      await _supaUpsert('goals', data);
+    }
+    // add_calendar_event / mark_email_read hit external APIs directly — no localStorage to sync
+  }
+
   async function executeAction(tool, params) {
+    let result;
     if (tool === 'set_calorie_target') {
       lsSet('calorie_targets_v1', Object.assign(lsGet('calorie_targets_v1')||{}, params));
-      return 'Calorie target set to '+params.kcal+' kcal/day'+(params.protein?' · '+params.protein+'g protein':'')+(params.carbs?' · '+params.carbs+'g carbs':'')+(params.fat?' · '+params.fat+'g fat':'');
-    }
-    if (tool === 'set_water_target') {
+      result = 'Calorie target set to '+params.kcal+' kcal/day'+(params.protein?' · '+params.protein+'g protein':'')+(params.carbs?' · '+params.carbs+'g carbs':'')+(params.fat?' · '+params.fat+'g fat':'');
+    } else if (tool === 'set_water_target') {
       const state = lsGet('po_water_v1') || {};
       if (!state.settings) state.settings = {};
       state.settings.targetMl = params.target_ml;
       lsSet('po_water_v1', state);
-      return 'Water target updated to ' + params.target_ml + ' ml/day';
-    }
-    if (tool === 'update_goal') {
+      result = 'Water target updated to ' + params.target_ml + ' ml/day';
+    } else if (tool === 'update_goal') {
       const goals = lsGet('axis_goals') || [];
       const idx   = goals.findIndex(function(g){ return g.id === params.id; });
       if (idx===-1) return 'Goal not found: ' + params.id;
@@ -1058,20 +1088,26 @@ Available tools:
       if (params.target   != null) goals[idx].targetValue = params.target;
       if (params.deadline != null) goals[idx].deadline    = params.deadline;
       lsSet('axis_goals', goals);
-      return 'Goal "' + goals[idx].title + '" updated';
-    }
-    if (tool === 'delete_goal') {
+      result = 'Goal "' + goals[idx].title + '" updated';
+    } else if (tool === 'delete_goal') {
       const goals = lsGet('axis_goals') || [];
       const idx   = goals.findIndex(function(g){ return g.id === params.id; });
       if (idx===-1) return 'Goal not found: ' + params.id;
       const title = goals[idx].title;
       goals.splice(idx, 1);
       lsSet('axis_goals', goals);
-      return 'Goal "' + title + '" deleted';
+      result = 'Goal "' + title + '" deleted';
+    } else if (tool === 'add_calendar_event') {
+      return await addCalendarEvent(params);
+    } else if (tool === 'mark_email_read') {
+      return await markEmailRead(params.id);
+    } else {
+      return 'Unknown tool: ' + tool;
     }
-    if (tool === 'add_calendar_event') return await addCalendarEvent(params);
-    if (tool === 'mark_email_read')    return await markEmailRead(params.id);
-    return 'Unknown tool: ' + tool;
+    // Push the affected scope to Supabase immediately so a page refresh can't
+    // overwrite the new value with a stale cloud snapshot.
+    await syncAfterAction(tool);
+    return result;
   }
 
   function parseActions(text) {
