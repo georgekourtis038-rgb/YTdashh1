@@ -462,9 +462,19 @@ GoogleAuth.init({
     loadInbox();
   },
   onNeedAuth: function() {
-    console.log('[Gmail] No valid token — showing auth card');
+    // First-time sign-in: show the full auth card
+    console.log('[Gmail] No stored token — showing auth card');
     gisReady = true;
     showAuthCard();
+  },
+  onExpired: function() {
+    // Session expired: show inbox skeleton and let the re-auth banner handle it
+    console.log('[Gmail] Token expired — re-auth banner shown by GoogleAuth');
+    gisReady = true;
+    document.getElementById('authCard').style.display = 'none';
+    document.getElementById('emSectionHeader').style.display = '';
+    document.getElementById('emList').style.display = '';
+    showState('<span style="opacity:.5;font-size:13px">Sign in again to load your inbox.</span>');
   },
   onSignIn: function(tok, err) {
     if (err) {

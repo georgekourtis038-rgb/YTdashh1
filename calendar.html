@@ -696,8 +696,15 @@ GoogleAuth.init({
     loadEvents();
   },
   onNeedAuth: function() {
+    // First-time sign-in: show the full auth card
     gisReady = true;
     showLoginCard();
+  },
+  onExpired: function() {
+    // Session expired: load what we can and let the re-auth banner handle it
+    gisReady = true;
+    document.getElementById('authCard').style.display = 'none';
+    loadEvents(); // will fail gracefully — banner is already shown by GoogleAuth
   },
   onSignIn: function(tok, err) {
     if (err) { console.error('[Calendar] Auth error:', err); return; }
