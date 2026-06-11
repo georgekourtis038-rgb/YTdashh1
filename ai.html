@@ -340,6 +340,27 @@ body {
 }
 .sidebar-new-btn:active { background: rgba(45,232,162,0.15); }
 
+/* ── Briefing retry button ── */
+.briefing-retry-btn {
+  display: inline-block;
+  margin-top: 10px;
+  padding: 6px 14px;
+  border-radius: 8px;
+  background: rgba(45,232,162,0.08);
+  border: 1px solid rgba(45,232,162,0.28);
+  color: var(--mint);
+  font-size: 12px;
+  font-family: var(--font);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.briefing-retry-btn:active { background: rgba(45,232,162,0.18); }
+
+/* ── Sidebar briefing row ── */
+.sidebar-briefing-row .sidebar-row-date { color: var(--mint) !important; opacity: 1 !important; }
+.sidebar-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
+
 /* ── Briefing loading state inside thread ── */
 .briefing-loading-row {
   align-self: flex-start; max-width: 85%;
@@ -427,6 +448,9 @@ body {
       if (window._pcTriggerSync) window._pcTriggerSync(k);
     } catch (_) {}
   }
+
+  // ── Briefing session ID (fixed, never deleted) ───────────────────
+  const BRIEFING_SESSION_ID = 'axis_daily_briefing';
 
   // ── Supabase ─────────────────────────────────────────────────────
   const _SUPA_URL  = 'https://oyylbiscxnymnmetyrho.supabase.co';
@@ -798,17 +822,26 @@ Available tools:
 
   // ── SSE streaming helper ─────────────────────────────────────────
   async function streamClaude(messages, onChunk) {
-    // Anthropic API requires messages to start with 'user'
-    const apiMessages = messages.slice();
-    if (apiMessages.length && apiMessages[0].role === 'assistant') {
-      apiMessages.unshift({ role: 'user', content: '[Continue from daily briefing]' });
+    // Strip internal flags; include hidden messages (they carry briefing context)
+    const apiMessages = messages
+      .filter(function(m){ return m.role === 'user' || m.role === 'assistant'; })
+      .map(function(m){ return { role: m.role, content: m.content || '' }; })
+      .filter(function(m){ return m.content; });
+
+    if (!apiMessages.length || apiMessages[0].role !== 'user') {
+      throw new Error('Conversation must begin with a user turn');
     }
+
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ system: buildSystemPrompt(), messages: apiMessages })
     });
-    if (!res.ok) throw new Error('API ' + res.status);
+    if (!res.ok) {
+      let errDetail = 'HTTP ' + res.status;
+      try { const j = await res.json(); errDetail += ': ' + (j.error || j.error_message || JSON.stringify(j)); } catch(_) {}
+      throw new Error(errDetail);
+    }
     const reader  = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = '', full = '';
@@ -822,7 +855,7 @@ Available tools:
         const raw = line.slice(6).trim(); if (!raw) continue;
         try {
           const evt = JSON.parse(raw);
-          if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta') {
+          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
             full += evt.delta.text; onChunk(full);
           }
         } catch (_) {}
@@ -835,7 +868,7 @@ Available tools:
   const SESSIONS_KEY = 'axis_chat_sessions';
   const ACTIVE_KEY   = 'axis_active_chat_id';
 
-  let chatHistory      = []; // [{ role, content }] — sent to API
+  let chatHistory      = []; // [{ role, content, hidden?, briefing? }] — sent to API (hidden included for context)
   let activeSessionId  = null;
 
   function getSessions()       { return lsGet(SESSIONS_KEY) || []; }
@@ -858,7 +891,8 @@ Available tools:
     const idx = sessions.findIndex(function(s){ return s.id === session.id; });
     if (idx >= 0) sessions[idx] = session;
     else sessions.unshift(session);
-    while (sessions.length > 30) sessions.pop(); // keep last 30
+    // Never trim the briefing session
+    while (sessions.length > 31 && sessions[sessions.length - 1].id !== BRIEFING_SESSION_ID) sessions.pop();
     saveSessions(sessions);
   }
 
@@ -867,10 +901,24 @@ Available tools:
     const sessions = getSessions();
     const session  = sessions.find(function(s){ return s.id === activeSessionId; });
     if (!session || !chatHistory.length) return;
-    session.messages = chatHistory.map(function(m){ return Object.assign({ ts: Date.now() }, m); });
-    session.preview  = getPreview(session.messages);
+    session.messages = chatHistory.map(function(m){ return Object.assign({}, m, { ts: m.ts || Date.now() }); });
+    if (!session.isBriefing) session.preview = getPreview(session.messages);
     saveSessions(sessions);
     _supaUpsert('chat_sessions', sessions);
+  }
+
+  function ensureBriefingSessionExists() {
+    const sessions = getSessions();
+    if (sessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; })) return;
+    sessions.unshift({
+      id: BRIEFING_SESSION_ID,
+      isBriefing: true,
+      createdAt: new Date(0).toISOString(),
+      briefingDates: [],
+      messages: [],
+      preview: 'Daily Briefing'
+    });
+    saveSessions(sessions);
   }
 
   // ── DOM helpers ──────────────────────────────────────────────────
@@ -1044,7 +1092,7 @@ Available tools:
     input.value   = '';
     input.disabled = true; sendBtn.disabled = true;
 
-    const userMsg = { role: 'user', content: text };
+    const userMsg = { role: 'user', content: text, ts: Date.now() };
     chatHistory.push(userMsg);
     appendMsg('user', text);
 
@@ -1065,33 +1113,44 @@ Available tools:
       else {
         const { clean, actions } = parseActions(full);
         if (clean !== full) aiText.textContent = clean;
-        chatHistory.push({ role: 'assistant', content: full });
+        chatHistory.push({ role: 'assistant', content: full, ts: Date.now() });
         saveCurrentSession();
         for (const action of actions) {
           appendActionCard(await executeAction(action.tool, action.params));
         }
       }
-    } catch (_) {
+    } catch (err) {
       aiBubble.classList.remove('streaming');
       typingEl.remove();
       if (attached) aiWrap.remove();
-      chatHistory.pop(); // remove the user msg we optimistically added
-      appendMsg('ai', 'Something went wrong — check your connection or try again.');
+      chatHistory.pop();
+      const errMsg = (err && err.message) ? err.message : String(err);
+      console.error('[chat] sendMessage error:', errMsg);
+      appendMsg('ai', 'Error: ' + errMsg);
     } finally {
       input.disabled = false; sendBtn.disabled = false; input.focus();
     }
   }
 
-  // ── Briefing ─────────────────────────────────────────────────────
-  async function ensureBriefingForToday() {
-    // Check if today's briefing already exists in this session
+  // ── Daily Briefing (persistent, one chat forever) ────────────────
+  async function runTodaysBriefing() {
+    const todayKey = todayStr();
     const sessions = getSessions();
-    const session  = sessions.find(function(s){ return s.id === activeSessionId; });
-    if (session && session.briefingDate === todayStr()) return;
+    const session  = sessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
+    if (session && Array.isArray(session.briefingDates) && session.briefingDates.includes(todayKey)) return;
 
-    // Show loading row
-    const thread   = document.getElementById('chatThread');
-    const loadRow  = document.createElement('div');
+    const thread    = document.getElementById('chatThread');
+    const now       = new Date();
+    const dateLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
+
+    // Date separator for today
+    const sep = document.createElement('div');
+    sep.className   = 'chat-date-sep';
+    sep.textContent = dateLabel;
+    thread.appendChild(sep);
+
+    // Loading indicator
+    const loadRow = document.createElement('div');
     loadRow.className = 'briefing-loading-row';
     loadRow.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span>Preparing your briefing…</span>';
     thread.appendChild(loadRow);
@@ -1099,95 +1158,167 @@ Available tools:
 
     const { wrap: bWrap, bubble: bBubble, textNode: bText } = buildMsgEl('ai', '', { isBriefing: true });
     bBubble.classList.add('streaming');
-
     let briefingFull = '';
+    let attached = false;
+
+    function attachBriefing() {
+      if (attached) return;
+      attached = true;
+      if (loadRow.parentNode) loadRow.remove();
+      if (!bWrap.parentNode) thread.appendChild(bWrap);
+    }
+
+    const briefingRequest = 'Daily briefing — ' + dateLabel + '. Format strictly as follows:\n'
+      + '1. Start with the date as a bold header: "' + dateLabel + '"\n'
+      + '2. Long-term goals: brief current status and one concrete action for today to stay on track.\n'
+      + '3. Calendar: highlight any events today or tomorrow (skip if none).\n'
+      + '4. Emails: flag up to two unread emails worth acting on (skip if none).\n'
+      + 'Tone: concise, professional, butler. No exclamation marks, no motivational language. Under 120 words total.';
+
+    // Build API messages: existing session history + today's request
+    const existingMsgs = (session && session.messages ? session.messages : [])
+      .map(function(m){ return { role: m.role, content: m.content || '' }; })
+      .filter(function(m){ return m.content; });
+    const apiMessages = existingMsgs.concat([{ role: 'user', content: briefingRequest }]);
+
     try {
-      await streamClaude([{
-        role: 'user',
-        content: 'Give me a concise daily briefing. Lead with the single most important thing for today — factoring in calendar events, pending goals, and any emails that connect to my priorities. Call out scheduling conflicts or high-signal emails worth acting on. Be specific, reference actual times and names. Stay under 60 words.'
-      }], function(accumulated) {
-        if (!loadRow.parentNode) return;
-        loadRow.remove();
-        if (!bWrap.parentNode) thread.appendChild(bWrap);
+      briefingFull = await streamClaude(apiMessages, function(accumulated) {
+        attachBriefing();
         bText.textContent = accumulated;
-        briefingFull      = accumulated;
         scrollToBottom();
       });
       bBubble.classList.remove('streaming');
-      if (!briefingFull) throw new Error('empty');
+      if (!briefingFull) throw new Error('empty response from API');
+      attachBriefing();
 
-      // Add briefing to chatHistory as assistant turn
-      chatHistory.unshift({ role: 'assistant', content: briefingFull, briefing: true });
+      // Persist hidden user msg + assistant briefing to the session
+      const hiddenUserMsg = { role: 'user', content: briefingRequest, hidden: true, ts: Date.now() };
+      const assistantMsg  = { role: 'assistant', content: briefingFull, briefing: true, ts: Date.now() };
 
-      // Update session
       const sessions2 = getSessions();
-      const s2 = sessions2.find(function(s){ return s.id === activeSessionId; });
+      const s2 = sessions2.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
       if (s2) {
-        s2.briefingDate = todayStr();
-        s2.messages     = chatHistory.map(function(m){ return Object.assign({ ts: Date.now() }, m); });
-        s2.preview      = briefingFull.slice(0,72) + (briefingFull.length>72?'…':'');
+        if (!Array.isArray(s2.briefingDates)) s2.briefingDates = [];
+        s2.briefingDates.push(todayKey);
+        if (!Array.isArray(s2.messages)) s2.messages = [];
+        s2.messages.push(hiddenUserMsg);
+        s2.messages.push(assistantMsg);
+        s2.preview = dateLabel + ' — ' + briefingFull.replace(/\n/g,' ').slice(0, 50) + '…';
         saveSessions(sessions2);
         _supaUpsert('chat_sessions', sessions2);
       }
-      // Also cache for legacy uses and push notification checks
-      const obj = { date: todayStr(), text: briefingFull };
+
+      // Rebuild chatHistory from saved session so it includes the new pair
+      const s3 = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
+      if (s3) {
+        chatHistory = (s3.messages || []).map(function(m){
+          return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+        });
+      }
+
+      // Legacy cache for push-init
+      const obj = { date: todayKey, text: briefingFull };
       try { localStorage.setItem('axis_briefing_cache', JSON.stringify(obj)); } catch(_) {}
       _supaUpsert('briefing', obj);
 
-    } catch (_) {
-      if (loadRow.parentNode) loadRow.remove();
+    } catch (err) {
       bBubble.classList.remove('streaming');
-      if (!bWrap.parentNode) thread.appendChild(bWrap);
-      bText.textContent = 'Could not load briefing — check your connection or try again.';
+      attachBriefing();
+      const errMsg = (err && err.message) ? err.message : String(err);
+      console.error('[briefing] error:', errMsg);
+      if (briefingFull) {
+        bText.textContent = briefingFull + '\n\n[Briefing cut short — ' + errMsg + ']';
+      } else {
+        bText.textContent = 'Could not load briefing: ' + errMsg;
+      }
+      // Retry button
+      const retryBtn = document.createElement('button');
+      retryBtn.className   = 'briefing-retry-btn';
+      retryBtn.textContent = '⟳ Retry';
+      retryBtn.addEventListener('click', function() {
+        retryBtn.remove();
+        bWrap.remove();
+        if (sep.parentNode) sep.remove();
+        runTodaysBriefing();
+      });
+      bBubble.appendChild(retryBtn);
     }
 
     renderSidebar();
   }
 
-  // ── New chat ─────────────────────────────────────────────────────
-  async function newChat() {
+  // ── New chat (regular — no briefing) ─────────────────────────────
+  function newChat() {
     saveCurrentSession();
     const id = genSessionId();
     activeSessionId = id;
     localStorage.setItem(ACTIVE_KEY, id);
     chatHistory = [];
-    upsertSession({ id, createdAt: new Date().toISOString(), briefingDate: null, messages: [], preview: 'New conversation' });
+    upsertSession({ id, createdAt: new Date().toISOString(), messages: [], preview: 'New conversation' });
     document.getElementById('chatThread').innerHTML = '';
     closeSidebar();
-    await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
-    await ensureBriefingForToday();
     renderSidebar();
   }
 
   // ── Load session ─────────────────────────────────────────────────
-  function loadSession(id) {
+  async function loadSession(id) {
     saveCurrentSession();
     activeSessionId = id;
     localStorage.setItem(ACTIVE_KEY, id);
     const session = getSessions().find(function(s){ return s.id === id; });
     if (!session) return;
-    chatHistory = (session.messages || []).filter(function(m){ return !m.hidden; }).map(function(m){ return { role: m.role, content: m.content, briefing: m.briefing }; });
+    chatHistory = (session.messages || []).map(function(m){
+      return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+    });
     renderThread(session.messages || []);
     closeSidebar();
     renderSidebar();
+    if (id === BRIEFING_SESSION_ID) {
+      await runTodaysBriefing();
+    }
   }
 
   // ── Sidebar ──────────────────────────────────────────────────────
   function renderSidebar() {
-    const list     = document.getElementById('sidebarList');
+    const list = document.getElementById('sidebarList');
     list.innerHTML = '';
-    const sessions = getSessions().slice().sort(function(a, b){ return b.createdAt.localeCompare(a.createdAt); });
-    if (!sessions.length) {
+    const allSessions = getSessions();
+
+    // Briefing session pinned at top
+    const briefingSession = allSessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
+    if (briefingSession) {
+      const row = document.createElement('button');
+      row.className = 'sidebar-row sidebar-briefing-row' + (activeSessionId === BRIEFING_SESSION_ID ? ' active' : '');
+      row.innerHTML = '<span class="sidebar-row-date">⚡ Daily Briefing</span>'
+        + '<span class="sidebar-row-preview">' + escHtml(briefingSession.preview || 'Daily Briefing') + '</span>';
+      row.addEventListener('click', function(){ loadSession(BRIEFING_SESSION_ID); });
+      list.appendChild(row);
+      const divider = document.createElement('div');
+      divider.className = 'sidebar-divider';
+      list.appendChild(divider);
+    }
+
+    // Regular sessions sorted newest first
+    const regular = allSessions
+      .filter(function(s){ return s.id !== BRIEFING_SESSION_ID; })
+      .slice()
+      .sort(function(a, b){ return b.createdAt.localeCompare(a.createdAt); });
+
+    if (!regular.length && !briefingSession) {
       list.innerHTML = '<p class="sidebar-empty">No past conversations</p>';
       return;
     }
-    sessions.forEach(function(s) {
-      const row      = document.createElement('button');
-      row.className  = 'sidebar-row' + (s.id === activeSessionId ? ' active' : '');
-      const d        = new Date(s.createdAt);
-      const dateLabel= d.toLocaleDateString('en-US', { month:'short', day:'numeric', year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined });
-      row.innerHTML  = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>' +
-                       '<span class="sidebar-row-preview">' + escHtml(s.preview || 'New conversation') + '</span>';
+
+    regular.forEach(function(s) {
+      const row = document.createElement('button');
+      row.className = 'sidebar-row' + (s.id === activeSessionId ? ' active' : '');
+      const d = new Date(s.createdAt);
+      const dateLabel = d.toLocaleDateString('en-US', {
+        month: 'short', day: 'numeric',
+        year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+      });
+      row.innerHTML = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>'
+        + '<span class="sidebar-row-preview">' + escHtml(s.preview || 'New conversation') + '</span>';
       row.addEventListener('click', function(){ loadSession(s.id); });
       list.appendChild(row);
     });
@@ -1207,40 +1338,43 @@ Available tools:
   async function boot() {
     document.getElementById('aiGreeting').textContent = getGreeting();
 
-    // Fetch calendar + email context before building briefing
     await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
 
     // Sync sessions from Supabase (cross-device)
     const remoteSessions = await _supaFetch('chat_sessions');
     if (Array.isArray(remoteSessions) && remoteSessions.length) {
-      // Merge: keep any local sessions not in remote, then save merged set
-      const local    = getSessions();
+      const local     = getSessions();
       const remoteIds = new Set(remoteSessions.map(function(s){ return s.id; }));
-      const merged   = remoteSessions.concat(local.filter(function(s){ return !remoteIds.has(s.id); }));
+      const merged    = remoteSessions.concat(local.filter(function(s){ return !remoteIds.has(s.id); }));
       merged.sort(function(a,b){ return b.createdAt.localeCompare(a.createdAt); });
-      while (merged.length > 30) merged.pop();
+      while (merged.length > 31) merged.pop();
       saveSessions(merged);
     }
 
-    // Restore or create active session
+    // Ensure the permanent briefing session exists
+    ensureBriefingSessionExists();
+
+    // Restore last active session; default to briefing session
     let activeId = localStorage.getItem(ACTIVE_KEY);
     let session  = activeId ? getSessions().find(function(s){ return s.id === activeId; }) : null;
     if (!session) {
-      activeId = genSessionId();
-      session  = { id: activeId, createdAt: new Date().toISOString(), briefingDate: null, messages: [], preview: 'New conversation' };
-      upsertSession(session);
-      localStorage.setItem(ACTIVE_KEY, activeId);
+      activeId = BRIEFING_SESSION_ID;
+      session  = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
     }
-    activeSessionId = session.id;
+    activeSessionId = activeId;
+    localStorage.setItem(ACTIVE_KEY, activeId);
 
-    // Restore messages into thread
-    if (session.messages && session.messages.length) {
-      chatHistory = session.messages.filter(function(m){ return !m.hidden; }).map(function(m){ return { role: m.role, content: m.content, briefing: m.briefing }; });
+    if (session && session.messages && session.messages.length) {
+      chatHistory = session.messages.map(function(m){
+        return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+      });
       renderThread(session.messages);
     }
 
-    // Generate briefing if not yet done today
-    await ensureBriefingForToday();
+    // Run today's briefing if we're in the briefing session
+    if (activeSessionId === BRIEFING_SESSION_ID) {
+      await runTodaysBriefing();
+    }
     renderSidebar();
 
     // Wire UI
