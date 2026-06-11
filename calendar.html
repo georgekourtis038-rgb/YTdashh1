@@ -11,6 +11,7 @@
 <title>Axis — Calendar</title>
 <script src="topbar.js" defer></script>
 <script src="/push-init.js" defer></script>
+<script src="google-auth.js"></script>
 <style>
 :root {
   --bg: #0a0f0e;
@@ -668,28 +669,8 @@ function esc(s) {
 }
 
 // -------------------------------------------------------
-// Google Identity Services boot
+// Google Identity Services boot — delegated to google-auth.js
 // -------------------------------------------------------
-function onGISLoad() {
-  gisReady = true;
-  if (!GOOGLE_CLIENT_ID) { showSetupCard(); return; }
-  const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
-  const tok    = stored && stored.token;
-  const expiry = stored && stored.expiry || 0;
-  if (tok && Date.now() < expiry) {
-    accessToken = tok;
-    document.getElementById('authCard').style.display = 'none';
-    loadEvents();
-  } else {
-    showLoginCard();
-  }
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: SCOPES,
-    callback: onToken,
-  });
-}
-
 function showSetupCard() {
   const card = document.getElementById('authCard');
   card.style.display = '';
@@ -704,38 +685,51 @@ function showLoginCard() {
 }
 
 function authenticate() {
-  if (!gisReady) { alert('Google Identity Services not loaded yet. Please wait.'); return; }
-  if (!GOOGLE_CLIENT_ID) { showSetupCard(); return; }
-  if (!tokenClient) return;
-  tokenClient.requestAccessToken({ prompt: '' });
+  GoogleAuth.signIn();
 }
 
-function onToken(resp) {
-  if (resp.error) return;
-  accessToken = resp.access_token;
-  const ttl = ((resp.expires_in || 3600) * 1000) - 60000;
-  localStorage.setItem('google_calendar_token', JSON.stringify({ token: accessToken, expiry: Date.now() + ttl }));
-  document.getElementById('authCard').style.display = 'none';
-  loadEvents();
-}
+GoogleAuth.init({
+  onReady: function(tok) {
+    accessToken = tok;
+    gisReady = true;
+    document.getElementById('authCard').style.display = 'none';
+    loadEvents();
+  },
+  onNeedAuth: function() {
+    gisReady = true;
+    showLoginCard();
+  },
+  onSignIn: function(tok, err) {
+    if (err) { console.error('[Calendar] Auth error:', err); return; }
+    accessToken = tok;
+    document.getElementById('authCard').style.display = 'none';
+    loadEvents();
+  },
+  onSignOut: function() {
+    accessToken = null;
+    showLoginCard();
+  },
+});
 
 // -------------------------------------------------------
 // Calendar REST API
 // -------------------------------------------------------
 async function apiFetch(path, opts = {}) {
-  if (!accessToken) return null;
+  // Always get a fresh (or silently refreshed) token before each call
+  const tok = await GoogleAuth.getToken();
+  if (!tok) { showLoginCard(); return null; }
+  accessToken = tok;
   const res = await fetch(API + path, {
     ...opts,
     headers: {
-      'Authorization': 'Bearer ' + accessToken,
+      'Authorization': 'Bearer ' + tok,
       'Content-Type': 'application/json',
       ...(opts.headers || {}),
     },
   });
   if (res.status === 401) {
-    accessToken = null;
-    localStorage.removeItem('google_calendar_token');
-    showLoginCard();
+    // Token rejected by Google despite refresh — force full re-auth
+    GoogleAuth.signOut();
     return null;
   }
   if (!res.ok) return null;
@@ -1053,6 +1047,6 @@ document.getElementById('createModalBg').addEventListener('click', e => {
 })();
 </script>
 <!-- Google Identity Services — onload triggers auth init -->
-<script src="https://accounts.google.com/gsi/client" onload="onGISLoad()" async defer></script>
+<script src="https://accounts.google.com/gsi/client" onload="GoogleAuth._onGISReady()" async defer></script>
 </body>
 </html>

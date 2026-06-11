@@ -10,6 +10,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Axis — Email</title>
 <script src="topbar.js" defer></script>
+<script src="google-auth.js"></script>
 <style>
 :root {
   --bg: #0a0f0e;
@@ -433,39 +434,8 @@ let activeFilter = 'all';
 let searchQuery = '';
 
 // -------------------------------------------------------
-// Auth
+// Auth — delegated to google-auth.js
 // -------------------------------------------------------
-function onGISLoad() {
-  console.log('[Gmail] GIS library loaded');
-  gisReady = true;
-  if (!GOOGLE_CLIENT_ID) {
-    showState('<strong>Setup required</strong><br>Add GOOGLE_CLIENT_ID to email.html.');
-    return;
-  }
-  const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
-  if (stored) {
-    console.log('[Gmail] Stored token found — expires in',
-      Math.round(((stored.expiry || 0) - Date.now()) / 1000) + 's');
-  } else {
-    console.log('[Gmail] No stored token');
-  }
-  const tok = stored && stored.token;
-  const expiry = stored && stored.expiry || 0;
-  if (tok && Date.now() < expiry) {
-    console.log('[Gmail] Token valid — loading inbox');
-    accessToken = tok;
-    loadInbox();
-  } else {
-    console.log('[Gmail] Token missing or expired — showing auth card');
-    showAuthCard();
-  }
-  tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: SCOPES,
-    callback: onToken,
-  });
-}
-
 function showAuthCard() {
   document.getElementById('authCard').style.display = '';
   document.getElementById('emStateWrap').innerHTML = '';
@@ -474,65 +444,66 @@ function showAuthCard() {
 }
 
 function authenticate() {
-  if (!gisReady || !tokenClient) { console.warn('[Gmail] Auth called before GIS ready'); return; }
-  // Use 'consent' prompt so Google always shows the scope grant screen.
-  // This ensures gmail.readonly is included even if the user previously only granted calendar.
-  console.log('[Gmail] Requesting access token (prompt=consent)');
-  tokenClient.requestAccessToken({ prompt: 'consent' });
+  GoogleAuth.signIn();
 }
 
 function reauthorize() {
-  console.log('[Gmail] Reauthorizing — clearing old token');
-  localStorage.removeItem('google_calendar_token');
-  accessToken = null;
-  document.getElementById('authCard').style.display = '';
-  authenticate();
+  console.log('[Gmail] Reauthorizing — clearing stored tokens');
+  GoogleAuth.signOut();
+  GoogleAuth.signIn();
 }
 
-function onToken(resp) {
-  console.log('[Gmail] Token response — error:', resp.error || 'none',
-    '| scope:', resp.scope || 'not returned', '| expires_in:', resp.expires_in);
-  if (resp.error) {
-    console.error('[Gmail] Auth failed:', resp.error, resp.error_description);
-    showState(`<strong style="color:rgba(255,200,120,0.95)">Sign-in error: ${esc(resp.error)}</strong><br>
-      <small style="opacity:.6">${esc(resp.error_description || '')}</small>`);
-    return;
-  }
-  if (resp.scope && !resp.scope.includes('gmail')) {
-    console.warn('[Gmail] Token granted WITHOUT gmail scope. Granted scopes:', resp.scope);
-    showState(`<strong style="color:rgba(255,200,120,0.95)">Gmail access not granted</strong><br>
-      The sign-in completed but Gmail permission was not included.<br>
-      <button onclick="reauthorize()" style="margin-top:12px;padding:10px 20px;background:var(--mint-dim);border:1.5px solid var(--mint);border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Grant Gmail Access</button><br>
-      <small style="opacity:.5;display:block;margin-top:6px">Granted scopes: ${esc(resp.scope)}</small>`);
-    return;
-  }
-  accessToken = resp.access_token;
-  const ttl = ((resp.expires_in || 3600) * 1000) - 60000;
-  localStorage.setItem('google_calendar_token', JSON.stringify({
-    token: accessToken,
-    expiry: Date.now() + ttl,
-  }));
-  console.log('[Gmail] Token stored. Loading inbox…');
-  document.getElementById('authCard').style.display = 'none';
-  document.getElementById('emStateWrap').innerHTML = '';
-  loadInbox();
-}
+GoogleAuth.init({
+  onReady: function(tok) {
+    console.log('[Gmail] Stored token valid — loading inbox');
+    accessToken = tok;
+    gisReady = true;
+    document.getElementById('authCard').style.display = 'none';
+    loadInbox();
+  },
+  onNeedAuth: function() {
+    console.log('[Gmail] No valid token — showing auth card');
+    gisReady = true;
+    showAuthCard();
+  },
+  onSignIn: function(tok, err) {
+    if (err) {
+      console.error('[Gmail] Auth error:', err);
+      showState('<strong style="color:rgba(255,200,120,0.95)">Sign-in error</strong><br>'
+        + '<small style="opacity:.6">' + esc(err) + '</small>');
+      return;
+    }
+    console.log('[Gmail] Signed in — loading inbox');
+    accessToken = tok;
+    document.getElementById('authCard').style.display = 'none';
+    document.getElementById('emStateWrap').innerHTML = '';
+    loadInbox();
+  },
+  onSignOut: function() {
+    console.log('[Gmail] Signed out — showing auth card');
+    accessToken = null;
+    showAuthCard();
+  },
+});
 
 // -------------------------------------------------------
 // Gmail API — returns data on success, { _error, _status, _message } on failure
 // -------------------------------------------------------
 async function gmailFetch(path, opts) {
-  if (!accessToken) {
-    console.warn('[Gmail] gmailFetch with no token');
+  // Always get a fresh (or silently refreshed) token before each call
+  const tok = await GoogleAuth.getToken();
+  if (!tok) {
+    console.warn('[Gmail] gmailFetch — not authenticated');
     return { _error: true, _status: 0, _message: 'Not authenticated' };
   }
+  accessToken = tok;
   const url = GMAIL_API + path;
   console.log('[Gmail] →', path.split('?')[0], path.includes('?') ? '?' + path.split('?')[1].slice(0, 60) : '');
   let res;
   try {
     res = await fetch(url, {
       ...(opts || {}),
-      headers: { 'Authorization': 'Bearer ' + accessToken, ...((opts && opts.headers) || {}) },
+      headers: { 'Authorization': 'Bearer ' + tok, ...((opts && opts.headers) || {}) },
     });
   } catch (err) {
     console.error('[Gmail] Network error on', path, err);
@@ -545,8 +516,8 @@ async function gmailFetch(path, opts) {
     const msg = (body && body.error && body.error.message) || ('HTTP ' + res.status);
     console.error('[Gmail] API error', res.status, msg, JSON.stringify(body));
     if (res.status === 401) {
-      accessToken = null;
-      localStorage.removeItem('google_calendar_token');
+      // Token rejected by Google despite refresh — force full re-auth
+      GoogleAuth.signOut();
     }
     return { _error: true, _status: res.status, _message: msg, _body: body };
   }
@@ -917,6 +888,6 @@ document.getElementById('emSearch').addEventListener('keydown', e => {
   }
 });
 </script>
-<script src="https://accounts.google.com/gsi/client" onload="onGISLoad()" async defer></script>
+<script src="https://accounts.google.com/gsi/client" onload="GoogleAuth._onGISReady()" async defer></script>
 </body>
 </html>

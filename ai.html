@@ -11,6 +11,7 @@
 <title>Axis AI</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="topbar.js" defer></script>
+<script src="google-auth.js"></script>
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -633,15 +634,6 @@ body {
     } catch (_) { return null; }
   }
 
-  // ── Google token helper ──────────────────────────────────────────
-  function _getGmailToken() {
-    try {
-      const stored = JSON.parse(localStorage.getItem('google_calendar_token') || 'null');
-      if (!stored || !stored.token || Date.now() >= (stored.expiry || 0)) return null;
-      return stored.token;
-    } catch (_) { return null; }
-  }
-
   // ── Gmail inbox context ──────────────────────────────────────────
   let _cachedGmailEmails = []; // [{ id, sender, subject, snippet }]
 
@@ -655,7 +647,7 @@ body {
 
   async function fetchGmailEmails() {
     if (loadGmailFromCache()) return;
-    const tok = _getGmailToken();
+    const tok = await GoogleAuth.getToken();
     if (!tok) return;
     try {
       const listRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=5',
@@ -682,7 +674,7 @@ body {
   let _calendarEvents = { today: [], tomorrow: [] };
 
   async function fetchCalendarEvents() {
-    const tok = _getGmailToken();
+    const tok = await GoogleAuth.getToken();
     if (!tok) return;
     try {
       const tz       = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -1003,7 +995,7 @@ Available tools:
 
   // ── Action executors ─────────────────────────────────────────────
   async function addCalendarEvent(params) {
-    const tok = _getGmailToken();
+    const tok = await GoogleAuth.getToken();
     if (!tok) return 'Calendar not connected — sign in via the email page first.';
     try {
       const tz    = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -1022,7 +1014,7 @@ Available tools:
   }
 
   async function markEmailRead(msgId) {
-    const tok = _getGmailToken();
+    const tok = await GoogleAuth.getToken();
     if (!tok) return 'Gmail not connected — sign in via the email page first.';
     try {
       const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+msgId+'/modify',
