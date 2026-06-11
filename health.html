@@ -1001,6 +1001,7 @@ main {
         <input type="file" id="calPhotoInput" accept="image/*" style="display:none">
         <div id="calPhotoStatus" class="cal-photo-status" hidden></div>
         <img id="calPhotoPreviewImg" class="cal-photo-preview-img" alt="" hidden>
+        <textarea id="calPhotoContext" class="cal-input" rows="2" placeholder="Add context (optional) — e.g. 'large portion' or 'Chipotle chicken bowl'" style="display:none;resize:none;margin-top:10px;font-size:14px;line-height:1.4;"></textarea>
         <div id="calPhotoResult" class="cal-photo-result" hidden></div>
       </div>
 
@@ -2574,11 +2575,12 @@ main {
   /* ====== PHOTO ANALYSIS (Claude vision) ====== */
   let calPhotoEstimate = null;
 
-  async function calAnalyzePhoto(base64, mimeType) {
+  async function calAnalyzePhoto(base64, mimeType, context) {
     calShowPhotoStatus('⏳ Analysing your meal…');
     document.getElementById('calPhotoResult').hidden = true;
 
-    const prompt = `Analyse this meal photo and estimate its nutritional content. Return ONLY a JSON object:
+    const contextNote = context ? `\nAdditional context from the user: "${context}"` : '';
+    const prompt = `Analyse this meal photo and estimate its nutritional content.${contextNote} Return ONLY a JSON object:
 {
   "name": "brief meal description (e.g. 'Grilled chicken with rice and salad')",
   "kcal": total estimated calories as number,
@@ -2680,6 +2682,9 @@ Be realistic. Return valid JSON only, no other text.`;
     calPhotoEstimate = null;
     document.getElementById('calPhotoResult').hidden   = true;
     document.getElementById('calPhotoPreviewImg').hidden = true;
+    const ctxEl = document.getElementById('calPhotoContext');
+    ctxEl.value = '';
+    ctxEl.style.display = 'none';
     calShowPhotoStatus('');
     calFullRender();
   }
@@ -2892,10 +2897,13 @@ Be realistic. Return valid JSON only, no other text.`;
     const imgEl = document.getElementById('calPhotoPreviewImg');
     imgEl.src    = URL.createObjectURL(file);
     imgEl.hidden = false;
+    const ctxEl = document.getElementById('calPhotoContext');
+    ctxEl.style.display = '';
     const reader = new FileReader();
     reader.onload = async (ev) => {
       const base64 = ev.target.result.split(',')[1];
-      await calAnalyzePhoto(base64, mimeType);
+      const context = ctxEl.value.trim();
+      await calAnalyzePhoto(base64, mimeType, context);
     };
     reader.readAsDataURL(file);
     e.target.value = '';
