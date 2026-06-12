@@ -3,720 +3,305 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0f0e">
+<meta name="theme-color" content="#060908">
 <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="axis-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Axis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
 html,body{
   width:100%;height:100%;
-  background:#0a0f0e;
+  background:#060908;
   overflow:hidden;
-  font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
-  -webkit-font-smoothing:antialiased;
+  font-family:'Geist','Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
 }
 
 .scene{
   position:relative;
   width:100vw;height:100dvh;
+  display:flex;flex-direction:column;align-items:center;justify-content:space-between;
+  padding:calc(env(safe-area-inset-top,0px) + 44px) 32px calc(env(safe-area-inset-bottom,0px) + 54px);
+  background:radial-gradient(135% 80% at 50% -8%,#102a22 0%,#0a1512 38%,#070b0a 70%,#060908 100%);
+  animation:sceneIn 0.6s ease both;
+}
+@keyframes sceneIn{0%{opacity:0}100%{opacity:1}}
+
+/* ── top label ── */
+.top-label{
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  margin-top:14px;
+  animation:slideUp 0.55s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+}
+.top-label span{
+  font-family:'Geist Mono',monospace;
+  font-size:12px;letter-spacing:.42em;
+  color:rgba(45,232,162,.8);
+  text-transform:uppercase;
+  padding-left:.42em;
+}
+
+/* ── ring graphic ── */
+.ring-wrap{
+  position:relative;
+  width:266px;height:266px;
   display:flex;align-items:center;justify-content:center;
-  will-change:opacity;
-  animation:sceneIn 0.8s ease both;
-}
-@keyframes sceneIn{0%{opacity:0;}100%{opacity:1;}}
-
-.scene::before{
-  content:'';position:absolute;inset:0;
-  background-image:radial-gradient(rgba(45,232,162,0.022) 1px,transparent 1px);
-  background-size:28px 28px;
-  pointer-events:none;z-index:0;
+  flex-shrink:0;
+  animation:slideUp 0.6s cubic-bezier(0.16,1,0.3,1) 0.18s both;
 }
 
-/* star canvas sits behind everything — own GPU layer */
-@keyframes starFadeIn{0%{opacity:0}100%{opacity:1}}
-#starCanvas{
-  position:absolute;inset:0;
-  pointer-events:none;z-index:0;
-  will-change:transform;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  animation:starFadeIn 1.5s ease 0.4s both;
-}
-
-/* deep teal centered ellipse glow */
-.bg-glow{
-  position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 60% at 50% 50%, rgba(45,232,162,0.07) 0%, transparent 70%);
-  pointer-events:none;z-index:0;
-}
-
-/* ambient layers */
-.ambient{
+/* ambient glow */
+.ring-glow{
   position:absolute;
-  width:min(90vw,640px);height:min(90vw,640px);
+  width:240px;height:240px;
   border-radius:50%;
-  background:radial-gradient(circle,rgba(45,232,162,0.08) 0%,rgba(45,232,162,0.025) 45%,transparent 68%);
-  pointer-events:none;z-index:0;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  animation:ambientPulse 5.5s ease-in-out infinite;
-}
-@keyframes ambientPulse{
-  0%,100%{-webkit-transform:scale(1) translateZ(0);    transform:scale(1) translateZ(0);    opacity:1;}
-  50%    {-webkit-transform:scale(1.14) translateZ(0); transform:scale(1.14) translateZ(0); opacity:0.5;}
-}
-.ambient2{
-  position:absolute;
-  width:min(150vw,1000px);height:min(150vw,1000px);
-  border-radius:50%;
-  background:radial-gradient(circle,rgba(45,232,162,0.028) 0%,transparent 58%);
-  pointer-events:none;z-index:0;
-  opacity:0.6;
-}
-
-/* ── axis stage: single GPU layer, floats up/down ── */
-.axis-stage{
-  position:relative;z-index:1;
-  display:flex;align-items:center;justify-content:center;
-  will-change:transform;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  transform-origin:center center;
-  animation:axisFloat 4s ease-in-out infinite;
-}
-@keyframes axisFloat{
-  0%,100%{-webkit-transform:translate3d(0,60px,0);    transform:translate3d(0,60px,0);}
-  50%    {-webkit-transform:translate3d(0,48px,0); transform:translate3d(0,48px,0);}
-}
-
-@keyframes axisIn{
-  0%  {opacity:0;-webkit-transform:scale(0.85) translateZ(0);transform:scale(0.85) translateZ(0);}
-  100%{opacity:1;-webkit-transform:scale(1) translateZ(0);   transform:scale(1) translateZ(0);}
-}
-.axis-wrap{
-  width:min(116vw,760px);height:min(116vw,760px);flex-shrink:0;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  animation:axisIn 1s cubic-bezier(0.16,1,0.3,1) both;
-}
-.axis-wrap svg{width:100%;height:100%;overflow:visible;}
-
-/* ── ring gyroscope: GPU-composited rotation ── */
-.r1,.r2,.r3,.r4{
-  transform-box:view-box;
-  transform-origin:center center;
-  will-change:transform;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-}
-.r1{animation:ringCW  20s linear infinite;}
-.r2{animation:ringCCW 30s linear infinite;}
-.r3{animation:ringCW  40s linear infinite;}
-.r4{animation:ringCCW 50s linear infinite;}
-@keyframes ringCW{
-  from{-webkit-transform:translate3d(0,0,0) rotate(0deg);   transform:translate3d(0,0,0) rotate(0deg);}
-  to  {-webkit-transform:translate3d(0,0,0) rotate(360deg); transform:translate3d(0,0,0) rotate(360deg);}
-}
-@keyframes ringCCW{
-  from{-webkit-transform:translate3d(0,0,0) rotate(0deg);    transform:translate3d(0,0,0) rotate(0deg);}
-  to  {-webkit-transform:translate3d(0,0,0) rotate(-360deg); transform:translate3d(0,0,0) rotate(-360deg);}
-}
-
-/* ── arm pendulum ── */
-.arm-group{
-  transform-box:view-box;
-  transform-origin:center center;
-  will-change:transform;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  animation:armPendulum 6s ease-in-out infinite;
-}
-@keyframes armPendulum{
-  0%,100%{-webkit-transform:translate3d(0,0,0) rotate(-8deg); transform:translate3d(0,0,0) rotate(-8deg);}
-  50%    {-webkit-transform:translate3d(0,0,0) rotate(8deg);  transform:translate3d(0,0,0) rotate(8deg);}
-}
-
-/* origin breathing */
-.ob1{animation:ob 3s ease-in-out infinite;}
-@keyframes ob{0%,100%{opacity:0.72;}50%{opacity:0.18;}}
-
-/* ── card entrance keyframes (per-card target opacity) ── */
-@keyframes cardIn0{0%{opacity:0;-webkit-transform:translate3d(0,14px,0);transform:translate3d(0,14px,0)}100%{opacity:0.70;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}
-@keyframes cardIn1{0%{opacity:0;-webkit-transform:translate3d(0,14px,0);transform:translate3d(0,14px,0)}100%{opacity:0.75;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}
-@keyframes cardIn2{0%{opacity:0;-webkit-transform:translate3d(0,14px,0);transform:translate3d(0,14px,0)}100%{opacity:1;  -webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}
-@keyframes cardIn3{0%{opacity:0;-webkit-transform:translate3d(0,14px,0);transform:translate3d(0,14px,0)}100%{opacity:0.85;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}
-
-/* ── glass pill cards ── */
-.card{
-  position:absolute;z-index:8;
-  display:flex;align-items:center;gap:9px;
-  padding:9px 15px;
-  border-radius:50px;
-  background:linear-gradient(135deg,rgba(18,40,30,0.52),rgba(6,14,10,0.68));
-  backdrop-filter:blur(20px) saturate(1.6);
-  -webkit-backdrop-filter:blur(20px) saturate(1.6);
-  border:1px solid rgba(45,232,162,0.15);
-  box-shadow:
-    0 4px 22px rgba(0,0,0,0.52),
-    0 0 12px rgba(45,232,162,0.06),
-    inset 0 1px 0 rgba(255,255,255,0.055);
-  white-space:nowrap;
-  cursor:pointer;
-  transition:border-color 0.25s,box-shadow 0.25s;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-}
-.card:hover{
-  opacity:1 !important;
-  border-color:rgba(45,232,162,0.34);
-  box-shadow:
-    0 4px 22px rgba(0,0,0,0.52),
-    0 0 22px rgba(45,232,162,0.15),
-    inset 0 1px 0 rgba(255,255,255,0.08);
-}
-.card:active{-webkit-transform:scale(0.95) translateZ(0);transform:scale(0.95) translateZ(0);}
-
-.card-icon{width:17px;height:17px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
-.card-text{display:flex;flex-direction:column;gap:1px;}
-.card-label{font-size:11.5px;font-weight:600;letter-spacing:0.04em;color:rgba(255,255,255,0.75);}
-.card-data {font-size:9.5px; font-weight:500;letter-spacing:0.02em;color:rgba(45,232,162,0.7);}
-
-/* ── card positions, depth (opacity + scale baked into keyframes) ──
-   All positioned relative to viewport center via calc(50% ± Xpx)
-   so they orbit the axis regardless of screen size. */
-
-/* Water: top-left, farthest → opacity 0.70, scale 0.88 */
-.card-water{
-  top:calc(50% - 110px);left:calc(50% - 180px);
-  opacity:0.70;
-  animation:cardIn0 0.45s ease 0.2s both, cf1 7s ease-in-out infinite 0.65s;
-}
-@keyframes cf1{
-  0%,100%{-webkit-transform:translate3d(0,0,0) scale(0.88);       transform:translate3d(0,0,0) scale(0.88);}
-  33%    {-webkit-transform:translate3d(11px,-18px,0) scale(0.88); transform:translate3d(11px,-18px,0) scale(0.88);}
-  66%    {-webkit-transform:translate3d(-8px,-9px,0) scale(0.88);  transform:translate3d(-8px,-9px,0) scale(0.88);}
-}
-
-/* Weight: top-right, far → opacity 0.75, scale 0.91 */
-.card-weight{
-  top:calc(50% - 102px);left:calc(50% + 60px);
-  opacity:0.75;
-  animation:cardIn1 0.45s ease 0.28s both, cf2 8.5s ease-in-out infinite 0.73s;
-}
-@keyframes cf2{
-  0%,100%{-webkit-transform:translate3d(0,0,0) scale(0.91);        transform:translate3d(0,0,0) scale(0.91);}
-  40%    {-webkit-transform:translate3d(-11px,14px,0) scale(0.91);  transform:translate3d(-11px,14px,0) scale(0.91);}
-  70%    {-webkit-transform:translate3d(9px,-11px,0) scale(0.91);   transform:translate3d(9px,-11px,0) scale(0.91);}
-}
-
-/* Fitness: right-middle, nearest → opacity 1, scale 1 */
-.card-fitness{
-  top:calc(50% + 88px);left:calc(50% + 96px);
-  opacity:1;
-  animation:cardIn2 0.45s ease 0.36s both, cf3 6.5s ease-in-out infinite 0.81s;
-}
-@keyframes cf3{
-  0%,100%{-webkit-transform:translate3d(0,0,0);        transform:translate3d(0,0,0);}
-  30%    {-webkit-transform:translate3d(-10px,-15px,0); transform:translate3d(-10px,-15px,0);}
-  60%    {-webkit-transform:translate3d(11px,10px,0);   transform:translate3d(11px,10px,0);}
-}
-
-/* Goals: bottom-left, mid → opacity 0.85, scale 0.94 */
-.card-goals{
-  top:calc(50% + 175px);left:calc(50% - 172px);
-  opacity:0.85;
-  animation:cardIn3 0.45s ease 0.44s both, cf4 9s ease-in-out infinite 0.89s;
-}
-@keyframes cf4{
-  0%,100%{-webkit-transform:translate3d(0,0,0) scale(0.94);       transform:translate3d(0,0,0) scale(0.94);}
-  25%    {-webkit-transform:translate3d(13px,-11px,0) scale(0.94); transform:translate3d(13px,-11px,0) scale(0.94);}
-  75%    {-webkit-transform:translate3d(-9px,13px,0) scale(0.94);  transform:translate3d(-9px,13px,0) scale(0.94);}
-}
-
-/* ── floating diamond nodes — brighter, larger ── */
-.fnode{
-  position:absolute;z-index:2;
-  background:rgba(45,232,162,0.12);
-  border:1px solid rgba(45,232,162,0.35);
-  box-shadow:
-    0 0 12px rgba(45,232,162,0.32),
-    0 0 30px rgba(45,232,162,0.14);
+  background:radial-gradient(circle,rgba(45,232,162,.16),transparent 65%);
+  filter:blur(8px);
   pointer-events:none;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  transform-origin:center center;
-}
-.fn1{width:10px;height:10px;top:19%;left:27%; animation:nf1 11s ease-in-out infinite;}
-.fn2{width: 7px;height: 7px;top:31%;right:21%;animation:nf2 13s ease-in-out infinite;}
-.fn3{width:12px;height:12px;top:56%;left:16%;animation:nf3 9s  ease-in-out infinite;}
-.fn4{width: 6px;height: 6px;top:16%;left:51%;animation:nf4 14s ease-in-out infinite;}
-.fn5{width: 9px;height: 9px;top:71%;right:26%;animation:nf5 10s ease-in-out infinite;}
-.fn6{width:11px;height:11px;top:45%;left:7%; animation:nf1 12s ease-in-out infinite 2.5s;}
-
-@keyframes nf1{
-  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.65;}
-  25% {-webkit-transform:rotate(45deg) translate3d(18px,-22px,0);  transform:rotate(45deg) translate3d(18px,-22px,0);  opacity:1;}
-  60% {-webkit-transform:rotate(45deg) translate3d(-14px,-8px,0);  transform:rotate(45deg) translate3d(-14px,-8px,0);  opacity:0.8;}
-  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);        transform:rotate(45deg) translate3d(0,0,0);        opacity:0.65;}
-}
-@keyframes nf2{
-  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.55;}
-  30% {-webkit-transform:rotate(45deg) translate3d(-18px,-16px,0);   transform:rotate(45deg) translate3d(-18px,-16px,0);   opacity:0.95;}
-  70% {-webkit-transform:rotate(45deg) translate3d(12px,14px,0);     transform:rotate(45deg) translate3d(12px,14px,0);     opacity:0.72;}
-  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.55;}
-}
-@keyframes nf3{
-  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);         transform:rotate(45deg) translate3d(0,0,0);         opacity:0.7;}
-  20% {-webkit-transform:rotate(45deg) translate3d(20px,12px,0);    transform:rotate(45deg) translate3d(20px,12px,0);    opacity:1;}
-  65% {-webkit-transform:rotate(45deg) translate3d(-10px,18px,0);   transform:rotate(45deg) translate3d(-10px,18px,0);   opacity:0.82;}
-  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);         transform:rotate(45deg) translate3d(0,0,0);         opacity:0.7;}
-}
-@keyframes nf4{
-  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.5;}
-  40% {-webkit-transform:rotate(45deg) translate3d(-22px,16px,0);    transform:rotate(45deg) translate3d(-22px,16px,0);    opacity:0.92;}
-  80% {-webkit-transform:rotate(45deg) translate3d(16px,-12px,0);    transform:rotate(45deg) translate3d(16px,-12px,0);    opacity:0.68;}
-  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.5;}
-}
-@keyframes nf5{
-  0%  {-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.6;}
-  35% {-webkit-transform:rotate(45deg) translate3d(14px,-24px,0);    transform:rotate(45deg) translate3d(14px,-24px,0);    opacity:1;}
-  70% {-webkit-transform:rotate(45deg) translate3d(-16px,10px,0);    transform:rotate(45deg) translate3d(-16px,10px,0);    opacity:0.78;}
-  100%{-webkit-transform:rotate(45deg) translate3d(0,0,0);          transform:rotate(45deg) translate3d(0,0,0);          opacity:0.6;}
 }
 
-/* ── single exit container: one compositing layer for all content ── */
-.content-layer{
-  position:absolute;inset:0;
-  display:flex;align-items:center;justify-content:center;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-}
-
-/* ── Enter CTA — glowing mint button with opacity pulse ── */
-.enter-wrap{
+/* static concentric rings */
+.ring-static{
   position:absolute;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 42px);
-  left:50%;transform:translateX(-50%);
-  z-index:9;
+  border-radius:50%;
+  pointer-events:none;
 }
+.rs1{inset:13px;border:1px solid rgba(255,255,255,.06);}
+.rs2{inset:48px;border:1px solid rgba(255,255,255,.05);}
+.rs3{inset:83px;border:1px solid rgba(45,232,162,.14);}
+
+/* spinning outer ring + dot layer */
+.ring-spin-outer{
+  position:absolute;inset:0;
+  border-radius:50%;
+  border:1.5px solid transparent;
+  border-top-color:#2de8a2;
+  border-right-color:rgba(45,232,162,.35);
+  filter:drop-shadow(0 0 7px rgba(45,232,162,.55));
+  animation:axSpin 7s linear infinite;
+  will-change:transform;
+}
+.ring-dot-outer-track{
+  position:absolute;inset:0;
+  border-radius:50%;
+  animation:axSpin 7s linear infinite;
+  will-change:transform;
+}
+.ring-dot-outer-track .dot{
+  position:absolute;top:-4px;left:50%;
+  transform:translateX(-50%);
+  width:9px;height:9px;border-radius:50%;
+  background:#2de8a2;
+  box-shadow:0 0 14px 2px #2de8a2;
+}
+
+/* spinning inner ring + dot layer */
+.ring-spin-inner{
+  position:absolute;inset:48px;
+  border-radius:50%;
+  border:1.5px solid transparent;
+  border-bottom-color:rgba(111,155,255,.6);
+  animation:axSpinRev 11s linear infinite;
+  will-change:transform;
+}
+.ring-dot-inner-track{
+  position:absolute;inset:48px;
+  border-radius:50%;
+  animation:axSpinRev 11s linear infinite;
+  will-change:transform;
+}
+.ring-dot-inner-track .dot{
+  position:absolute;bottom:-3px;left:50%;
+  transform:translateX(-50%);
+  width:6px;height:6px;border-radius:50%;
+  background:#6f9bff;
+  box-shadow:0 0 10px 1px #6f9bff;
+}
+
+/* center core */
+.ring-core{
+  width:96px;height:96px;border-radius:50%;
+  background:radial-gradient(circle at 38% 34%,rgba(255,255,255,.14),rgba(255,255,255,.03) 60%);
+  border:1px solid rgba(255,255,255,.1);
+  display:flex;align-items:center;justify-content:center;
+  animation:axBreath 4.5s ease-in-out infinite;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.15);
+  position:relative;z-index:2;
+}
+.ring-core-icon{
+  width:20px;height:20px;
+  border:2.5px solid #2de8a2;
+  border-radius:50%;
+  border-right-color:transparent;
+  border-bottom-color:transparent;
+  box-shadow:0 0 14px rgba(45,232,162,.7);
+}
+
+/* ── bottom section ── */
+.bottom-section{
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+  width:100%;
+  animation:slideUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.26s both;
+}
+.axis-title{
+  font-family:'Geist','Space Grotesk',sans-serif;
+  font-weight:700;font-size:62px;letter-spacing:.04em;
+  color:#fff;line-height:1;
+  text-shadow:0 0 40px rgba(45,232,162,.25);
+}
+.axis-sub{
+  font-size:15px;
+  color:rgba(255,255,255,.5);
+  letter-spacing:.01em;
+  text-align:center;
+}
+
+/* enter button */
 .enter-btn{
-  display:inline-flex;align-items:center;justify-content:center;
-  min-width:200px;
-  height:54px;
-  padding:0 48px;
-  border-radius:17px;
-  background:linear-gradient(180deg,#2de8a2,#1ec78a);
-  backdrop-filter:none;
-  -webkit-backdrop-filter:none;
-  border:none;
-  color:#04140d;
-  font-size:14px;font-weight:500;letter-spacing:0.08em;
-  font-family:'Space Grotesk',-apple-system,sans-serif;
-  text-decoration:none;
-  text-shadow:none;
-  box-shadow:0 0 24px -2px rgba(45,232,162,0.65), 0 6px 30px rgba(0,0,0,0.4);
-  transition:transform 0.15s,box-shadow 0.2s;
-  will-change:transform,opacity;
-  -webkit-backface-visibility:hidden;
-  backface-visibility:hidden;
-  animation:enterPulse 2s ease-in-out infinite;
+  margin-top:18px;width:100%;height:58px;
+  border-radius:18px;
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  text-decoration:none;cursor:pointer;
+  background:linear-gradient(180deg,rgba(45,232,162,.16),rgba(45,232,162,.07));
+  border:1.5px solid rgba(45,232,162,.55);
+  color:#eafff6;
+  font-family:'Geist',sans-serif;font-weight:600;font-size:17px;letter-spacing:.02em;
+  box-shadow:0 0 30px -6px rgba(45,232,162,.5),inset 0 1px 0 rgba(255,255,255,.12);
+  transition:box-shadow 0.2s,border-color 0.2s;
+  -webkit-tap-highlight-color:transparent;
 }
 .enter-btn:hover{
-  box-shadow:0 0 36px -2px rgba(45,232,162,0.8), 0 6px 30px rgba(0,0,0,0.48);
+  border-color:rgba(45,232,162,.75);
+  box-shadow:0 0 40px -4px rgba(45,232,162,.65),inset 0 1px 0 rgba(255,255,255,.16);
 }
-.enter-btn:active{-webkit-transform:scale(0.95) translateZ(0);transform:scale(0.95) translateZ(0);}
-@keyframes enterPulse{
-  0%,100%{opacity:0.85;}
-  50%    {opacity:1;}
+.enter-btn:active{transform:scale(0.97);}
+
+/* status row */
+.status-row{
+  display:flex;align-items:center;gap:9px;
+  margin-top:6px;
+}
+.status-dot{
+  width:7px;height:7px;border-radius:50%;
+  background:#2de8a2;
+  box-shadow:0 0 9px #2de8a2;
+  animation:axPulse 2.4s ease-in-out infinite;
+  flex-shrink:0;
+}
+.status-text{
+  font-family:'Geist Mono',monospace;
+  font-size:12px;letter-spacing:.06em;
+  color:rgba(255,255,255,.42);
 }
 
-/* hero header */
-.hero-header{
-  position:absolute;
-  top:calc(env(safe-area-inset-top,0px) + 20px);
-  left:50%;
-  transform:translateX(-50%);
-  z-index:10;
-  display:flex;flex-direction:column;align-items:center;
-  text-align:center;
-  pointer-events:none;
-  animation:sceneIn 0.8s ease 0.3s both;
+/* ── keyframes ── */
+@keyframes axSpin{
+  from{transform:rotate(0deg)}
+  to  {transform:rotate(360deg)}
 }
-.hero-welcome{
-  font-size:15px;
-  letter-spacing:2px;
-  color:rgba(255,255,255,0.7);
-  font-weight:400;
-  margin-bottom:6px;
+@keyframes axSpinRev{
+  from{transform:rotate(0deg)}
+  to  {transform:rotate(-360deg)}
 }
-.hero-title{
-  font-size:clamp(52px,12vw,92px);
-  font-weight:700;
-  letter-spacing:14px;
-  color:#ffffff;
-  text-shadow:
-    0 0 40px rgba(45,232,162,0.35),
-    0 0 80px rgba(45,232,162,0.15);
-  line-height:1;
-  margin-bottom:10px;
-  padding-left:14px;
-  font-family:'Space Grotesk',-apple-system,BlinkMacSystemFont,sans-serif;
+@keyframes axBreath{
+  0%,100%{transform:scale(1);opacity:1}
+  50%    {transform:scale(1.055);opacity:0.82}
 }
-.hero-sub{
-  font-size:11px;
-  letter-spacing:4px;
-  color:rgba(255,255,255,0.35);
-  font-weight:400;
-  text-transform:uppercase;
-  padding-left:4px;
+@keyframes axPulse{
+  0%,100%{opacity:1;transform:scale(1)}
+  50%    {opacity:0.45;transform:scale(0.85)}
+}
+@keyframes slideUp{
+  0%  {opacity:0;transform:translateY(22px)}
+  100%{opacity:1;transform:translateY(0)}
 }
 
-/* origin dot — tappable with pulse glow */
-.origin-tap{cursor:pointer;}
-.origin-pulse-ring{
-  transform-box:view-box;
-  transform-origin:250px 250px;
-  pointer-events:none;
-  animation:originPulse 2.4s ease-in-out infinite;
-}
-@keyframes originPulse{
-  0%,100%{transform:scale(1);opacity:0;}
-  40%    {transform:scale(1.9);opacity:0.45;}
-  80%    {transform:scale(2.6);opacity:0;}
-}
-
-@media(max-width:390px){
-  .card-water  {left:calc(50% - 162px);}
-  .card-weight {left:calc(50% + 46px);}
-  .card-fitness{left:calc(50% + 78px);}
-  .card-goals  {left:calc(50% - 158px);}
+/* exit animation class */
+.scene.exit{
+  transition:opacity 0.4s ease, transform 0.4s cubic-bezier(0.4,0,1,1);
+  opacity:0;
+  transform:scale(1.04);
 }
 </style>
-<link rel="stylesheet" href="/axis-design.css">
 </head>
 <body>
-<div class="scene">
-  <!-- hero header -->
-  <div class="hero-header">
-    <span class="hero-welcome">Welcome to</span>
-    <span class="hero-title">AXIS</span>
-    <span class="hero-sub">Your personal operating system</span>
+<div class="scene" id="scene">
+
+  <!-- top: welcome label -->
+  <div class="top-label">
+    <span>Welcome back</span>
   </div>
 
-  <!-- star particle field: animated on canvas (single GPU layer) -->
-  <canvas id="starCanvas"></canvas>
-
-  <!-- deep teal ellipse glow behind everything -->
-  <div class="bg-glow"></div>
-
-  <div class="ambient"></div>
-  <div class="ambient2"></div>
-
-  <!-- floating diamond nodes -->
-  <div class="fnode fn1"></div>
-  <div class="fnode fn2"></div>
-  <div class="fnode fn3"></div>
-  <div class="fnode fn4"></div>
-  <div class="fnode fn5"></div>
-  <div class="fnode fn6"></div>
-
-  <!-- single exit layer: axis + cards + CTA animate out together -->
-  <div class="content-layer" id="contentLayer">
-
-    <!-- axis stage: SVG + brand float as one unit -->
-    <div class="axis-stage">
-      <div class="axis-wrap">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
-          <defs>
-            <filter id="g" x="-50%" y="-50%" width="200%" height="200%">
-              <feGaussianBlur stdDeviation="3.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="gs" x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="9" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-            <filter id="gm" x="-70%" y="-70%" width="240%" height="240%">
-              <feGaussianBlur stdDeviation="5.5" result="b"/>
-              <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-            </filter>
-          </defs>
-
-          <!-- rings: opacity baked as stroke-opacity, CSS only does rotation -->
-          <circle class="r1" cx="250" cy="250" r="72"  fill="none" stroke="#2de8a2" stroke-width="1"    stroke-dasharray="10,8"  stroke-opacity="0.38" filter="url(#g)"/>
-          <circle class="r2" cx="250" cy="250" r="118" fill="none" stroke="#2de8a2" stroke-width="0.8"  stroke-dasharray="13,10" stroke-opacity="0.28" filter="url(#g)"/>
-          <circle class="r3" cx="250" cy="250" r="166" fill="none" stroke="#2de8a2" stroke-width="0.65" stroke-dasharray="15,13" stroke-opacity="0.2"  filter="url(#g)"/>
-          <circle class="r4" cx="250" cy="250" r="218" fill="none" stroke="#2de8a2" stroke-width="0.5"  stroke-dasharray="18,16" stroke-opacity="0.13" filter="url(#g)"/>
-
-          <!-- arm pendulum group -->
-          <g class="arm-group">
-            <g stroke="#2de8a2" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-dasharray="9,6" filter="url(#g)">
-              <line x1="250" y1="250" x2="250" y2="92"/>
-              <line x1="250" y1="250" x2="387" y2="328"/>
-              <line x1="250" y1="250" x2="113" y2="328"/>
-            </g>
-            <g fill="#2de8a2" filter="url(#gm)">
-              <polygon points="250,80 243,93 257,93"/>
-              <polygon points="387,328 370,327 377,314"/>
-              <polygon points="113,328 123,314 130,327"/>
-            </g>
-          </g>
-
-          <!-- static node shapes in arm gaps -->
-          <g filter="url(#g)" opacity="0.55">
-            <rect x="152" y="142" width="9"  height="9"  rx="1.5" fill="rgba(45,232,162,0.07)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 156.5 146.5)"/>
-            <rect x="326" y="150" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 329.5 153.5)"/>
-            <rect x="349" y="296" width="8"  height="8"  rx="1.5" fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.75" transform="rotate(45 353 300)"/>
-            <rect x="138" y="294" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.7"  transform="rotate(45 141.5 297.5)"/>
-            <rect x="246" y="126" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.08)" stroke="#2de8a2" stroke-width="0.8"  transform="rotate(45 249 129)"/>
-            <rect x="393" y="213" width="7"  height="7"  rx="1"   fill="rgba(45,232,162,0.05)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 396.5 216.5)"/>
-            <rect x="96"  y="218" width="6"  height="6"  rx="1"   fill="rgba(45,232,162,0.06)" stroke="#2de8a2" stroke-width="0.65" transform="rotate(45 99 221)"/>
-          </g>
-
-          <!-- origin: breathing glow + fixed core — tappable, navigates to ai.html -->
-          <a class="origin-tap" href="ai.html">
-            <circle class="origin-pulse-ring" cx="250" cy="250" r="18" fill="none" stroke="#2de8a2" stroke-width="1.5"/>
-            <circle class="ob1" cx="250" cy="250" r="22" fill="#2de8a2" fill-opacity="0.06" filter="url(#gs)"/>
-            <circle cx="250" cy="250" r="11" fill="none" stroke="#2de8a2" stroke-width="1.2" stroke-opacity="0.32" filter="url(#g)"/>
-            <circle cx="250" cy="250" r="4.5" fill="#2de8a2" filter="url(#gs)"/>
-            <circle cx="250" cy="250" r="30" fill="transparent"/>
-          </a>
-        </svg>
-      </div>
-
+  <!-- middle: ring graphic -->
+  <div class="ring-wrap">
+    <div class="ring-glow"></div>
+    <div class="ring-static rs1"></div>
+    <div class="ring-static rs2"></div>
+    <div class="ring-static rs3"></div>
+    <div class="ring-spin-outer"></div>
+    <div class="ring-dot-outer-track"><div class="dot"></div></div>
+    <div class="ring-spin-inner"></div>
+    <div class="ring-dot-inner-track"><div class="dot"></div></div>
+    <div class="ring-core">
+      <div class="ring-core-icon"></div>
     </div>
+  </div>
 
-    <!-- feature cards with live data -->
-    <div class="card card-water">
-      <div class="card-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M8 1.5C8 1.5 3 7.5 3 10.5C3 13.26 5.24 15.5 8 15.5C10.76 15.5 13 13.26 13 10.5C13 7.5 8 1.5 8 1.5Z" fill="#2de8a2" fill-opacity="0.85"/>
-        </svg>
-      </div>
-      <div class="card-text">
-        <span class="card-label">Water</span>
-        <span class="card-data" id="cdWater">—</span>
-      </div>
+  <!-- bottom: AXIS + enter -->
+  <div class="bottom-section">
+    <h1 class="axis-title">AXIS</h1>
+    <p class="axis-sub" id="axisGreeting">Your personal operating system</p>
+    <a href="index.html" class="enter-btn" id="enterBtn">
+      Enter
+      <svg width="17" height="17" viewBox="0 0 17 17" fill="none">
+        <path d="M3 8.5h10M9 4.5l4 4-4 4" stroke="#2de8a2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+    <div class="status-row">
+      <span class="status-dot"></span>
+      <span class="status-text" id="statusText">systems online · synced</span>
     </div>
+  </div>
 
-    <div class="card card-weight">
-      <div class="card-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <rect x="2" y="9" width="12" height="5" rx="2" stroke="#2de8a2" stroke-width="1.2"/>
-          <path d="M6 9V7a2 2 0 114 0v2" stroke="#2de8a2" stroke-width="1.2" stroke-linecap="round" fill="none"/>
-          <circle cx="8" cy="4" r="1.5" fill="#2de8a2" fill-opacity="0.8"/>
-        </svg>
-      </div>
-      <div class="card-text">
-        <span class="card-label">Weight</span>
-        <span class="card-data" id="cdWeight">—</span>
-      </div>
-    </div>
-
-    <div class="card card-fitness">
-      <div class="card-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <path d="M1 8h2.5M12.5 8H15M3.5 8a4.5 4.5 0 019 0M5.5 5.5v5M10.5 5.5v5" stroke="#2de8a2" stroke-width="1.3" stroke-linecap="round"/>
-        </svg>
-      </div>
-      <div class="card-text">
-        <span class="card-label">Fitness</span>
-        <span class="card-data" id="cdFitness">—</span>
-      </div>
-    </div>
-
-    <div class="card card-goals">
-      <div class="card-icon">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <circle cx="8" cy="8" r="6.5" stroke="#2de8a2" stroke-width="1.2"/>
-          <circle cx="8" cy="8" r="3.5" stroke="#2de8a2" stroke-width="1"/>
-          <circle cx="8" cy="8" r="1.6" fill="#2de8a2"/>
-        </svg>
-      </div>
-      <div class="card-text">
-        <span class="card-label">Goals</span>
-        <span class="card-data" id="cdGoals">—</span>
-      </div>
-    </div>
-
-    <div class="enter-wrap">
-      <a href="index.html" class="enter-btn" id="enterBtn">ENTER</a>
-    </div>
-
-  </div><!-- /.content-layer -->
 </div>
 
 <script>
 (function () {
-  /* ── live card data from localStorage ── */
-  function pad2(n) { return String(n).padStart(2, '0'); }
-  function activeDate() {
-    var d = new Date();
-    if (d.getHours() < 6) d.setDate(d.getDate() - 1);
-    return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
-  }
-  function fill(id, txt) { var e = document.getElementById(id); if (e) e.textContent = txt; }
+  /* ── greeting ── */
+  var h = new Date().getHours();
+  var greeting = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
+  var greetEl = document.getElementById('axisGreeting');
+  if (greetEl) greetEl.textContent = greeting;
 
-  function refreshCards() {
-    var today = activeDate();
+  /* ── status: count tracked systems ── */
+  try {
+    var count = 0;
+    if (localStorage.getItem('po_water_v1')) count++;
+    if (localStorage.getItem('po_coach_weights')) count++;
+    if (localStorage.getItem('po_coach_v1')) count++;
+    if (localStorage.getItem('goals:' + (function() {
+      var d = new Date();
+      if (d.getHours() < 6) d.setDate(d.getDate() - 1);
+      return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+    })())) count++;
+    if (localStorage.getItem('dash_weight')) count++;
+    var statusEl = document.getElementById('statusText');
+    if (statusEl && count > 0) statusEl.textContent = count + ' systems online · synced';
+  } catch (e) {}
 
-    // Water: always recalculate target fresh from po_coach_weights (same formula as computeTargetMl() in po-water.html)
-    try {
-      var wData = JSON.parse(localStorage.getItem('po_water_v1') || '{}');
-      var ml = (wData.history && wData.history[today]) || 0;
-
-      var wKg = (wData.profile && wData.profile.weightKg) || 75;
-      if (wData.weightUnit === 'lb') wKg = wKg / 2.20462;
-      try {
-        var rawW = localStorage.getItem('po_coach_weights');
-        if (rawW) {
-          var wEntries = JSON.parse(rawW);
-          if (Array.isArray(wEntries) && wEntries.length) {
-            wEntries.sort(function(a, b) { return a.dateKey.localeCompare(b.dateKey); });
-            var latestW = wEntries[wEntries.length - 1];
-            if (latestW && typeof latestW.weight === 'number' && latestW.weight > 0) {
-              var gymUnit = 'kg';
-              try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch (e2) {}
-              wKg = gymUnit === 'lb' ? latestW.weight / 2.20462 : latestW.weight;
-            }
-          }
-        }
-      } catch (e2) {}
-      var calcBase     = wKg * 35;
-      var calcExercise = ((wData.profile && wData.profile.activityHrsPerWeek) || 0) / 7 * 500;
-      var calcCaffeine = Math.max(0, (wData.caffeineMgPerDay || 0) - 200) * 1.5;
-      var calcSubs     = (wData.substances || []).reduce(function(s, x) {
-        var dose = (x.dose != null ? x.dose : x.defaultDose) || 0;
-        return s + Math.max(0, dose * (x.mlPerUnit || 0));
-      }, 0);
-      var calcAdjust = 0;
-      var dashSex = localStorage.getItem('dash_sex') || '';
-      if (dashSex !== 'female' && dashSex !== 'other') calcAdjust += 200;
-      if (wData.profile && (wData.profile.age || 0) >= 50) calcAdjust += 100;
-      var tgtMl = calcBase + calcExercise + calcCaffeine + calcSubs + calcAdjust;
-      if (!(tgtMl > 0)) tgtMl = 3000;
-
-      fill('cdWater', (ml / 1000).toFixed(1) + 'L / ' + (tgtMl / 1000).toFixed(1) + 'L');
-    } catch (e) {}
-
-    // Weight: po_coach_weights → most recent entry, converted to lb
-    try {
-      var entries = JSON.parse(localStorage.getItem('po_coach_weights') || 'null');
-      if (Array.isArray(entries) && entries.length) {
-        var sorted = entries.slice().sort(function(a, b) {
-          return (b.dateKey || '') > (a.dateKey || '') ? 1 : -1;
-        });
-        var latest = sorted[0];
-        if (latest && typeof latest.weight === 'number' && latest.weight > 0) {
-          var gymState = JSON.parse(localStorage.getItem('po_coach_v1') || '{}');
-          var wUnit    = gymState.units || 'kg';
-          var wLb      = wUnit === 'lb' ? latest.weight : latest.weight * 2.20462;
-          fill('cdWeight', wLb.toFixed(1) + ' lb');
-        }
-      }
-    } catch (e) {}
-
-    // Goals: goals:YYYY-MM-DD → count done / total
-    try {
-      var goals = JSON.parse(localStorage.getItem('goals:' + today) || 'null');
-      if (Array.isArray(goals) && goals.length) {
-        var done = goals.filter(function(g) { return g.done; }).length;
-        fill('cdGoals', done + ' / ' + goals.length + ' done');
-      }
-    } catch (e) {}
-
-    // Fitness: replicates gym.html getTodaySplitName() exactly.
-    // 1. dash_gym_cycle — cycle rotation from a start date.
-    // 2. dash_gym_split — weekday → split name map.
-    try {
-      var spl = '';
-      var gymCycle = JSON.parse(localStorage.getItem('dash_gym_cycle') || 'null');
-      if (gymCycle && gymCycle.type === 'cycle' && Array.isArray(gymCycle.days) && gymCycle.days.length && gymCycle.startDate) {
-        var cycleToday = new Date(); cycleToday.setHours(0,0,0,0);
-        var cycleStart = new Date(gymCycle.startDate + 'T00:00:00'); cycleStart.setHours(0,0,0,0);
-        var cycleDiff  = Math.round((cycleToday - cycleStart) / 86400000);
-        if (cycleDiff >= 0) spl = gymCycle.days[cycleDiff % gymCycle.days.length] || '';
-      }
-      if (!spl) {
-        var weekDays     = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-        var todayDayName = weekDays[new Date().getDay()];
-        var weeklySplit  = JSON.parse(localStorage.getItem('dash_gym_split') || '{}');
-        spl = weeklySplit[todayDayName] || '';
-      }
-      if (spl) {
-        fill('cdFitness', /^(rest|off)$/i.test(spl) ? 'Rest Day' : spl + ' Day');
-      }
-    } catch (e) {}
-  }
-
-  refreshCards();
-  setInterval(refreshCards, 30000);
-
-  /* ── star particle field on canvas ── */
-  var canvas = document.getElementById('starCanvas');
-  if (!canvas) return;
-  var ctx = canvas.getContext('2d');
-
-  function resize() {
-    canvas.width  = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-  resize();
-  window.addEventListener('resize', resize, { passive: true });
-
-  var stars = [];
-  for (var i = 0; i < 46; i++) {
-    stars.push({
-      x:     Math.random() * window.innerWidth,
-      y:     Math.random() * window.innerHeight,
-      r:     Math.random() > 0.55 ? 1.5 : 1,
-      vx:    (Math.random() - 0.5) * 0.2,
-      vy:    (Math.random() - 0.5) * 0.2,
-      base:  0.08 + Math.random() * 0.1,
-      phase: Math.random() * 6.28,
-      spd:   0.007 + Math.random() * 0.012
-    });
-  }
-
-  function drawStars() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    var W = canvas.width, H = canvas.height;
-    for (var j = 0; j < stars.length; j++) {
-      var s = stars[j];
-      s.x += s.vx; s.y += s.vy;
-      if (s.x < -4) s.x = W + 4; else if (s.x > W + 4) s.x = -4;
-      if (s.y < -4) s.y = H + 4; else if (s.y > H + 4) s.y = -4;
-      s.phase += s.spd;
-      var o = s.base * (0.55 + 0.45 * Math.sin(s.phase));
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, 6.2832);
-      ctx.fillStyle = 'rgba(45,232,162,' + o.toFixed(3) + ')';
-      ctx.fill();
-    }
-    requestAnimationFrame(drawStars);
-  }
-  drawStars();
-
-  /* ── exit animation: single container fade — one GPU layer ── */
+  /* ── exit animation ── */
   var enterBtn = document.getElementById('enterBtn');
-  if (enterBtn) {
+  var scene    = document.getElementById('scene');
+  if (enterBtn && scene) {
     enterBtn.addEventListener('click', function (e) {
       e.preventDefault();
       var dest = enterBtn.getAttribute('href');
-      var contentLayer = document.getElementById('contentLayer');
-      if (contentLayer) {
-        contentLayer.style.transition = 'opacity 0.45s ease, transform 0.45s cubic-bezier(0.4,0,1,1)';
-        contentLayer.style.opacity = '0';
-        contentLayer.style.transform = 'scale(1.04) translateZ(0)';
-      }
-      setTimeout(function () { window.location.href = dest; }, 460);
+      scene.classList.add('exit');
+      setTimeout(function () { window.location.href = dest; }, 420);
     });
   }
 })();
