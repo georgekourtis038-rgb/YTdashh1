@@ -14,43 +14,56 @@
 <script src="/push-init.js" defer></script>
 <style>
 :root {
+  --bg: #0a0d0c;
+  --accent: #2de8a2;
+  --accent-dim: rgba(45,232,162,0.08);
+  --accent-border: rgba(45,232,162,0.16);
+  --accent-glow: rgba(45,232,162,0.5);
   --text-primary: #ffffff;
-  --text-secondary: rgba(255, 255, 255, 0.86);
-  --text-tertiary: rgba(255, 255, 255, 0.42);
-  --success: #2de8a2;
-  --mint: #2de8a2;
-  --warning: #F2C063;
-  --danger: #FF6B6B;
+  --text-secondary: rgba(255,255,255,0.86);
+  --text-muted: rgba(255,255,255,0.55);
+  --text-dim: rgba(255,255,255,0.42);
+  --text-tertiary: rgba(255,255,255,0.42);
+  --border: rgba(255,255,255,0.08);
+  --card-bg: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
   --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --success: #2de8a2;
+  --warning: #F2C063;
+  --danger: #FF6B6B;
 }
+
 * { box-sizing: border-box; }
+
 html, body {
   margin: 0; padding: 0;
-  background: #0a0f0e;
+  background: var(--bg);
   color: var(--text-secondary);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -webkit-text-size-adjust: 100%;
 }
+
 body {
   min-height: 100vh;
   position: relative;
   overflow-x: hidden;
   padding: 0 0 60px;
 }
+
 body::before {
   content: '';
   position: fixed; inset: 0;
   background:
-    radial-gradient(circle at 82% 14%, rgba(45, 232, 162, 0.09), transparent 45%),
-    radial-gradient(circle at 18% 90%, rgba(45, 232, 162, 0.04), transparent 50%);
+    radial-gradient(circle at 78% 12%, rgba(45,232,162,0.10), transparent 44%),
+    radial-gradient(circle at 18% 88%, rgba(45,232,162,0.05), transparent 50%);
   filter: blur(40px);
   pointer-events: none;
   z-index: -2;
   animation: drift 36s ease-in-out infinite alternate;
 }
+
 body::after {
   content: '';
   position: fixed; inset: 0;
@@ -59,293 +72,316 @@ body::after {
   pointer-events: none;
   z-index: -1;
 }
+
 @keyframes drift {
-  0%   { transform: translate3d(0,0,0); }
+  0%   { transform: translate3d(0, 0, 0); }
   100% { transform: translate3d(-22px, 14px, 0); }
 }
 
-.page {
-  max-width: 1100px;
+body.gd-page-out {
+  opacity: 0;
+  transition: opacity 0.22s ease;
+}
+
+/* ── Page layout ── */
+.ax-page {
+  max-width: 680px;
   margin: 0 auto;
-  padding: max(110px, calc(env(safe-area-inset-top) + 60px)) 20px 0;
+  padding: max(108px, calc(env(safe-area-inset-top) + 60px)) 16px 0;
 }
 
-/* ===== Page heading (AXIS + name) ===== */
-.dash-page-heading {
-  margin: 0 0 18px;
-  line-height: 1.2;
-}
-.dash-page-heading-title {
-  display: block;
-  font-size: 28px;
-  font-weight: 700;
-  color: #fff;
-  letter-spacing: -0.025em;
-}
-.dash-page-heading-sub {
-  display: block;
-  font-size: 14px;
-  font-weight: 400;
-  color: rgba(255,255,255,0.4);
-  margin-top: 2px;
-}
-
-/* ===== Component 1: page title ===== */
-.dash-title {
-  margin: 0 0 14px;
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.025em;
-  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: transparent;
-}
-@media (max-width: 480px) { .dash-title { font-size: 22px; } }
-
-/* ===== Component 2: Goal Ticker ===== */
-.ticker-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
+/* ── Header ── */
+.ax-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 18px;
 }
-.goal-ticker {
-  position: relative; overflow: hidden;
-  display: flex; align-items: center; gap: 10px;
-  padding: 7px 12px;
-  border-radius: 12px;
-  background:
-    linear-gradient(180deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.30) 100%),
-    repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+.ax-header-left {
+  display: flex;
+  flex-direction: column;
 }
-.goal-ticker::after {
-  content: '';
-  position: absolute; top: 0; bottom: 0;
-  width: 30%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-  pointer-events: none;
-  animation: ticker-sweep 8s linear infinite;
+.ax-date {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--text-dim);
 }
-@keyframes ticker-sweep {
-  0%   { left: -40%; }
-  100% { left: 110%; }
+.ax-greeting {
+  margin: 5px 0 0;
+  font-family: var(--font);
+  font-size: 29px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: #ffffff;
+  line-height: 1.15;
 }
-.goal-ticker-led { display: inline-flex; align-items: center; }
+.ax-avatar {
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(150deg, #1c2c27, #0e1614);
+  border: 1px solid rgba(255,255,255,0.10);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── Ticker strip ── */
+.ax-ticker {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06);
+  margin-bottom: 14px;
+}
 .goal-ticker-led-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: #2de8a2;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
   box-shadow: 0 0 8px rgba(45,232,162,0.7);
+  flex-shrink: 0;
   animation: led-pulse 1.6s ease-in-out infinite;
 }
 @keyframes led-pulse {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50%      { opacity: 0.45; transform: scale(0.85); }
+  50%       { opacity: 0.45; transform: scale(0.85); }
 }
-.goal-ticker-label {
+.ax-ticker-label {
   font-family: var(--font-mono);
-  font-size: 9.5px; font-weight: 800;
+  font-size: 9px;
+  font-weight: 800;
   letter-spacing: 0.18em;
-  color: var(--text-tertiary);
-}
-.goal-ticker-stage {
-  position: relative; overflow: hidden;
-  flex: 1; height: 22px;
-}
-.goal-ticker-row { position: absolute; inset: 0; display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text-primary); white-space: nowrap; opacity: 1; transition: opacity 0.22s ease; }
-.goal-ticker-row.is-fading { opacity: 0; }
-.goal-ticker-status {
-  display: inline-flex; justify-content: center;
-  width: 18px;
-  color: var(--text-tertiary);
-}
-.goal-ticker-status[data-status="done"]    { color: var(--success); }
-.goal-ticker-status[data-status="pending"] { color: var(--text-tertiary); }
-.goal-ticker-text {
-  flex: 1;
-  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-}
-.goal-ticker-meta {
-  font-family: var(--font-mono);
-  font-size: 11px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em;
-  color: var(--text-secondary);
-  padding: 3px 8px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-}
-@media (max-width: 480px) {
-  .goal-ticker { padding: 9px 12px; }
-  .goal-ticker-label { font-size: 9px; letter-spacing: 0.14em; }
-  .goal-ticker-row { font-size: 12px; }
-  .goal-ticker-meta { font-size: 10px; padding: 2px 7px; }
-}
-
-/* ===== Component 3: Day Ring ===== */
-.day-ring-wrap {
-  display: flex; flex-wrap: wrap;
-  align-items: center; justify-content: center;
-  gap: 26px;
-  padding: 22px;
-  margin-bottom: 22px;
-  border-radius: 24px;
-  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(45,232,162,0.16);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(45,232,162,0.35);
-}
-.day-ring {
-  position: relative;
-  width: 168px; height: 168px;
+  text-transform: uppercase;
+  color: var(--text-dim);
   flex-shrink: 0;
 }
-.day-ring svg { width: 100%; height: 100%; display: block; }
-.day-ring-track { fill: none; stroke: rgba(255,255,255,0.06); stroke-width: 8; }
-.day-ring-fill {
-  fill: none;
-  stroke-width: 8;
-  stroke-linecap: round;
-  transform: rotate(-90deg);
-  transform-origin: 60px 60px;
-  transition: stroke 0.7s cubic-bezier(0.22, 1, 0.36, 1),
-              stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.day-ring-overlay {
-  position: absolute; inset: 0;
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  pointer-events: none;
-}
-.day-ring-percent {
-  font-size: 40px; font-weight: 800;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.04em;
-  color: var(--text-primary);
-  line-height: 1;
-}
-.day-ring-phase {
-  margin-top: 5px;
-  font-family: var(--font-mono);
-  font-size: 9.5px; font-weight: 800;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.day-ring-clock {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: var(--text-tertiary);
-  margin-top: 2px;
-}
-.day-ring-text {
-  display: flex; flex-direction: column;
-  gap: 6px;
-  max-width: 280px;
-}
-.day-ring-status { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-.day-ring-remaining { font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); }
-.day-ring-hours { font-family: var(--font-mono); font-size: 11px; color: var(--text-tertiary); }
-@media (max-width: 480px) {
-  .day-ring { width: 144px; height: 144px; }
-  .day-ring-percent { font-size: 32px; }
-  .day-ring-status { font-size: 13px; }
-}
-
-/* ===== Component 4: section + To Do List ===== */
-.section { margin-top: 8px; }
-.section-title {
-  font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--text-tertiary);
-  display: flex; align-items: center; gap: 12px;
-  margin-bottom: 12px;
-}
-.section-title::before {
-  content: ''; width: 18px; height: 1px;
-  background: var(--text-tertiary); opacity: 0.6;
-}
-.section-title::after {
-  content: ''; flex: 1; height: 1px;
-  background: linear-gradient(90deg, rgba(255,255,255,0.08), transparent);
-}
-
-.gm-card {
+.ax-ticker-stage {
+  flex: 1;
+  overflow: hidden;
+  height: 20px;
   position: relative;
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
+}
+.goal-ticker-row {
+  position: absolute; inset: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  opacity: 1;
+  transition: opacity 0.22s ease;
+}
+.goal-ticker-row.is-fading { opacity: 0; }
+.goal-ticker-status {
+  display: inline-flex;
+  justify-content: center;
+  width: 18px;
+  color: var(--text-dim);
+}
+.goal-ticker-status[data-status="done"] { color: var(--accent); }
+.goal-ticker-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ax-ticker-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(45,232,162,0.08);
+  flex-shrink: 0;
+}
+
+/* ── Cards ── */
+.ax-card {
+  background: var(--card-bg);
   border-radius: 24px;
   padding: 20px;
   margin-bottom: 14px;
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.08);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
   transition: background 0.4s;
   overflow: hidden;
-}
-.gm-card.gm-all-done::before {
-  content: '';
-  position: absolute; inset: 0;
-  background: radial-gradient(circle at 50% 0%, rgba(107,227,164,0.10), transparent 60%);
-  pointer-events: none;
-}
-.gm-card.gm-all-done .gm-progress-num,
-.gm-card.gm-all-done .gm-progress-label { color: var(--success); }
-
-.gm-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  flex-wrap: wrap; gap: 12px;
-  margin-bottom: 14px;
   position: relative;
 }
-.gm-header-left { display: flex; flex-direction: column; }
-.gm-eyebrow {
-  font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 6px;
-}
-.gm-progress-row { display: flex; align-items: baseline; gap: 6px; }
-.gm-progress-num {
-  font-size: 42px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -0.045em;
-  color: var(--text-primary);
-  line-height: 1;
-}
-.gm-progress-total {
-  font-family: var(--font-mono);
-  font-size: 18px;
-  color: var(--text-tertiary);
-}
-.gm-progress-label {
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.10em; text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-left: 4px;
-}
-.gm-tomorrow-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 4px; }
-.gm-tomorrow-count {
-  font-family: var(--font-mono);
-  font-size: 11px; font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  letter-spacing: 0.04em; text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.gm-card-tomorrow .gm-progress-row { display: none; }
 
+/* Accent card (day progress) */
+.ax-card-accent {
+  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
+  border: 1px solid rgba(45,232,162,0.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.08),
+    0 8px 30px -14px rgba(45,232,162,0.35);
+}
+.ax-ring-glow {
+  position: absolute;
+  top: -40px; right: -30px;
+  width: 160px; height: 160px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45,232,162,0.18) 0%, transparent 70%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* Done-all glow state */
+.ax-card.gm-all-done::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 50% 0%, rgba(45,232,162,0.10), transparent 60%);
+  pointer-events: none;
+}
+.ax-card.gm-all-done .ax-count-badge { color: var(--accent); }
+
+/* ── Day ring ── */
+.ax-ring-row {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+.ax-ring-wrap {
+  position: relative;
+  width: 128px; height: 128px;
+  flex-shrink: 0;
+}
+.ax-ring-svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+.day-ring-track { transition: stroke 0.7s; }
+.day-ring-fill {
+  transition:
+    stroke 0.7s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke-dashoffset 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.ax-ring-overlay {
+  position: absolute; inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+.ax-ring-percent {
+  font-family: var(--font);
+  font-size: 34px;
+  font-weight: 600;
+  color: #ffffff;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.ax-ring-phase {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: rgba(45,232,162,0.85);
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+.ax-ring-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ax-section-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+.ax-ring-status {
+  font-family: var(--font);
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+.ax-ring-remaining {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.ax-ring-clock {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+.ax-ring-hours {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+
+/* ── Card header row ── */
+.ax-card-row.ax-card-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.ax-count-badge {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.ax-count-label {
+  color: var(--text-dim);
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+/* Tomorrow card */
+.ax-card-tomorrow {}
+.ax-tomorrow-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  margin-top: -6px;
+}
+#gmCardTomorrow .ax-count-badge {
+  font-size: 11px;
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-dim);
+}
+
+/* ── Streak badge ── */
 .gm-streak {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
   border-radius: 999px;
   background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.06);
-  color: var(--text-tertiary);
-  font-size: 11px; font-weight: 600;
-  letter-spacing: 0.10em; text-transform: uppercase;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
   transition: background 0.25s, color 0.25s, border-color 0.25s;
+  margin-bottom: 14px;
 }
 .gm-streak-icon { font-size: 13px; }
 .gm-streak-num {
@@ -362,8 +398,10 @@ body::after {
   filter: drop-shadow(0 0 6px rgba(242,192,99,0.6));
 }
 
+/* ── Progress bar ── */
 .gm-bar {
-  display: flex; gap: 4px;
+  display: flex;
+  gap: 4px;
   height: 6px;
   margin-bottom: 16px;
 }
@@ -375,53 +413,49 @@ body::after {
   transition: background 0.3s, box-shadow 0.3s;
 }
 .gm-bar-seg-done {
-  background: #6BE3A4;
-  box-shadow: 0 0 6px rgba(107,227,164,0.40);
+  background: var(--accent);
+  box-shadow: 0 0 6px rgba(45,232,162,0.40);
 }
 
-.goal-list { list-style: none; margin: 0; padding: 0; }
-.empty-state {
-  text-align: center;
-  font-size: 12px; font-style: italic;
-  color: var(--text-tertiary);
-  padding: 14px 0;
+/* ── Goal rows ── */
+.goal-list, .gm-list {
+  list-style: none;
+  margin: 0; padding: 0;
 }
-
 .gm-row {
-  display: flex; align-items: center; gap: 12px;
-  padding: 12px 14px;
-  margin-bottom: 6px;
-  background: rgba(255,255,255,0.035);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 12px;
-  transition: background 0.2s, opacity 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 13px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  transition: opacity 0.3s;
   position: relative;
+  cursor: pointer;
 }
-.gm-row:hover { background: rgba(255,255,255,0.06); }
-.gm-row.gm-row-done {
-  opacity: 0.45;
-  background: rgba(107,227,164,0.04);
-}
+.gm-row:last-child { border-bottom: none; }
+.gm-row.gm-row-done { opacity: 0.45; }
 .gm-row.gm-row-done .gm-text {
   text-decoration: line-through;
-  text-decoration-color: rgba(255,255,255,0.4);
+  text-decoration-color: rgba(255,255,255,0.28);
 }
 .gm-row.gm-row-queued {
-  background: rgba(242,192,99,0.10);
+  background: rgba(242,192,99,0.08);
   box-shadow: inset 3px 0 0 0 #F2C063;
+  padding-left: 8px;
 }
 .gm-row.gm-row-queued .gm-text { color: #FFE2A8; }
-.gm-row.is-drag-over { border-top: 2px solid #6BE3A4; }
+.gm-row.is-drag-over { border-top: 2px solid var(--accent); }
 .gm-row.is-queue-flashing { animation: gm-queue-flash 0.48s ease-out; }
 @keyframes gm-queue-flash {
-  0%   { background: rgba(255,255,255,0.035); transform: scale(1); }
+  0%   { background: transparent; transform: scale(1); }
   40%  { background: rgba(242,192,99,0.32); transform: scale(1.015); }
-  100% { background: rgba(255,255,255,0.035); transform: scale(1); }
+  100% { background: transparent; transform: scale(1); }
 }
 
+/* ── Handle ── */
 .gm-handle {
   width: 14px; flex-shrink: 0;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   font-weight: 700; font-size: 14px;
   letter-spacing: -2px;
   cursor: grab;
@@ -432,27 +466,28 @@ body::after {
 .gm-row:hover .gm-handle { opacity: 1; }
 .gm-handle:active { cursor: grabbing; }
 
+/* ── Checkbox ── */
 .gm-check {
   appearance: none; -webkit-appearance: none;
   width: 22px; height: 22px; flex-shrink: 0;
   margin: 0;
-  border: 1.5px solid rgba(255,255,255,0.18);
-  background: rgba(0,0,0,0.28);
+  border: 1.5px solid rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.03);
   border-radius: 7px;
   position: relative;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, box-shadow 0.25s;
 }
 .gm-check:checked {
-  background: #6BE3A4;
-  border-color: #6BE3A4;
-  box-shadow: 0 0 12px rgba(107,227,164,0.40);
+  background: #2de8a2;
+  border-color: #2de8a2;
+  box-shadow: 0 0 12px rgba(45,232,162,0.45);
 }
 .gm-check:checked::after {
   content: '';
   position: absolute; left: 6px; top: 2px;
   width: 6px; height: 11px;
-  border: solid #0A0A0B;
+  border: solid #ffffff;
   border-width: 0 2.5px 2.5px 0;
   transform: rotate(45deg);
   animation: gm-check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -463,10 +498,12 @@ body::after {
 }
 .gm-check:disabled { cursor: not-allowed; opacity: 0.55; }
 
+/* ── Goal text ── */
 .gm-text {
   flex: 1;
-  font-size: 14px;
-  color: var(--text-primary);
+  font-size: 15.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
   cursor: text;
   outline: none;
   border-radius: 4px;
@@ -475,12 +512,16 @@ body::after {
 }
 .gm-text[contenteditable="true"] {
   outline: 1px solid rgba(255,255,255,0.18);
-  background: rgba(0,0,0,0.28);
+  background: rgba(0,0,0,0.18);
+}
+.gm-row-done .gm-text {
+  color: rgba(255,255,255,0.4);
 }
 
+/* ── Queue button ── */
 .gm-queue-btn {
   border: 0; background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   font-size: 14px;
   cursor: pointer;
   padding: 4px 6px;
@@ -496,9 +537,10 @@ body::after {
 }
 .gm-queue-btn:disabled { cursor: not-allowed; opacity: 0.3; }
 
+/* ── Delete button ── */
 .goal-delete {
   border: 0; background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   font-size: 18px;
   cursor: pointer;
   padding: 0 4px;
@@ -508,6 +550,7 @@ body::after {
 .gm-row:hover .goal-delete { opacity: 1; }
 .goal-delete:hover { color: var(--danger); }
 
+/* ── Show more toggle ── */
 .gm-show-toggle {
   width: 100%;
   margin: 6px 0 0;
@@ -515,15 +558,19 @@ body::after {
   border: 1px dashed rgba(255,255,255,0.12);
   border-radius: 10px;
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   font-family: inherit;
   font-size: 11px; font-weight: 600;
   letter-spacing: 0.06em; text-transform: uppercase;
   cursor: pointer;
   transition: color 0.2s, border-color 0.2s;
 }
-.gm-show-toggle:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.22); }
+.gm-show-toggle:hover {
+  color: var(--text-primary);
+  border-color: rgba(255,255,255,0.22);
+}
 
+/* ── Push button ── */
 .gm-push-btn {
   width: 100%;
   margin-top: 14px;
@@ -531,7 +578,7 @@ body::after {
   border: 1px dashed rgba(255,255,255,0.16);
   border-radius: 12px;
   background: transparent;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   font-family: inherit;
   font-size: 11px; font-weight: 700;
   letter-spacing: 0.10em; text-transform: uppercase;
@@ -545,9 +592,13 @@ body::after {
   background: rgba(255,255,255,0.04);
 }
 
+/* ── Input row ── */
 .goal-input-wrap.gm-input-wrap {
-  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
-  margin-top: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,0.06);
 }
@@ -556,175 +607,278 @@ body::after {
   padding: 11px 14px;
   border: 1px solid rgba(255,255,255,0.08);
   border-radius: 12px;
-  background: rgba(0,0,0,0.28);
+  background: rgba(255,255,255,0.05);
   color: var(--text-primary);
-  font-family: inherit; font-size: 16px;
+  font-family: inherit;
+  font-size: 16px;
   outline: none;
   transition: border-color 0.2s, background 0.2s;
 }
-.gm-input::placeholder { color: var(--text-tertiary); }
-.gm-input:focus { border-color: rgba(255,255,255,0.28); background: rgba(0,0,0,0.36); }
-
+.gm-input::placeholder { color: var(--text-dim); }
+.gm-input:focus {
+  border-color: rgba(255,255,255,0.28);
+  background: rgba(255,255,255,0.07);
+}
 .gm-add {
-  padding: 11px 20px;
-  border: 0; border-radius: 12px;
-  background: linear-gradient(180deg, #FFFFFF 0%, #E8E5DD 100%);
-  color: #0A0A0B;
-  font-family: inherit; font-size: 13px; font-weight: 700;
+  padding: 0 16px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  color: #04140d;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.9),
-    0 2px 8px rgba(0,0,0,0.35),
-    0 8px 22px rgba(0,0,0,0.25);
+  box-shadow: 0 0 14px rgba(45,232,162,0.4);
   transition: transform 0.1s, filter 0.15s;
+  white-space: nowrap;
 }
 .gm-add:hover { filter: brightness(1.06); transform: translateY(-1px); }
 .gm-add:active { transform: translateY(0); }
-
 .gm-polish {
-  padding: 11px 18px;
+  padding: 0 14px;
+  height: 44px;
   border: 1px solid rgba(255,255,255,0.10);
   border-radius: 12px;
-  background: rgba(255,255,255,0.04);
-  color: var(--text-primary);
-  font-family: inherit; font-size: 13px; font-weight: 600;
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
 }
 .gm-polish:hover {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.08);
   border-color: rgba(255,255,255,0.18);
 }
-
 .gm-status {
   flex-basis: 100%;
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: var(--text-dim);
   min-height: 14px;
   margin-top: 4px;
 }
 .gm-status.gm-status-error { color: var(--danger); }
 
-@media (max-width: 480px) {
-  body { padding: 0 0 50px; }
-  .page { padding-left: 14px; padding-right: 14px; }
-  .gm-card { padding: 16px; }
-  .gm-progress-num { font-size: 36px; }
+/* ── Empty state ── */
+.ax-empty {
+  text-align: center;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 14px 0;
 }
 
-/* ── Long-term goals ── */
+/* ── LTG add button ── */
+.ax-add-btn {
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  padding: 6px 12px;
+  color: rgba(255,255,255,0.7);
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+}
+.ax-add-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.20);
+}
+
+/* ── LTG cards (generated by JS innerHTML) ── */
 .ltg-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 16px;
-  padding: 16px;
-  margin-bottom: 10px;
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
+.ltg-card:last-child { border-bottom: none; }
 .ltg-card-top {
-  display: flex; align-items: flex-start; justify-content: space-between;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+.ltg-card-title {
+  font-size: 15px;
+  color: rgba(255,255,255,0.9);
+  font-weight: 500;
+}
+.ltg-card-sub {
+  font-size: 11px;
+  color: rgba(255,255,255,0.42);
+  font-family: var(--font-mono);
+  margin-top: 2px;
+}
+.ltg-card-actions {
+  display: flex;
+  gap: 6px;
+}
+.ltg-btn-icon {
+  background: transparent;
+  border: 0;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  transition: color 0.15s;
+}
+.ltg-btn-icon:hover { color: #fff; }
+.ltg-btn-del:hover { color: rgba(255,80,80,0.85); }
+.ltg-vals {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   margin-bottom: 10px;
 }
-.ltg-card-title { font-size: 15px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
-.ltg-card-sub   { font-size: 11px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; }
-.ltg-card-actions { display: flex; gap: 5px; flex-shrink: 0; margin-left: 8px; }
-.ltg-btn-icon {
-  width: 28px; height: 28px; border: none;
-  background: rgba(255,255,255,0.06); border-radius: 8px;
-  color: var(--text-tertiary); font-size: 12px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent; transition: background 0.15s;
-}
-.ltg-btn-icon:hover { background: rgba(255,255,255,0.10); }
-.ltg-btn-del:hover  { color: var(--danger); }
-.ltg-vals { display: flex; align-items: baseline; gap: 6px; margin-bottom: 10px; }
 .ltg-cur {
-  font-size: 28px; font-weight: 700; color: var(--text-primary);
-  font-variant-numeric: tabular-nums; letter-spacing: -0.03em; line-height: 1;
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 600;
+  color: #fff;
 }
-.ltg-sep { font-size: 13px; color: var(--text-tertiary); font-family: var(--font-mono); }
-.ltg-bar-wrap { height: 5px; background: rgba(255,255,255,0.07); border-radius: 3px; margin-bottom: 10px; overflow: hidden; }
-.ltg-bar { height: 100%; background: var(--success); border-radius: 3px; box-shadow: 0 0 6px rgba(107,227,164,0.4); transition: width 0.7s cubic-bezier(0.22,1,0.36,1); }
-.ltg-footer { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-tertiary); font-family: var(--font-mono); }
-.ltg-empty  { text-align: center; font-size: 13px; color: var(--text-tertiary); padding: 20px 0; }
-.ltg-add-btn {
-  width: 100%; padding: 12px; border-radius: 12px;
-  border: 1px dashed rgba(255,255,255,0.14); background: transparent;
-  color: var(--text-tertiary); font-family: var(--font); font-size: 14px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  margin-top: 4px;
+.ltg-sep {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255,255,255,0.42);
 }
-.ltg-add-btn:hover { background: rgba(255,255,255,0.04); color: var(--text-primary); border-color: rgba(255,255,255,0.24); }
-/* LTG Modal */
+.ltg-bar-wrap {
+  height: 7px;
+  border-radius: 6px;
+  background: rgba(255,255,255,0.07);
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+.ltg-bar {
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #13b683, #2de8a2);
+  box-shadow: 0 0 12px rgba(45,232,162,0.5);
+  transition: width 0.6s ease;
+}
+.ltg-footer {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+}
+.ltg-empty {
+  font-size: 12px;
+  font-style: italic;
+  color: rgba(255,255,255,0.35);
+  padding: 12px 0 4px;
+}
+
+/* ── LTG Modal ── */
 .ltg-modal-bg {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.72);
-  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
-  z-index: 900; align-items: flex-end; justify-content: center;
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  z-index: 900;
+  align-items: flex-end;
+  justify-content: center;
 }
 .ltg-modal {
-  background: #111318; border: 1px solid rgba(255,255,255,0.10);
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 24px 24px 0 0;
   padding: 24px 20px max(28px, calc(env(safe-area-inset-bottom) + 20px));
   width: 100%; max-width: 540px; max-height: 90vh;
   overflow-y: auto; overscroll-behavior: contain;
 }
-.ltg-modal-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin-bottom: 20px; }
-.ltg-field { margin-bottom: 14px; }
-.ltg-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 6px; }
-.ltg-minput, .ltg-mselect {
-  width: 100%; background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.10); border-radius: 10px;
-  color: var(--text-primary); font-family: var(--font);
-  font-size: 16px; padding: 10px 13px; outline: none;
-  -webkit-appearance: none; box-sizing: border-box; transition: border-color 0.15s;
+.ltg-modal-title {
+  font-size: 17px; font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 20px;
 }
-.ltg-minput:focus, .ltg-mselect:focus { border-color: rgba(107,227,164,0.45); }
-.ltg-modal-btns { display: flex; gap: 8px; margin-top: 20px; }
+.ltg-field { margin-bottom: 14px; }
+.ltg-label {
+  font-size: 11px; font-weight: 600;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+.ltg-minput, .ltg-mselect {
+  width: 100%;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 16px;
+  padding: 10px 13px;
+  outline: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.ltg-minput:focus, .ltg-mselect:focus {
+  border-color: rgba(45,232,162,0.45);
+}
+.ltg-modal-btns {
+  display: flex; gap: 8px; margin-top: 20px;
+}
 .ltg-btn-save {
-  flex: 1; padding: 13px; border-radius: 12px; border: none;
-  background: linear-gradient(180deg,#FFFFFF 0%,#E8E5DD 100%);
-  color: #0A0A0B; font-family: var(--font); font-size: 14px; font-weight: 700;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  flex: 1; padding: 13px;
+  border-radius: 12px; border: none;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  color: #04140d;
+  font-family: var(--font);
+  font-size: 14px; font-weight: 700;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 .ltg-btn-cancel {
   padding: 13px 18px; border-radius: 12px;
-  border: 1px solid rgba(255,255,255,0.10); background: rgba(255,255,255,0.04);
-  color: var(--text-secondary); font-family: var(--font); font-size: 14px;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 14px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* ── Goal critique modal ── */
+/* ── Critique modal ── */
 .critique-modal-bg {
   position: fixed; inset: 0;
   background: rgba(0,0,0,0.76);
-  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
-  z-index: 1000; display: none;
-  align-items: flex-end; justify-content: center;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
 }
 .critique-modal-bg.open { display: flex; }
 .critique-modal {
-  background: #111318; border: 1px solid rgba(255,255,255,0.10);
+  background: #111318;
+  border: 1px solid rgba(255,255,255,0.10);
   border-radius: 24px 24px 0 0;
   padding: 24px 20px max(28px, calc(env(safe-area-inset-bottom) + 20px));
   width: 100%; max-width: 540px; max-height: 85vh;
   overflow-y: auto; overscroll-behavior: contain;
-  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
-  animation: critiqueSlide 0.35s cubic-bezier(0.22,1,0.36,1) both;
+  will-change: transform;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  animation: critiqueSlide 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 @keyframes critiqueSlide {
   from { transform: translateY(60px) translateZ(0); opacity: 0; }
-  to   { transform: translateY(0)    translateZ(0); opacity: 1; }
+  to   { transform: translateY(0) translateZ(0); opacity: 1; }
 }
 .critique-header {
   display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
 }
 .critique-icon {
   width: 32px; height: 32px; border-radius: 10px;
-  background: rgba(242,192,99,0.12); border: 1px solid rgba(242,192,99,0.28);
+  background: rgba(242,192,99,0.12);
+  border: 1px solid rgba(242,192,99,0.28);
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; flex-shrink: 0;
 }
@@ -732,159 +886,171 @@ body::after {
   font-size: 16px; font-weight: 700; color: var(--text-primary);
 }
 .critique-body {
-  font-size: 14px; line-height: 1.65; color: var(--text-secondary);
+  font-size: 14px; line-height: 1.65;
+  color: var(--text-secondary);
   min-height: 60px; margin-bottom: 20px;
 }
 .critique-loading {
   display: flex; align-items: center; gap: 8px;
-  color: var(--text-tertiary); font-size: 13px;
+  color: var(--text-dim); font-size: 13px;
 }
 .critique-dot-pulse { display: flex; gap: 4px; align-items: center; }
 .critique-dot-pulse span {
   width: 5px; height: 5px; border-radius: 50%;
   background: rgba(242,192,99,0.5);
   animation: cdotPulse 1.2s ease-in-out infinite;
-  will-change: transform,opacity; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  will-change: transform, opacity;
+  -webkit-backface-visibility: hidden; backface-visibility: hidden;
 }
 .critique-dot-pulse span:nth-child(2) { animation-delay: 0.2s; }
 .critique-dot-pulse span:nth-child(3) { animation-delay: 0.4s; }
 @keyframes cdotPulse {
-  0%,80%,100% { opacity:0.3; transform:scale(0.8) translateZ(0); }
-  40%          { opacity:1;   transform:scale(1)   translateZ(0); }
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8) translateZ(0); }
+  40%           { opacity: 1;   transform: scale(1)   translateZ(0); }
 }
 .critique-btns { display: flex; flex-direction: column; gap: 8px; }
 .critique-btn {
-  width: 100%; padding: 13px; border-radius: 12px; font-family: var(--font);
-  font-size: 14px; font-weight: 600; cursor: pointer;
-  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+  width: 100%; padding: 13px;
+  border-radius: 12px;
+  font-family: var(--font);
+  font-size: 14px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s;
   border: none; text-align: center;
 }
 .critique-btn:active { opacity: 0.75; }
 .critique-btn-keep {
-  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
   color: var(--text-secondary);
 }
 .critique-btn-suggest {
-  background: linear-gradient(180deg,#FFFFFF 0%,#E8E5DD 100%); color: #111;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  color: #04140d;
 }
 .critique-btn-adjust {
-  background: transparent; border: 1px solid rgba(255,255,255,0.10);
-  color: var(--text-tertiary); font-size: 13px; font-weight: 500; padding: 10px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.10);
+  color: var(--text-dim);
+  font-size: 13px; font-weight: 500; padding: 10px;
 }
 
+@media (max-width: 480px) {
+  body { padding: 0 0 50px; }
+  .ax-page { padding-left: 14px; padding-right: 14px; }
+  .ax-greeting { font-size: 24px; }
+  .ax-ring-percent { font-size: 28px; }
+  .ax-ring-status { font-size: 15px; }
+}
 </style>
 <link rel="stylesheet" href="/animations.css">
 <link rel="stylesheet" href="/axis-design.css">
 </head>
 <body>
-<div class="page">
+<div class="ax-page">
 
-  <div class="dash-page-heading">
-    <span class="dash-page-heading-title">AXIS</span>
-    <span class="dash-page-heading-sub" id="dashHeadingSub">— Your Dashboard</span>
+  <!-- HEADER -->
+  <header class="ax-header">
+    <div class="ax-header-left">
+      <div class="ax-date" id="axDateLabel">Loading…</div>
+      <h1 class="ax-greeting" id="axGreeting">Good morning</h1>
+    </div>
+    <div class="ax-avatar" id="axAvatar">G</div>
+  </header>
+
+  <!-- TICKER STRIP -->
+  <div class="ax-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
+    <span class="goal-ticker-led-dot"></span>
+    <div class="ax-ticker-label">GOALS</div>
+    <div class="ax-ticker-stage" id="goalTickerStage">
+      <div class="goal-ticker-row">
+        <span class="goal-ticker-status" data-status="">—</span>
+        <span class="goal-ticker-text">Loading…</span>
+      </div>
+    </div>
+    <div class="ax-ticker-meta" id="goalTickerMeta">0/0</div>
   </div>
 
-  <div class="ticker-row">
-    <div class="goal-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
-      <div class="goal-ticker-led"><span class="goal-ticker-led-dot"></span></div>
-      <div class="goal-ticker-label">GOALS</div>
-      <div class="goal-ticker-stage" id="goalTickerStage">
-        <div class="goal-ticker-row">
-          <span class="goal-ticker-status" data-status="">—</span>
-          <span class="goal-ticker-text">Loading…</span>
+  <!-- DAY PROGRESS CARD (accent) -->
+  <div class="ax-card ax-card-accent">
+    <div class="ax-ring-glow"></div>
+    <div class="ax-ring-row">
+      <div class="ax-ring-wrap">
+        <svg class="ax-ring-svg" viewBox="0 0 128 128" style="transform:rotate(-90deg)">
+          <circle class="day-ring-track" cx="64" cy="64" r="56" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="9"/>
+          <circle class="day-ring-fill" id="dayRingFill" cx="64" cy="64" r="56" fill="none" stroke="#2de8a2" stroke-width="9" stroke-linecap="round" style="filter:drop-shadow(0 0 6px rgba(45,232,162,0.6))"/>
+        </svg>
+        <div class="ax-ring-overlay">
+          <div class="ax-ring-percent" id="dayRingPercent">—</div>
+          <div class="ax-ring-phase" id="dayRingPhase">—</div>
         </div>
       </div>
-      <div class="goal-ticker-meta" id="goalTickerMeta">0/0</div>
-    </div>
-  </div>
-
-  <div class="day-ring-wrap">
-    <div class="day-ring">
-      <svg viewBox="0 0 120 120">
-        <defs>
-          <filter id="dayRingGlow" x="-20%" y="-20%" width="140%" height="140%">
-            <feGaussianBlur stdDeviation="2.4" result="b" />
-            <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-          </filter>
-        </defs>
-        <circle class="day-ring-track" cx="60" cy="60" r="52" />
-        <circle class="day-ring-fill"  cx="60" cy="60" r="52" id="dayRingFill" filter="url(#dayRingGlow)" />
-      </svg>
-      <div class="day-ring-overlay">
-        <div class="day-ring-percent" id="dayRingPercent">—</div>
-        <div class="day-ring-phase"   id="dayRingPhase">—</div>
-        <div class="day-ring-clock"   id="dayRingClock">—</div>
-      </div>
-    </div>
-    <div class="day-ring-text">
-      <div class="day-ring-status"    id="dayRingStatus">Loading…</div>
-      <div class="day-ring-remaining" id="dayRingRemaining">—</div>
-      <div class="day-ring-hours" id="dayRingHours">8:00 AM – 12:00 AM</div>
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="section-title">To Do List</div>
-
-    <!-- TODAY -->
-    <div class="gm-card" id="gmCardToday">
-      <div class="gm-header">
-        <div class="gm-header-left">
-          <div class="gm-eyebrow" id="todayLabel">Today —</div>
-          <div class="gm-progress-row">
-            <span class="gm-progress-num"   id="gmProgressNum">0</span>
-            <span class="gm-progress-total" id="gmProgressTotal">/ 0</span>
-            <span class="gm-progress-label" id="gmProgressLabel">no goals yet</span>
-          </div>
-        </div>
-        <div class="gm-streak" id="gmStreak">
-          <span class="gm-streak-icon">⚡</span>
-          <span class="gm-streak-num" id="gmStreakNum">0</span>
-          <span>day streak</span>
-        </div>
-      </div>
-      <div class="gm-bar" id="gmBar"></div>
-      <ul id="goalList" class="goal-list gm-list"></ul>
-      <div id="emptyState" class="empty-state">No goals for today yet — add one below.</div>
-      <button type="button" id="gmPushBtn" class="gm-push-btn" style="display:none;">Push remaining to tomorrow</button>
-      <div class="goal-input-wrap gm-input-wrap">
-        <input id="goalInput" class="gm-input" type="text" placeholder="Add a goal for today…" autocomplete="off">
-        <button type="button" id="goalAddBtn"    class="gm-add">+ Add</button>
-        <button type="button" id="goalPolishBtn" class="gm-polish">✨ Polish</button>
-        <div class="gm-status" id="polishStatus"></div>
-      </div>
-    </div>
-
-    <!-- PLAN TOMORROW -->
-    <div class="gm-card gm-card-tomorrow" id="gmCardTomorrow">
-      <div class="gm-header">
-        <div class="gm-header-left">
-          <div class="gm-eyebrow" id="tomorrowLabel">Plan tomorrow —</div>
-          <div class="gm-tomorrow-sub">Write tonight, locked until 6 AM.</div>
-        </div>
-        <div class="gm-tomorrow-count" id="gmTomorrowCount">0 planned</div>
-      </div>
-      <ul id="tomorrowList" class="goal-list gm-list"></ul>
-      <div id="tomorrowEmpty" class="empty-state">Nothing planned for tomorrow yet</div>
-      <div class="goal-input-wrap gm-input-wrap">
-        <input id="tomorrowInput" class="gm-input" type="text" placeholder="Add a goal for tomorrow…" autocomplete="off">
-        <button type="button" id="tomorrowAddBtn"    class="gm-add">+ Add</button>
-        <button type="button" id="tomorrowPolishBtn" class="gm-polish">✨ Polish</button>
-        <div class="gm-status" id="tomorrowStatus"></div>
+      <div class="ax-ring-text">
+        <div class="ax-section-label">Day progress</div>
+        <div class="ax-ring-status" id="dayRingStatus">Loading…</div>
+        <div class="ax-ring-remaining" id="dayRingRemaining">—</div>
+        <div class="ax-ring-clock" id="dayRingClock">—</div>
+        <div class="ax-ring-hours" id="dayRingHours">8:00 AM – 12:00 AM</div>
       </div>
     </div>
   </div>
 
-  <!-- LONG-TERM GOALS -->
-  <div class="section" id="ltgSection">
-    <div class="section-title">Long-Term Goals</div>
+  <!-- TODAY CARD -->
+  <div class="ax-card" id="gmCardToday">
+    <div class="ax-card-row ax-card-header-row">
+      <span class="ax-section-label" id="todayLabel">TODAY</span>
+      <span class="ax-count-badge">
+        <span id="gmProgressNum">0</span><span id="gmProgressTotal">/ 0</span>
+        <span class="ax-count-label" id="gmProgressLabel"></span>
+      </span>
+    </div>
+    <div class="gm-streak" id="gmStreak">
+      <span class="gm-streak-icon">⚡</span>
+      <span class="gm-streak-num" id="gmStreakNum">0</span>
+      <span>day streak</span>
+    </div>
+    <div class="gm-bar" id="gmBar"></div>
+    <ul id="goalList" class="goal-list gm-list"></ul>
+    <div id="emptyState" class="ax-empty">No goals for today yet — add one below.</div>
+    <button type="button" id="gmPushBtn" class="gm-push-btn" style="display:none">Push remaining to tomorrow</button>
+    <div class="goal-input-wrap gm-input-wrap">
+      <input id="goalInput" class="gm-input" type="text" placeholder="Add a goal for today…" autocomplete="off">
+      <button type="button" id="goalAddBtn" class="gm-add">+ Add</button>
+      <button type="button" id="goalPolishBtn" class="gm-polish">✨ Polish</button>
+      <div class="gm-status" id="polishStatus"></div>
+    </div>
+  </div>
+
+  <!-- PLAN TOMORROW CARD -->
+  <div class="ax-card ax-card-tomorrow" id="gmCardTomorrow">
+    <div class="ax-card-row ax-card-header-row">
+      <span class="ax-section-label" id="tomorrowLabel">PLAN TOMORROW</span>
+      <span class="ax-count-badge" id="gmTomorrowCount">0 planned</span>
+    </div>
+    <div class="ax-tomorrow-sub">Write tonight, locked until 6 AM.</div>
+    <ul id="tomorrowList" class="goal-list gm-list"></ul>
+    <div id="tomorrowEmpty" class="ax-empty">Nothing planned for tomorrow yet</div>
+    <div class="goal-input-wrap gm-input-wrap">
+      <input id="tomorrowInput" class="gm-input" type="text" placeholder="Add a goal for tomorrow…" autocomplete="off">
+      <button type="button" id="tomorrowAddBtn" class="gm-add">+ Add</button>
+      <button type="button" id="tomorrowPolishBtn" class="gm-polish">✨ Polish</button>
+      <div class="gm-status" id="tomorrowStatus"></div>
+    </div>
+  </div>
+
+  <!-- LONG-TERM GOALS CARD -->
+  <div class="ax-card" id="ltgSection">
+    <div class="ax-card-row ax-card-header-row">
+      <span class="ax-section-label">LONG-TERM GOALS</span>
+      <button type="button" class="ax-add-btn" id="ltgAddBtn">+ Add Goal</button>
+    </div>
     <div id="ltgList"></div>
-    <button type="button" class="ltg-add-btn" id="ltgAddBtn">+ Add Goal</button>
   </div>
 
-</div>
+</div><!-- .ax-page -->
 
-<!-- LTG Add/Edit Modal -->
+<!-- LTG Modal -->
 <div class="ltg-modal-bg" id="ltgModalBg" style="display:none">
   <div class="ltg-modal">
     <div class="ltg-modal-title" id="ltgModalTitle">New Goal</div>
@@ -910,7 +1076,7 @@ body::after {
       <div class="ltg-label">Target Value &amp; Unit</div>
       <div style="display:flex;gap:8px">
         <input type="number" class="ltg-minput" id="ltgTarget" placeholder="e.g. 170" inputmode="decimal" step="any" style="flex:1">
-        <input type="text" class="ltg-minput" id="ltgUnit" placeholder="unit" autocomplete="off" style="width:100px">
+        <input type="text"   class="ltg-minput" id="ltgUnit"   placeholder="unit" autocomplete="off" style="width:100px">
       </div>
     </div>
     <div class="ltg-field">
@@ -924,7 +1090,7 @@ body::after {
   </div>
 </div>
 
-<!-- Goal Critique Modal -->
+<!-- Critique Modal -->
 <div class="critique-modal-bg" id="critiqueModalBg">
   <div class="critique-modal">
     <div class="critique-header">
@@ -1176,7 +1342,7 @@ body::after {
     return h + 'h ' + m + 'm';
   }
 
-  const C = 2 * Math.PI * 52;
+  const C = 2 * Math.PI * 56;
   const fillEl = document.getElementById('dayRingFill');
   fillEl.setAttribute('stroke-dasharray', C);
   fillEl.setAttribute('stroke-dashoffset', C);
@@ -1556,8 +1722,20 @@ body::after {
 
   // ---------- Page heading ----------
   (function() {
-    const el = document.getElementById('dashHeadingSub');
-    if (!el) return;
+    // Populate greeting, avatar, and date
+    const greetEl  = document.getElementById('axGreeting');
+    const avatarEl = document.getElementById('axAvatar');
+    const dateEl   = document.getElementById('axDateLabel');
+
+    // Date label
+    if (dateEl) {
+      const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const now = new Date();
+      dateEl.textContent = days[now.getDay()] + ' · ' + months[now.getMonth()] + ' ' + now.getDate();
+    }
+
+    // Name / greeting
     try {
       const s = JSON.parse(localStorage.getItem('settings'));
       let name = s && typeof s.firstName === 'string' && s.firstName.trim();
@@ -1566,7 +1744,10 @@ body::after {
         const sp  = raw.indexOf(' ');
         name = sp >= 0 ? raw.slice(0, sp) : raw;
       }
-      if (name) el.textContent = '— ' + name + '’s Dashboard';
+      const h = new Date().getHours();
+      const tod = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+      if (greetEl) greetEl.textContent = 'Good ' + tod + (name ? ', ' + name : '');
+      if (avatarEl) avatarEl.textContent = name ? name[0].toUpperCase() : 'G';
     } catch(e) {}
   })();
 
