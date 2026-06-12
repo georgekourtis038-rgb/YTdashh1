@@ -9,6 +9,9 @@
 <link rel="apple-touch-icon" href="axis-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
 <title>Axis</title>
 <script src="topbar.js" defer></script>
 <script src="/push-init.js" defer></script>
@@ -22,12 +25,12 @@
   --text-primary: #ffffff;
   --text-secondary: rgba(255,255,255,0.86);
   --text-muted: rgba(255,255,255,0.55);
-  --text-dim: rgba(255,255,255,0.42);
-  --text-tertiary: rgba(255,255,255,0.42);
+  --text-dim: rgba(255,255,255,0.40);
+  --text-tertiary: rgba(255,255,255,0.40);
   --border: rgba(255,255,255,0.08);
   --card-bg: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
-  --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font: 'Geist', 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Geist Mono', 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --success: #2de8a2;
   --warning: #F2C063;
   --danger: #FF6B6B;
@@ -95,7 +98,7 @@ body.gd-page-out {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 .ax-header-left {
   display: flex;
@@ -107,7 +110,7 @@ body.gd-page-out {
   font-weight: 400;
   letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: var(--text-dim);
+  color: rgba(255,255,255,0.40);
 }
 .ax-greeting {
   margin: 5px 0 0;
@@ -133,80 +136,6 @@ body.gd-page-out {
   user-select: none;
 }
 
-/* ── Ticker strip ── */
-.ax-ticker {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 16px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  margin-bottom: 14px;
-}
-.goal-ticker-led-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 8px rgba(45,232,162,0.7);
-  flex-shrink: 0;
-  animation: led-pulse 1.6s ease-in-out infinite;
-}
-@keyframes led-pulse {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50%       { opacity: 0.45; transform: scale(0.85); }
-}
-.ax-ticker-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--text-dim);
-  flex-shrink: 0;
-}
-.ax-ticker-stage {
-  flex: 1;
-  overflow: hidden;
-  height: 20px;
-  position: relative;
-}
-.goal-ticker-row {
-  position: absolute; inset: 0;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-secondary);
-  white-space: nowrap;
-  opacity: 1;
-  transition: opacity 0.22s ease;
-}
-.goal-ticker-row.is-fading { opacity: 0; }
-.goal-ticker-status {
-  display: inline-flex;
-  justify-content: center;
-  width: 18px;
-  color: var(--text-dim);
-}
-.goal-ticker-status[data-status="done"] { color: var(--accent); }
-.goal-ticker-text {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.ax-ticker-meta {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--accent);
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(45,232,162,0.08);
-  flex-shrink: 0;
-}
-
 /* ── Cards ── */
 .ax-card {
   background: var(--card-bg);
@@ -224,6 +153,7 @@ body.gd-page-out {
 .ax-card-accent {
   background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
   border: 1px solid rgba(45,232,162,0.16);
+  padding: 24px;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.08),
     0 8px 30px -14px rgba(45,232,162,0.35);
@@ -238,7 +168,7 @@ body.gd-page-out {
   pointer-events: none;
 }
 
-/* Done-all glow state */
+/* Done-all glow */
 .ax-card.gm-all-done::before {
   content: '';
   position: absolute; inset: 0;
@@ -285,6 +215,11 @@ body.gd-page-out {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.03em;
 }
+.ax-ring-percent-sign {
+  font-size: 18px;
+  color: rgba(255,255,255,0.50);
+  vertical-align: middle;
+}
 .ax-ring-phase {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -298,37 +233,31 @@ body.gd-page-out {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 4px;
 }
 .ax-section-label {
   font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--text-dim);
-  margin-bottom: 4px;
+  color: rgba(255,255,255,0.40);
+  margin-bottom: 0;
+}
+.ax-ring-text .ax-section-label {
+  margin-bottom: 8px;
 }
 .ax-ring-status {
   font-family: var(--font);
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   color: #ffffff;
+  margin-bottom: 6px;
 }
 .ax-ring-remaining {
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-muted);
-}
-.ax-ring-clock {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-dim);
-}
-.ax-ring-hours {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
+  font-size: 13.5px;
+  color: rgba(255,255,255,0.55);
+  line-height: 1.5;
 }
 
 /* ── Card header row ── */
@@ -337,6 +266,15 @@ body.gd-page-out {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 14px;
+}
+#gmCardToday .ax-card-row.ax-card-header-row {
+  margin-bottom: 8px;
+}
+#ltgSection .ax-card-row.ax-card-header-row {
+  margin-bottom: 18px;
+}
+#gmCardTomorrow .ax-card-row.ax-card-header-row {
+  margin-bottom: 8px;
 }
 .ax-count-badge {
   font-family: var(--font-mono);
@@ -350,71 +288,18 @@ body.gd-page-out {
   font-size: 11px;
 }
 
-/* Tomorrow card */
-.ax-card-tomorrow {}
+/* Tomorrow card sub */
 .ax-tomorrow-sub {
   font-size: 12px;
   color: var(--text-muted);
   margin-bottom: 12px;
-  margin-top: -6px;
+  margin-top: -4px;
 }
 #gmCardTomorrow .ax-count-badge {
   font-size: 11px;
-  font-family: var(--font-mono);
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--text-dim);
-}
-
-/* ── Streak badge ── */
-.gm-streak {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 7px 12px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.06);
-  color: var(--text-dim);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  transition: background 0.25s, color 0.25s, border-color 0.25s;
-  margin-bottom: 14px;
-}
-.gm-streak-icon { font-size: 13px; }
-.gm-streak-num {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-.gm-streak.gm-streak-active {
-  background: rgba(242,192,99,0.10);
-  color: #F2C063;
-  border-color: rgba(242,192,99,0.32);
-}
-.gm-streak.gm-streak-active .gm-streak-icon {
-  filter: drop-shadow(0 0 6px rgba(242,192,99,0.6));
-}
-
-/* ── Progress bar ── */
-.gm-bar {
-  display: flex;
-  gap: 4px;
-  height: 6px;
-  margin-bottom: 16px;
-}
-.gm-bar:empty { display: none; }
-.gm-bar-seg {
-  flex: 1;
-  background: rgba(255,255,255,0.06);
-  border-radius: 3px;
-  transition: background 0.3s, box-shadow 0.3s;
-}
-.gm-bar-seg-done {
-  background: var(--accent);
-  box-shadow: 0 0 6px rgba(45,232,162,0.40);
 }
 
 /* ── Goal rows ── */
@@ -471,8 +356,8 @@ body.gd-page-out {
   appearance: none; -webkit-appearance: none;
   width: 22px; height: 22px; flex-shrink: 0;
   margin: 0;
-  border: 1.5px solid rgba(255,255,255,0.22);
-  background: rgba(255,255,255,0.03);
+  border: 1.5px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.06);
   border-radius: 7px;
   position: relative;
   cursor: pointer;
@@ -487,7 +372,7 @@ body.gd-page-out {
   content: '';
   position: absolute; left: 6px; top: 2px;
   width: 6px; height: 11px;
-  border: solid #ffffff;
+  border: solid #04140d;
   border-width: 0 2.5px 2.5px 0;
   transform: rotate(45deg);
   animation: gm-check-pop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -514,9 +399,7 @@ body.gd-page-out {
   outline: 1px solid rgba(255,255,255,0.18);
   background: rgba(0,0,0,0.18);
 }
-.gm-row-done .gm-text {
-  color: rgba(255,255,255,0.4);
-}
+.gm-row-done .gm-text { color: rgba(255,255,255,0.4); }
 
 /* ── Queue button ── */
 .gm-queue-btn {
@@ -526,16 +409,17 @@ body.gd-page-out {
   cursor: pointer;
   padding: 4px 6px;
   border-radius: 6px;
-  opacity: 0.55;
+  opacity: 0;
   transition: opacity 0.2s, color 0.2s, transform 0.1s;
 }
-.gm-queue-btn:hover { opacity: 1; }
+.gm-row:hover .gm-queue-btn { opacity: 0.55; }
+.gm-queue-btn:hover { opacity: 1 !important; }
 .gm-queue-btn.gm-queue-active {
   color: #F2C063;
   opacity: 1;
   filter: drop-shadow(0 0 4px rgba(242,192,99,0.65));
 }
-.gm-queue-btn:disabled { cursor: not-allowed; opacity: 0.3; }
+.gm-queue-btn:disabled { cursor: not-allowed; opacity: 0.3 !important; }
 
 /* ── Delete button ── */
 .goal-delete {
@@ -544,11 +428,11 @@ body.gd-page-out {
   font-size: 18px;
   cursor: pointer;
   padding: 0 4px;
-  opacity: 0.5;
+  opacity: 0;
   transition: opacity 0.2s, color 0.2s;
 }
-.gm-row:hover .goal-delete { opacity: 1; }
-.goal-delete:hover { color: var(--danger); }
+.gm-row:hover .goal-delete { opacity: 0.7; }
+.goal-delete:hover { color: var(--danger); opacity: 1 !important; }
 
 /* ── Show more toggle ── */
 .gm-show-toggle {
@@ -570,10 +454,10 @@ body.gd-page-out {
   border-color: rgba(255,255,255,0.22);
 }
 
-/* ── Push button ── */
+/* ── Push / utility buttons ── */
 .gm-push-btn {
   width: 100%;
-  margin-top: 14px;
+  margin-top: 12px;
   padding: 11px;
   border: 1px dashed rgba(255,255,255,0.16);
   border-radius: 12px;
@@ -594,13 +478,16 @@ body.gd-page-out {
 
 /* ── Input row ── */
 .goal-input-wrap.gm-input-wrap {
-  display: flex;
+  display: none;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   margin-top: 16px;
   padding-top: 14px;
   border-top: 1px solid rgba(255,255,255,0.06);
+}
+.goal-input-wrap.gm-input-wrap.gm-input-open {
+  display: flex;
 }
 .gm-input {
   flex: 1; min-width: 0;
@@ -672,7 +559,7 @@ body.gd-page-out {
   padding: 14px 0;
 }
 
-/* ── LTG add button ── */
+/* ── Small add button (card headers) ── */
 .ax-add-btn {
   background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.10);
@@ -690,88 +577,85 @@ body.gd-page-out {
   border-color: rgba(255,255,255,0.20);
 }
 
-/* ── LTG cards (generated by JS innerHTML) ── */
-.ltg-card {
-  padding: 16px 0;
-  border-bottom: 1px solid rgba(255,255,255,0.05);
+/* ── Long-term goal items ── */
+.ltg-item {
+  margin-bottom: 18px;
 }
-.ltg-card:last-child { border-bottom: none; }
-.ltg-card-top {
+.ltg-item:last-child { margin-bottom: 0; }
+.ltg-item-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 8px;
+  align-items: baseline;
+  margin-bottom: 9px;
+  gap: 8px;
 }
-.ltg-card-title {
+.ltg-item-title {
   font-size: 15px;
   color: rgba(255,255,255,0.9);
   font-weight: 500;
+  flex-shrink: 0;
 }
-.ltg-card-sub {
-  font-size: 11px;
-  color: rgba(255,255,255,0.42);
-  font-family: var(--font-mono);
-  margin-top: 2px;
-}
-.ltg-card-actions {
+.ltg-item-right {
   display: flex;
+  align-items: center;
   gap: 6px;
+  min-width: 0;
 }
+.ltg-item-sub {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: rgba(255,255,255,0.50);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ltg-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 0.18s;
+}
+.ltg-item:hover .ltg-item-actions { opacity: 1; }
 .ltg-btn-icon {
   background: transparent;
   border: 0;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.40);
   cursor: pointer;
-  font-size: 13px;
-  padding: 4px 6px;
+  font-size: 12px;
+  padding: 3px 5px;
   border-radius: 6px;
   transition: color 0.15s;
+  line-height: 1;
 }
 .ltg-btn-icon:hover { color: #fff; }
 .ltg-btn-del:hover { color: rgba(255,80,80,0.85); }
-.ltg-vals {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  margin-bottom: 10px;
-}
-.ltg-cur {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 600;
-  color: #fff;
-}
-.ltg-sep {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: rgba(255,255,255,0.42);
-}
 .ltg-bar-wrap {
   height: 7px;
   border-radius: 6px;
   background: rgba(255,255,255,0.07);
   overflow: hidden;
-  margin-bottom: 8px;
 }
 .ltg-bar {
   height: 100%;
   border-radius: 6px;
   background: linear-gradient(90deg, #13b683, #2de8a2);
-  box-shadow: 0 0 12px rgba(45,232,162,0.5);
+  box-shadow: 0 0 12px rgba(45,232,162,0.50);
   transition: width 0.6s ease;
 }
-.ltg-footer {
-  display: flex;
-  justify-content: space-between;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: rgba(255,255,255,0.35);
+.ltg-bar-blue {
+  background: linear-gradient(90deg, #4a72c8, #6f9bff);
+  box-shadow: 0 0 12px rgba(111,155,255,0.45);
+}
+.ltg-bar-purple {
+  background: linear-gradient(90deg, #7b4bc4, #a87cff);
+  box-shadow: 0 0 12px rgba(168,124,255,0.45);
 }
 .ltg-empty {
   font-size: 12px;
   font-style: italic;
   color: rgba(255,255,255,0.35);
-  padding: 12px 0 4px;
+  padding: 4px 0 8px;
 }
 
 /* ── LTG Modal ── */
@@ -959,20 +843,7 @@ body.gd-page-out {
     <div class="ax-avatar" id="axAvatar">G</div>
   </header>
 
-  <!-- TICKER STRIP -->
-  <div class="ax-ticker" id="goalTicker" aria-live="polite" aria-atomic="true">
-    <span class="goal-ticker-led-dot"></span>
-    <div class="ax-ticker-label">GOALS</div>
-    <div class="ax-ticker-stage" id="goalTickerStage">
-      <div class="goal-ticker-row">
-        <span class="goal-ticker-status" data-status="">—</span>
-        <span class="goal-ticker-text">Loading…</span>
-      </div>
-    </div>
-    <div class="ax-ticker-meta" id="goalTickerMeta">0/0</div>
-  </div>
-
-  <!-- DAY PROGRESS CARD (accent) -->
+  <!-- DAY PROGRESS CARD -->
   <div class="ax-card ax-card-accent">
     <div class="ax-ring-glow"></div>
     <div class="ax-ring-row">
@@ -990,8 +861,6 @@ body.gd-page-out {
         <div class="ax-section-label">Day progress</div>
         <div class="ax-ring-status" id="dayRingStatus">Loading…</div>
         <div class="ax-ring-remaining" id="dayRingRemaining">—</div>
-        <div class="ax-ring-clock" id="dayRingClock">—</div>
-        <div class="ax-ring-hours" id="dayRingHours">8:00 AM – 12:00 AM</div>
       </div>
     </div>
   </div>
@@ -1000,21 +869,18 @@ body.gd-page-out {
   <div class="ax-card" id="gmCardToday">
     <div class="ax-card-row ax-card-header-row">
       <span class="ax-section-label" id="todayLabel">TODAY</span>
-      <span class="ax-count-badge">
-        <span id="gmProgressNum">0</span><span id="gmProgressTotal">/ 0</span>
-        <span class="ax-count-label" id="gmProgressLabel"></span>
-      </span>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="ax-count-badge">
+          <span id="gmProgressNum">0</span><span id="gmProgressTotal">/ 0</span><span class="ax-count-label" id="gmProgressLabel"></span>
+        </span>
+        <button type="button" class="ax-add-btn" id="gmToggleAddBtn" aria-label="Add goal">+</button>
+      </div>
     </div>
-    <div class="gm-streak" id="gmStreak">
-      <span class="gm-streak-icon">⚡</span>
-      <span class="gm-streak-num" id="gmStreakNum">0</span>
-      <span>day streak</span>
-    </div>
-    <div class="gm-bar" id="gmBar"></div>
     <ul id="goalList" class="goal-list gm-list"></ul>
-    <div id="emptyState" class="ax-empty">No goals for today yet — add one below.</div>
+    <div id="emptyState" class="ax-empty">No goals for today yet.</div>
     <button type="button" id="gmPushBtn" class="gm-push-btn" style="display:none">Push remaining to tomorrow</button>
-    <div class="goal-input-wrap gm-input-wrap">
+    <button type="button" id="gmPlanTomorrowBtn" class="gm-push-btn">Plan tomorrow →</button>
+    <div class="goal-input-wrap gm-input-wrap" id="todayInputWrap">
       <input id="goalInput" class="gm-input" type="text" placeholder="Add a goal for today…" autocomplete="off">
       <button type="button" id="goalAddBtn" class="gm-add">+ Add</button>
       <button type="button" id="goalPolishBtn" class="gm-polish">✨ Polish</button>
@@ -1022,30 +888,30 @@ body.gd-page-out {
     </div>
   </div>
 
-  <!-- PLAN TOMORROW CARD -->
-  <div class="ax-card ax-card-tomorrow" id="gmCardTomorrow">
+  <!-- LONG-TERM GOALS CARD -->
+  <div class="ax-card" id="ltgSection">
     <div class="ax-card-row ax-card-header-row">
-      <span class="ax-section-label" id="tomorrowLabel">PLAN TOMORROW</span>
+      <span class="ax-section-label">Long-term goals</span>
+      <button type="button" class="ax-add-btn" id="ltgAddBtn">+ Add</button>
+    </div>
+    <div id="ltgList"></div>
+  </div>
+
+  <!-- PLAN TOMORROW CARD (hidden, revealed by button) -->
+  <div class="ax-card ax-card-tomorrow" id="gmCardTomorrow" style="display:none">
+    <div class="ax-card-row ax-card-header-row">
+      <span class="ax-section-label" id="tomorrowLabel">Plan Tomorrow</span>
       <span class="ax-count-badge" id="gmTomorrowCount">0 planned</span>
     </div>
-    <div class="ax-tomorrow-sub">Write tonight, locked until 6 AM.</div>
+    <div class="ax-tomorrow-sub">Write tonight, activates at 6 AM.</div>
     <ul id="tomorrowList" class="goal-list gm-list"></ul>
     <div id="tomorrowEmpty" class="ax-empty">Nothing planned for tomorrow yet</div>
-    <div class="goal-input-wrap gm-input-wrap">
+    <div class="goal-input-wrap gm-input-wrap gm-input-open" id="tomorrowInputWrap">
       <input id="tomorrowInput" class="gm-input" type="text" placeholder="Add a goal for tomorrow…" autocomplete="off">
       <button type="button" id="tomorrowAddBtn" class="gm-add">+ Add</button>
       <button type="button" id="tomorrowPolishBtn" class="gm-polish">✨ Polish</button>
       <div class="gm-status" id="tomorrowStatus"></div>
     </div>
-  </div>
-
-  <!-- LONG-TERM GOALS CARD -->
-  <div class="ax-card" id="ltgSection">
-    <div class="ax-card-row ax-card-header-row">
-      <span class="ax-section-label">LONG-TERM GOALS</span>
-      <button type="button" class="ax-add-btn" id="ltgAddBtn">+ Add Goal</button>
-    </div>
-    <div id="ltgList"></div>
   </div>
 
 </div><!-- .ax-page -->
@@ -1124,7 +990,6 @@ body.gd-page-out {
 (function () {
   'use strict';
 
-  // Paste your Anthropic key here to enable ✨ Polish. Empty = falls back to plain add.
   const ANTHROPIC_API_KEY = '';
 
   function getWakeSleepMins() {
@@ -1135,7 +1000,7 @@ body.gd-page-out {
     }
     const wake  = parseToMins(localStorage.getItem('dash_wake_time'),  8);
     let   sleep = parseToMins(localStorage.getItem('dash_sleep_time'), 24);
-    if (sleep <= wake) sleep += 1440; // handles sleep time after midnight
+    if (sleep <= wake) sleep += 1440;
     return { wake, sleep };
   }
   function formatTimeMins(totalMins) {
@@ -1202,13 +1067,12 @@ body.gd-page-out {
   }
   function setGoals(key, list) { storeSet(key, list); }
 
-  // ---------- rollover: pull undone older goals into today ----------
+  // ---------- rollover ----------
   function rollover() {
     const todayDateStr = getActiveDateString();
     const todayK = 'goals:' + todayDateStr;
     let today = getGoals(todayK);
     const texts = new Set(today.map(g => g.text));
-
     storeListKeys('goals:').forEach(k => {
       const dateStr = k.slice('goals:'.length);
       if (dateStr >= todayDateStr) return;
@@ -1242,7 +1106,7 @@ body.gd-page-out {
     keys.forEach(dateStr => {
       if (s.lastProcessedDate && dateStr <= s.lastProcessedDate) return;
       const list = getGoals('goals:' + dateStr);
-      if (list.length === 0) { /* don't break the streak on empty days */ }
+      if (list.length === 0) { /* don't break streak on empty days */ }
       else if (list.every(g => g.done)) s.count += 1;
       else s.count = 0;
       s.lastProcessedDate = dateStr;
@@ -1250,55 +1114,17 @@ body.gd-page-out {
     saveStreak(s);
   }
 
-  // ---------- Goal Ticker ----------
-  const tickerStage = document.getElementById('goalTickerStage');
-  const tickerMeta  = document.getElementById('goalTickerMeta');
-  let cycleIdx = 0;
-  let tickerTimer = null;
-
+  // ---------- Ticker (JS-only, no DOM element) ----------
   function buildTickerItems() {
     const goals = getGoals(todayKey());
     const total = goals.length;
     const done  = goals.filter(g => g.done).length;
-    if (total === 0) return { items: [{ status: 'empty',   text: 'No goals set for today — add one to get rolling.' }], done, total };
-    if (done === total) return { items: [{ status: 'done', text: '✓ All goals done — solid day.' }], done, total };
-    const items = goals.filter(g => !g.done).map(g => ({ status: 'pending', text: g.text }));
-    return { items, done, total };
+    if (total === 0) return { items: [{ status: 'empty', text: 'No goals set for today.' }], done, total };
+    if (done === total) return { items: [{ status: 'done', text: '✓ All goals done.' }], done, total };
+    return { items: goals.filter(g => !g.done).map(g => ({ status: 'pending', text: g.text })), done, total };
   }
-
-  function statusGlyph(status) {
-    if (status === 'done') return '✓';
-    if (status === 'pending') return '○';
-    return '·';
-  }
-
-  let firstTick = true;
-  function tick() {
-    const { items, done, total } = buildTickerItems();
-    if (cycleIdx >= items.length) cycleIdx = 0;
-    const item = items[cycleIdx];
-    cycleIdx = (cycleIdx + 1) % items.length;
-    tickerMeta.textContent = done + '/' + total;
-    let row = tickerStage.querySelector('.goal-ticker-row');
-    if (!row) { row = document.createElement('div'); row.className = 'goal-ticker-row'; row.innerHTML = '<span class="goal-ticker-status"></span><span class="goal-ticker-text"></span>'; tickerStage.appendChild(row); }
-    const statusEl = row.querySelector('.goal-ticker-status');
-    const textEl = row.querySelector('.goal-ticker-text');
-    const apply = () => { statusEl.setAttribute('data-status', item.status); statusEl.textContent = statusGlyph(item.status); textEl.textContent = item.text; row.classList.remove('is-fading'); };
-    if (firstTick) { apply(); firstTick = false; return; }
-    row.classList.add('is-fading');
-    setTimeout(apply, 220);
-  }
-
-  function startTicker() {
-    tick();
-    if (tickerTimer) clearInterval(tickerTimer);
-    tickerTimer = setInterval(tick, 5000);
-  }
-
-  window.addEventListener('goals-changed', () => {
-    cycleIdx = 0;
-    tick();
-  });
+  // Keep ticker running silently for any external listeners
+  setInterval(buildTickerItems, 5000);
 
   // ---------- Day Ring ----------
   const PALETTE = [
@@ -1328,14 +1154,6 @@ body.gd-page-out {
   }
   function rgb(c) { return 'rgb(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ')'; }
 
-  function formatClock(d) {
-    let h = d.getHours();
-    const m = d.getMinutes();
-    const ampm = h >= 12 ? 'PM' : 'AM';
-    h = h % 12;
-    if (h === 0) h = 12;
-    return h + ':' + pad2(m) + ' ' + ampm;
-  }
   function formatRemaining(totalMin) {
     const h = Math.floor(totalMin / 60);
     const m = Math.floor(totalMin % 60);
@@ -1347,19 +1165,19 @@ body.gd-page-out {
   fillEl.setAttribute('stroke-dasharray', C);
   fillEl.setAttribute('stroke-dashoffset', C);
 
+  function setPercent(el, val) {
+    if (val === null) { el.textContent = '—'; return; }
+    el.innerHTML = val + '<span class="ax-ring-percent-sign">%</span>';
+  }
+
   function updateDayRing() {
     const { wake: WAKE_MIN, sleep: SLEEP_MIN } = getWakeSleepMins();
     const now     = new Date();
     const nowMins = now.getHours() * 60 + now.getMinutes() + now.getSeconds() / 60;
     const percentEl   = document.getElementById('dayRingPercent');
     const phaseEl     = document.getElementById('dayRingPhase');
-    const clockEl     = document.getElementById('dayRingClock');
     const statusEl    = document.getElementById('dayRingStatus');
     const remainingEl = document.getElementById('dayRingRemaining');
-    const hoursEl     = document.getElementById('dayRingHours');
-    if (hoursEl) hoursEl.textContent = formatTimeMins(WAKE_MIN) + ' – ' + formatTimeMins(SLEEP_MIN);
-
-    clockEl.textContent = formatClock(now);
 
     if (nowMins < WAKE_MIN) {
       fillEl.setAttribute('stroke-dashoffset', C);
@@ -1374,7 +1192,7 @@ body.gd-page-out {
     if (nowMins >= SLEEP_MIN) {
       fillEl.setAttribute('stroke-dashoffset', 0);
       fillEl.style.stroke = '#E25D7A';
-      percentEl.textContent = '100%';
+      setPercent(percentEl, 100);
       phaseEl.textContent   = 'PAST BEDTIME';
       statusEl.textContent  = '⚠️ Past bedtime';
       remainingEl.textContent = 'Sleep!';
@@ -1385,7 +1203,7 @@ body.gd-page-out {
     const percent = (nowMins - WAKE_MIN) / span * 100;
     fillEl.setAttribute('stroke-dashoffset', C * (1 - percent / 100));
     fillEl.style.stroke = rgb(paletteAt(percent));
-    percentEl.textContent = Math.floor(percent) + '%';
+    setPercent(percentEl, Math.floor(percent));
 
     let phase, status;
     if (percent < 25)      { phase = 'MORNING';   status = '☀️ Morning — fresh start'; }
@@ -1395,7 +1213,6 @@ body.gd-page-out {
     else                   { phase = 'BEDTIME';   status = '🌙 Bedtime soon'; }
     phaseEl.textContent  = phase;
     statusEl.textContent = status;
-
     remainingEl.textContent = formatRemaining(SLEEP_MIN - nowMins) + ' awake time left';
   }
 
@@ -1535,32 +1352,15 @@ body.gd-page-out {
     document.getElementById('gmProgressNum').textContent   = done;
     document.getElementById('gmProgressTotal').textContent = '/ ' + total;
     const label = document.getElementById('gmProgressLabel');
-    if (total === 0)        label.textContent = 'no goals yet';
-    else if (done === total) label.textContent = 'all done — solid day';
-    else                     label.textContent = 'complete';
-
-    document.getElementById('todayLabel').textContent =
-      'Today — ' + formatDate(getActiveDateString());
-
-    const bar = document.getElementById('gmBar');
-    bar.innerHTML = '';
-    goals.forEach(g => {
-      const seg = document.createElement('div');
-      seg.className = 'gm-bar-seg' + (g.done ? ' gm-bar-seg-done' : '');
-      bar.appendChild(seg);
-    });
+    if (total === 0)         label.textContent = '';
+    else if (done === total) label.textContent = 'all done';
+    else                     label.textContent = '';
 
     const card = document.getElementById('gmCardToday');
     card.classList.toggle('gm-all-done', total > 0 && done === total);
 
     const pushBtn = document.getElementById('gmPushBtn');
     pushBtn.style.display = (total > 0 && done < total) ? 'block' : 'none';
-  }
-
-  function renderStreak() {
-    const s = loadStreak();
-    document.getElementById('gmStreakNum').textContent = s.count;
-    document.getElementById('gmStreak').classList.toggle('gm-streak-active', s.count > 0);
   }
 
   function renderTomorrowCount() {
@@ -1629,6 +1429,24 @@ body.gd-page-out {
     setGoals(tomorrowKey(), tomorrow);
     setGoals(todayKey(), today.filter(g => g.done));
     loadToday(); loadTomorrow();
+  });
+
+  // ---------- Toggle: Add Goal input ----------
+  document.getElementById('gmToggleAddBtn').addEventListener('click', function() {
+    const wrap = document.getElementById('todayInputWrap');
+    const opening = !wrap.classList.contains('gm-input-open');
+    wrap.classList.toggle('gm-input-open', opening);
+    this.textContent = opening ? '×' : '+';
+    if (opening) setTimeout(() => document.getElementById('goalInput').focus(), 0);
+  });
+
+  // ---------- Toggle: Plan Tomorrow card ----------
+  document.getElementById('gmPlanTomorrowBtn').addEventListener('click', function() {
+    const card = document.getElementById('gmCardTomorrow');
+    const opening = card.style.display === 'none';
+    card.style.display = opening ? 'block' : 'none';
+    this.textContent = opening ? 'Close tomorrow ×' : 'Plan tomorrow →';
+    if (opening) setTimeout(() => document.getElementById('tomorrowInput').focus(), 0);
   });
 
   // ---------- Add + Polish handlers ----------
@@ -1722,12 +1540,10 @@ body.gd-page-out {
 
   // ---------- Page heading ----------
   (function() {
-    // Populate greeting, avatar, and date
     const greetEl  = document.getElementById('axGreeting');
     const avatarEl = document.getElementById('axAvatar');
     const dateEl   = document.getElementById('axDateLabel');
 
-    // Date label
     if (dateEl) {
       const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
       const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
@@ -1735,7 +1551,6 @@ body.gd-page-out {
       dateEl.textContent = days[now.getDay()] + ' · ' + months[now.getMonth()] + ' ' + now.getDate();
     }
 
-    // Name / greeting
     try {
       const s = JSON.parse(localStorage.getItem('settings'));
       let name = s && typeof s.firstName === 'string' && s.firstName.trim();
@@ -1756,15 +1571,16 @@ body.gd-page-out {
   processStreak();
   loadToday();
   loadTomorrow();
-  renderStreak();
   updateDayRing();
   setInterval(updateDayRing, 60 * 1000);
-  startTicker();
 
-  // Re-render when storage changes from another tab (or our bridged parent).
   window.addEventListener('storage', () => {
-    loadToday(); loadTomorrow(); renderStreak();
+    loadToday(); loadTomorrow();
     updateDayRing();
+  });
+
+  window.addEventListener('goals-changed', () => {
+    loadToday();
   });
 })();
 </script>
@@ -1826,42 +1642,50 @@ body.gd-page-out {
       .toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
   }
 
+  function barColorClass(goal) {
+    if (goal.category === 'weight' || goal.category === 'custom') return '';
+    if (goal.category === 'fitness') return 'ltg-bar-purple';
+    return 'ltg-bar-blue';
+  }
+
   function render() {
     const goals = getGoals();
     const container = document.getElementById('ltgList');
     if (!container) return;
     container.innerHTML = '';
     if (!goals.length) {
-      container.innerHTML = '<p class="ltg-empty">No long-term goals yet — tap below to add one.</p>';
+      container.innerHTML = '<p class="ltg-empty">No long-term goals yet — tap + to add one.</p>';
       return;
     }
     goals.forEach(function(goal, i) {
       const cur  = getCurrentValue(goal);
       const pct  = calcPct(goal, cur);
-      const proj = calcProjection(goal, cur);
-      const curStr = cur != null ? parseFloat(cur).toLocaleString(undefined,{maximumFractionDigits:1}) : '—';
+      const curStr = cur != null ? parseFloat(cur).toLocaleString(undefined,{maximumFractionDigits:1}) : null;
       const tgtStr = parseFloat(goal.targetValue).toLocaleString(undefined,{maximumFractionDigits:1});
-      const dl = goal.deadline
-        ? new Date(goal.deadline+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
-        : null;
+
+      let sub;
+      if (curStr != null) {
+        const remaining = Math.abs(parseFloat(goal.targetValue) - parseFloat(cur));
+        sub = curStr + ' ' + esc(goal.unit) + ' &middot; ' +
+              remaining.toLocaleString(undefined,{maximumFractionDigits:1}) + ' to go';
+      } else {
+        sub = tgtStr + ' ' + esc(goal.unit) + ' target';
+      }
+
       const el = document.createElement('div');
-      el.className = 'ltg-card';
+      el.className = 'ltg-item';
       el.innerHTML =
-        '<div class="ltg-card-top">' +
-          '<div><div class="ltg-card-title">' + esc(goal.title) + '</div>' +
-          '<div class="ltg-card-sub">' + esc(goal.category) + ' · ' + esc(goal.unit) + '</div></div>' +
-          '<div class="ltg-card-actions">' +
-            '<button class="ltg-btn-icon" data-edit="'+i+'" aria-label="Edit">✏️</button>' +
-            '<button class="ltg-btn-icon ltg-btn-del" data-del="'+i+'" aria-label="Delete">✕</button>' +
+        '<div class="ltg-item-header">' +
+          '<span class="ltg-item-title">' + esc(goal.title) + '</span>' +
+          '<div class="ltg-item-right">' +
+            '<span class="ltg-item-sub">' + sub + '</span>' +
+            '<div class="ltg-item-actions">' +
+              '<button class="ltg-btn-icon" data-edit="'+i+'" aria-label="Edit">✏️</button>' +
+              '<button class="ltg-btn-icon ltg-btn-del" data-del="'+i+'" aria-label="Delete">✕</button>' +
+            '</div>' +
           '</div>' +
         '</div>' +
-        '<div class="ltg-vals"><span class="ltg-cur">'+curStr+'</span>' +
-          '<span class="ltg-sep">/ '+tgtStr+' '+esc(goal.unit)+'</span></div>' +
-        '<div class="ltg-bar-wrap"><div class="ltg-bar" style="width:'+pct.toFixed(1)+'%"></div></div>' +
-        '<div class="ltg-footer">' +
-          '<span>'+(proj ? 'Projected: '+proj : 'Tracking…')+'</span>' +
-          (dl ? '<span>By '+dl+'</span>' : '') +
-        '</div>';
+        '<div class="ltg-bar-wrap"><div class="ltg-bar ' + barColorClass(goal) + '" style="width:' + pct.toFixed(1) + '%"></div></div>';
       container.appendChild(el);
     });
   }
@@ -1903,8 +1727,8 @@ body.gd-page-out {
     }
   }
 
-  // ── Goal critique helpers ─────────────────────────────────────────
-  let _pendingGoalData = null; // { goals, newGoal, isEdit, editIdx }
+  // ── Goal critique helpers ──────────────────────────────────────────
+  let _pendingGoalData = null;
   let _suggestedDeadline = null;
 
   function calcWeightLossRate(targetLbs, deadlineStr) {
@@ -1920,7 +1744,6 @@ body.gd-page-out {
   }
 
   function critiqueCheck(cat, target, unit, deadline) {
-    // Only flag new weight-loss goals with a deadline
     if (cat !== 'weight' || !deadline) return null;
     const targetLbs = (unit === 'kg') ? target * 2.205 : target;
     const info = calcWeightLossRate(targetLbs, deadline);
@@ -1929,7 +1752,6 @@ body.gd-page-out {
     if (info.rate > 1.5) flags.push({ type: 'rate', rate: info.rate, lbsToLose: info.lbsToLose, days: info.days });
     if (info.days < 14 && info.lbsToLose > 2) flags.push({ type: 'short', days: info.days, lbsToLose: info.lbsToLose });
     if (!flags.length) return null;
-    // Compute a healthier suggested deadline (1 lb/week)
     const saferDays = Math.ceil((info.lbsToLose / 1.0) * 7);
     const suggested = new Date(); suggested.setDate(suggested.getDate() + saferDays);
     const pad = n => String(n).padStart(2,'0');
@@ -2005,7 +1827,6 @@ body.gd-page-out {
     const critiqueData = critiqueCheck(cat, target, unit, deadline);
     loadCritiqueMessage(cat, target, unit, deadline, critiqueData);
     document.getElementById('critiqueBtnSuggest').onclick = function() {
-      // Apply suggested deadline to the pending goal data
       if (_pendingGoalData.isEdit) {
         _pendingGoalData.goals[_pendingGoalData.editIdx].deadline = _suggestedDeadline;
       } else {
@@ -2020,7 +1841,6 @@ body.gd-page-out {
     };
     document.getElementById('critiqueBtnAdjust').onclick = function() {
       closeCritiqueModal();
-      // Re-open the goal modal so user can adjust
       const editIdx = _pendingGoalData.isEdit ? _pendingGoalData.editIdx : null;
       openModal(editIdx);
     };
@@ -2035,7 +1855,6 @@ body.gd-page-out {
     if (e.target === this) closeCritiqueModal();
   });
 
-  // ── Save goal (with critique gate) ───────────────────────────────
   function saveGoal() {
     const title  = document.getElementById('ltgTitle').value.trim();
     const target = parseFloat(document.getElementById('ltgTarget').value);
@@ -2066,7 +1885,6 @@ body.gd-page-out {
       pendingData = { goals, isEdit:false, editIdx:null, newGoal:newG };
     }
 
-    // Show critique modal if the goal triggers a flag
     const flagged = critiqueCheck(cat, target, unit, dl);
     if (flagged) {
       openCritiqueModal(cat, target, unit, dl, pendingData);
@@ -2086,11 +1904,9 @@ body.gd-page-out {
   document.getElementById('ltgModalBg').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
   document.getElementById('ltgCat').addEventListener('change', updateModalFields);
 
-  // Re-render when weight or water data changes (other tabs or topbar water add)
   window.addEventListener('storage', function(e) {
     if (e.key === KEY || e.key === 'po_coach_weights' || e.key === 'po_water_v1') render();
   });
-  // Re-render when Supabase sync applies remote axis_goals data
   window.addEventListener('goals-changed', render);
 
   render();
@@ -2146,7 +1962,6 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function pcRerender() {
-    // Trigger the existing listeners inside the main IIFE
     try { window.dispatchEvent(new Event('storage')); } catch {}
     try { window.dispatchEvent(new CustomEvent('goals-changed')); } catch {}
   }
