@@ -1,8 +1,29 @@
 /* ================================================================
-   George's Dashboard — animations.css
+   Axis Dashboard — animations.css
    Drop one <link> on every HTML page and you're done.
    Covers: index.html · health.html · gym.html · po-water.html
    ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700&display=swap');
+
+/* ─── AXIS DESIGN SYSTEM KEYFRAMES ─────────────────────────────── */
+
+@keyframes axPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes axBreath {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+@keyframes axRise {
+  from { transform: translateY(22px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes axSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 
 /* ─── 1. KEYFRAME DEFINITIONS ─────────────────────────────────── */
 

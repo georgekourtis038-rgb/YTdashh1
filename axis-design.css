@@ -1,0 +1,237 @@
+/* =============================================================
+   Axis Design System — axis-design.css
+   Link on every page (after existing <style> blocks) to apply
+   the Axis visual language. Pure visual overrides only.
+   ============================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700&display=swap');
+
+/* ── Axis animation keyframes ── */
+@keyframes axPulse {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 1; }
+}
+@keyframes axBreath {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(1.06); opacity: 1; }
+}
+@keyframes axRise {
+  from { transform: translateY(22px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes axSpin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+}
+
+/* ── CSS variable overrides ── */
+:root {
+  --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.86);
+  --text-tertiary: rgba(255, 255, 255, 0.42);
+  --text-muted: rgba(255, 255, 255, 0.55);
+  --text-dim: rgba(255, 255, 255, 0.42);
+  --text-faint: rgba(255, 255, 255, 0.28);
+  --text-1: #ffffff;
+  --text-2: rgba(255, 255, 255, 0.86);
+  --text-3: rgba(255, 255, 255, 0.42);
+  --accent: #2de8a2;
+  --mint: #2de8a2;
+  --success: #2de8a2;
+  --blue: #6f9bff;
+  --accent-glow: rgba(45, 232, 162, 0.5);
+  --accent-subtle: rgba(45, 232, 162, 0.08);
+  --accent-border: rgba(45, 232, 162, 0.16);
+  --mint-dim: rgba(45, 232, 162, 0.08);
+  --mint-border: rgba(45, 232, 162, 0.16);
+  --border: rgba(255, 255, 255, 0.08);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --bg-card: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022));
+}
+
+/* ── Global font ── */
+html, body {
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ── Card base — applied to all major card wrappers ── */
+.gm-card,
+.wt-card,
+.stack-card,
+.water-card,
+.cal-card,
+.em-list,
+.auth-card,
+.action-card,
+.wl-card,
+.po-rx-card,
+.day-ring-wrap {
+  border-radius: 24px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+/* gym.html uses .card as its main card class */
+.card:not(.bottombar-tab):not(.topbar-logo-link) {
+  border-radius: 24px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+/* Accent-highlighted card variant (primary metrics) */
+.gm-card.gm-today,
+.gm-card.accent-card,
+[data-accent-card] {
+  background: linear-gradient(180deg, rgba(45, 232, 162, 0.08), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(45, 232, 162, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+              0 8px 30px -14px rgba(45, 232, 162, 0.35) !important;
+}
+
+/* ── Section labels (monospace caps) ── */
+.section-title,
+.gm-eyebrow,
+.ai-eyebrow,
+.water-label,
+.em-section-label {
+  font-family: 'Space Mono', ui-monospace, Consolas, monospace !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase !important;
+  color: rgba(255, 255, 255, 0.42) !important;
+}
+.section-title { font-size: 11px !important; }
+.gm-eyebrow { font-size: 10.5px !important; }
+
+/* ── Progress bars ── */
+.wpbar-fill.green,
+.wpbar-fill.green-bright {
+  background: linear-gradient(90deg, #13b683, #2de8a2) !important;
+  box-shadow: 0 0 12px rgba(45, 232, 162, 0.5) !important;
+}
+
+/* ── Buttons — primary (accent) ── */
+.wt-save-btn,
+.gm-add,
+.stack-add-btn {
+  background: linear-gradient(180deg, #2de8a2, #1ec78a) !important;
+  color: #04140d !important;
+  border: none !important;
+  border-radius: 14px !important;
+  box-shadow: 0 0 18px -2px rgba(45, 232, 162, 0.6) !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 500 !important;
+}
+
+/* ── Buttons — secondary / ghost ── */
+.wt-edit-btn,
+.gm-polish,
+.stack-low-btn {
+  background: rgba(255, 255, 255, 0.05) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+  border-radius: 14px !important;
+}
+
+/* ── Checkboxes — done state ── */
+input[type="checkbox"]:checked {
+  accent-color: #2de8a2;
+}
+
+/* ── Avatar ── */
+.settings-avatar,
+.dash-avatar {
+  border-radius: 50%;
+  background: linear-gradient(150deg, #1c2c27, #0e1614);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  color: #2de8a2;
+}
+
+/* ── Topbar / settings icon button ── */
+.topbar-finance-btn {
+  border-radius: 12px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: none !important;
+}
+
+/* ── Calendar card event highlight ── */
+.cal-card-today,
+.cal-event-today {
+  border: 1px solid rgba(45, 232, 162, 0.3) !important;
+}
+
+/* ── Email unread dot ── */
+.em-unread-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2de8a2;
+  flex-shrink: 0;
+}
+
+/* ── AI chat bubbles ── */
+.msg-user .msg-bubble {
+  background: linear-gradient(180deg, #2de8a2, #1ec78a) !important;
+  color: #04140d !important;
+  border-radius: 18px 18px 4px 18px !important;
+}
+.msg-ai .msg-bubble,
+.msg-axis .msg-bubble {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-radius: 18px 18px 18px 4px !important;
+}
+
+/* ── AI briefing card ── */
+.action-card {
+  background: linear-gradient(180deg, rgba(45, 232, 162, 0.08), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(45, 232, 162, 0.16) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08),
+              0 8px 30px -14px rgba(45, 232, 162, 0.35) !important;
+}
+
+/* ── Settings cards ── */
+.s-card,
+.settings-card,
+.sync-card,
+.memory-card {
+  border-radius: 20px !important;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.022)) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+/* ── Landing page sign-in button ── */
+.landing-cta,
+.cta-btn {
+  background: linear-gradient(180deg, #2de8a2, #1ec78a) !important;
+  color: #04140d !important;
+  border: none !important;
+  border-radius: 17px !important;
+  height: 54px !important;
+  font-family: 'Space Grotesk', sans-serif !important;
+  font-weight: 500 !important;
+  box-shadow: 0 0 18px -2px rgba(45, 232, 162, 0.6) !important;
+}
+
+/* ── Monospace data values ── */
+.goal-ticker-row,
+.day-ring-percent,
+.day-ring-phase,
+.gm-progress-num,
+.wml-big {
+  font-family: 'Space Mono', ui-monospace, monospace !important;
+}

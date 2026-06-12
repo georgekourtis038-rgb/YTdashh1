@@ -45,7 +45,7 @@ body { background: transparent; }
   border: none;
   box-shadow: none;
   pointer-events: none;
-  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 body.has-topbar {
   padding-top: max(80px, calc(env(safe-area-inset-top) + 20px)) !important;
@@ -92,7 +92,7 @@ body.has-topbar {
   50%      { box-shadow: 0 0 0 5px rgba(239, 68, 68, 0); }
 }
 .topbar-pill-count {
-  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-family: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   font-size: 13px; font-weight: 700; color: #FAFAFA;
   font-variant-numeric: tabular-nums; white-space: nowrap;
 }
@@ -133,65 +133,60 @@ body.has-topbar {
 }
 .bottombar {
   position: fixed !important;
-  bottom: calc(12px + env(safe-area-inset-bottom)) !important;
-  left: 0 !important;
-  right: 0 !important;
+  bottom: calc(16px + env(safe-area-inset-bottom)) !important;
+  left: 16px !important;
+  right: 16px !important;
   margin: 0 auto !important;
-  width: calc(100% - 32px) !important;
+  width: auto !important;
   max-width: 420px !important;
-  border-radius: 999px !important;
-  background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05)) !important;
-  -webkit-backdrop-filter: blur(20px) saturate(160%) brightness(1.08) !important;
-  backdrop-filter: blur(20px) saturate(160%) brightness(1.08) !important;
-  border: 1px solid rgba(255,255,255,0.20) !important;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.35), inset 0 -1px 0 rgba(255,255,255,0.08) !important;
+  height: 66px !important;
+  border-radius: 26px !important;
+  background: rgba(12, 18, 16, 0.72) !important;
+  -webkit-backdrop-filter: blur(26px) saturate(170%) !important;
+  backdrop-filter: blur(26px) saturate(170%) !important;
+  border: none !important;
+  box-shadow: 0 14px 44px -10px rgba(0,0,0,0.7),
+              inset 0 1px 0 rgba(255,255,255,0.09),
+              inset 0 0 0 1px rgba(255,255,255,0.06) !important;
   display: flex !important;
   justify-content: space-around !important;
-  align-items: stretch !important;
-  padding: 4px 12px !important;
-  z-index: 40 !important;
+  align-items: center !important;
+  padding: 0 6px !important;
+  z-index: 45 !important;
 }
-.bottombar::before {
-  content: '' !important;
-  position: absolute !important;
-  top: 0 !important; left: 10% !important; right: 10% !important; height: 1px !important;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent) !important;
-  pointer-events: none !important;
-}
-.bottombar::after {
-  content: '' !important;
-  position: absolute !important;
-  inset: 0 !important;
-  border-radius: 999px !important;
-  background: linear-gradient(160deg, rgba(255,255,255,0.08) 0%, transparent 40%, rgba(255,255,255,0.03) 100%) !important;
-  pointer-events: none !important;
-}
+.bottombar::before { content: none !important; }
+.bottombar::after { content: none !important; }
 .bottombar-tab {
   flex: 1;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  gap: 3px; padding: 4px 8px !important; text-decoration: none;
-  color: rgba(255, 255, 255, 0.45); border-radius: 999px;
-  font-size: 10px; font-weight: 600; letter-spacing: 0.04em;
+  gap: 5px; padding: 8px 4px !important; text-decoration: none;
+  color: rgba(255, 255, 255, 0.4); border-radius: 0;
+  font-size: 10px; font-weight: 500; letter-spacing: 0.02em;
+  font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   -webkit-tap-highlight-color: transparent;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: color 0.2s ease;
+  background: none !important;
+  box-shadow: none !important;
 }
 .bottombar-tab-icon {
-  font-size: 24px; line-height: 1;
-  filter: grayscale(100%) brightness(1.2); opacity: 0.55;
-  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  display: flex; align-items: center; justify-content: center;
+  width: 22px; height: 22px;
+  filter: none !important; opacity: 1;
+  color: inherit;
+  transition: color 0.2s ease;
 }
 .bottombar-tab.active {
-  color: #FAFAFA;
-  background: rgba(255,255,255,0.18);
-  border-radius: 999px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 8px rgba(0,0,0,0.2);
+  color: #2de8a2 !important;
+  background: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 .bottombar-tab.active .bottombar-tab-icon {
-  filter: grayscale(100%) brightness(1.6); opacity: 1;
+  filter: none !important; opacity: 1;
 }
 .bottombar-tab:active .bottombar-tab-icon { transform: scale(0.92); }
 body.has-bottombar {
-  padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important;
+  padding-bottom: calc(98px + env(safe-area-inset-bottom)) !important;
 }
 @media (max-width: 480px) {
   .topbar { gap: 6px; }
@@ -200,8 +195,8 @@ body.has-bottombar {
   .topbar-water-add { width: 40px; font-size: 18px; }
   .topbar-finance-btn { width: 40px; height: 38px; }
   .topbar-finance-icon { font-size: 18px; }
-  .bottombar-tab-icon { font-size: 22px !important; }
-  .bottombar-tab { font-size: 10px; }
+  .bottombar-tab-icon { width: 20px !important; height: 20px !important; }
+  .bottombar-tab { font-size: 9px; }
 }
 html, body { -webkit-text-size-adjust: 100%; }
 @media (max-width: 768px) {
@@ -271,19 +266,24 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   const bottombarHtml = `
 <nav class="bottombar" id="bottombar" role="navigation" aria-label="Main tabs">
   <a href="index.html" class="bottombar-tab" data-page="main">
-    <span class="bottombar-tab-icon">🏠</span><span>Main</span>
+    <span class="bottombar-tab-icon"><svg width="22" height="22" viewBox="0 0 22 22"><circle cx="6" cy="6" r="2.4" fill="currentColor"/><circle cx="16" cy="6" r="2.4" fill="currentColor"/><circle cx="6" cy="16" r="2.4" fill="currentColor"/><circle cx="16" cy="16" r="2.4" fill="currentColor"/></svg></span>
+    <span>Main</span>
   </a>
   <a href="health.html" class="bottombar-tab" data-page="health">
-    <span class="bottombar-tab-icon">💊</span><span>Health</span>
+    <span class="bottombar-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 20.5C5.5 16 3 12.4 3 8.8 3 6.1 5 4 7.6 4c1.7 0 3.2.9 4.4 2.4C13.2 4.9 14.7 4 16.4 4 19 4 21 6.1 21 8.8c0 3.6-2.5 7.2-9 11.7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></span>
+    <span>Health</span>
   </a>
   <a href="gym.html" class="bottombar-tab" data-page="fitness">
-    <span class="bottombar-tab-icon">💪</span><span>Fitness</span>
+    <span class="bottombar-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6.5 9v6M17.5 9v6M4 10.5v3M20 10.5v3M6.5 12h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+    <span>Fitness</span>
   </a>
   <a href="calendar.html" class="bottombar-tab" data-page="calendar">
-    <span class="bottombar-tab-icon" style="display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="3"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/><rect x="7" y="13" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="11" y="13" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/><rect x="15" y="13" width="2" height="2" rx="0.5" fill="currentColor" stroke="none"/></svg></span><span>Calendar</span>
+    <span class="bottombar-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="M3.5 9h17M8 3v3M16 3v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+    <span>Calendar</span>
   </a>
   <a href="email.html" class="bottombar-tab" data-page="email">
-    <span class="bottombar-tab-icon" style="display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><polyline points="2,7 12,14 22,7"/></svg></span><span>Email</span>
+    <span class="bottombar-tab-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="5.5" width="18" height="13" rx="3" stroke="currentColor" stroke-width="1.7"/><path d="m4 7 8 6 8-6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    <span>Email</span>
   </a>
 </nav>`;
 

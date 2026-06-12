@@ -14,15 +14,15 @@
 <script src="/push-init.js" defer></script>
 <style>
 :root {
-  --text-primary: #FAFAFA;
-  --text-secondary: #B8B6B0;
-  --text-tertiary: #76746E;
+  --text-primary: #ffffff;
+  --text-secondary: rgba(255, 255, 255, 0.86);
+  --text-tertiary: rgba(255, 255, 255, 0.42);
   --success: #2de8a2;
   --mint: #2de8a2;
   --warning: #F2C063;
   --danger: #FF6B6B;
-  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
 html, body {
@@ -191,12 +191,12 @@ body::after {
   gap: 26px;
   padding: 22px;
   margin-bottom: 22px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.04);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  border: 1px solid rgba(45,232,162,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(45,232,162,0.35);
 }
 .day-ring {
   position: relative;
@@ -274,14 +274,14 @@ body::after {
 
 .gm-card {
   position: relative;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
+  border-radius: 24px;
   padding: 20px;
   margin-bottom: 14px;
   -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
   transition: background 0.4s;
   overflow: hidden;
 }
@@ -774,6 +774,7 @@ body::after {
 
 </style>
 <link rel="stylesheet" href="/animations.css">
+<link rel="stylesheet" href="/axis-design.css">
 </head>
 <body>
 <div class="page">
