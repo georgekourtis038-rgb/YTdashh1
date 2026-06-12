@@ -27,10 +27,9 @@
   // -------- CSS --------
   const css = `
 html {
-  background: radial-gradient(ellipse at 20% 50%, rgba(99, 102, 241, 0.15) 0%, transparent 60%),
-              radial-gradient(ellipse at 80% 20%, rgba(16, 185, 129, 0.12) 0%, transparent 50%),
-              radial-gradient(ellipse at 60% 80%, rgba(245, 158, 11, 0.08) 0%, transparent 50%),
-              #0a0a0b;
+  background: radial-gradient(ellipse at 80% 14%, rgba(45, 232, 162, 0.09) 0%, transparent 55%),
+              radial-gradient(ellipse at 18% 90%, rgba(45, 232, 162, 0.04) 0%, transparent 55%),
+              #0a0f0e;
 }
 body { background: transparent; }
 .topbar {
