@@ -989,7 +989,10 @@ body{
     </div>
 
     <!-- Log Food panels -->
-    <div class="cal-card" id="calLogCard" style="display:none">
+    <!-- hidden bar kept for JS compat (ring replaces visual bar) -->
+    <div id="calKcalBar" style="display:none"></div>
+
+    <div class="cal-card" id="calLogCard">
       <!-- Search panel -->
       <div id="calPanelSearch">
         <div class="cal-search-wrap">
@@ -1161,7 +1164,7 @@ body{
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px">
-      <button onclick="document.getElementById('wBtnBottle').click();wsync()" style="border-radius:18px;padding:18px 16px;background:rgba(111,155,255,.1);border:1px solid rgba(111,155,255,.35);display:flex;align-items:center;gap:13px;cursor:pointer;text-align:left">
+      <button onclick="document.getElementById('wBtnBottle').click();wsSheetSync()" style="border-radius:18px;padding:18px 16px;background:rgba(111,155,255,.1);border:1px solid rgba(111,155,255,.35);display:flex;align-items:center;gap:13px;cursor:pointer;text-align:left">
         <svg width="22" height="26" viewBox="0 0 22 26" fill="none"><path d="M7 1h8v3l1 3v15a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V7l1-3V1Z" stroke="#6f9bff" stroke-width="1.6"></path><path d="M6 14h10v8a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3v-8Z" fill="rgba(111,155,255,.35)"></path></svg>
         <div>
           <div style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:17px;color:#fff" id="sheetBottleLabel">Bottle</div>
@@ -1169,7 +1172,7 @@ body{
         </div>
       </button>
 
-      <button onclick="document.getElementById('wBtnGlass').click();wsync()" style="border-radius:18px;padding:18px 16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:13px;cursor:pointer;text-align:left">
+      <button onclick="document.getElementById('wBtnGlass').click();wsSheetSync()" style="border-radius:18px;padding:18px 16px;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;gap:13px;cursor:pointer;text-align:left">
         <svg width="20" height="26" viewBox="0 0 20 26" fill="none"><path d="M3 2h14l-1.6 21a2 2 0 0 1-2 1.8H6.6a2 2 0 0 1-2-1.8L3 2Z" stroke="rgba(255,255,255,.7)" stroke-width="1.6"></path><path d="M3.7 11h12.6l-1 12a2 2 0 0 1-2 1.8H6.7a2 2 0 0 1-2-1.8l-1-12Z" fill="rgba(255,255,255,.16)"></path></svg>
         <div>
           <div style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:17px;color:#fff" id="sheetGlassLabel">Glass</div>
@@ -1271,6 +1274,1897 @@ body{
   </div>
 </div>
 
-<!-- JS here -->
+<script>
+
+(function() {
+  var _orig = localStorage.setItem.bind(localStorage);
+  window.__lsOrigSet = _orig;
+  localStorage.setItem = function(k, v) {
+    _orig(k, v);
+    try { if (typeof window._pcTriggerSync === 'function') window._pcTriggerSync(k); } catch(e) {}
+  };
+})();
+(() => {
+  'use strict';
+
+  const storeGet = (k) => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } };
+  const storeSet = (k, v) => {
+    localStorage.setItem(k, JSON.stringify(v));
+    try { if (pcKeyInScope(k)) pcSchedulePush(); } catch(e) {}
+  };
+
+  function getActiveDate() {
+    const now = new Date();
+    if (now.getHours() < 6) now.setDate(now.getDate() - 1);
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+
+  const TEMPLATE_VERSION = 5;
+
+  const STACK_DEFAULTS = [
+    { id: 'm1', name: 'XXXXX - Supplement of choice', dose: '', window: 'morning', note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+    { id: 'm2', name: 'XXXXX - Supplement of choice', dose: '', window: 'morning', note: 'how much MG, meal times, any data below', tag: 'stack', ordered: true  },
+    { id: 'm3', name: 'XXXXX - Supplement of choice', dose: '', window: 'morning', note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+    { id: 'l1', name: 'XXXXX - Supplement of choice', dose: '', window: 'lunch',   note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+    { id: 'l2', name: 'XXXXX - Supplement of choice', dose: '', window: 'lunch',   note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+    { id: 'e1', name: 'XXXXX - Supplement of choice', dose: '', window: 'evening', note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+    { id: 'e2', name: 'XXXXX - Supplement of choice', dose: '', window: 'evening', note: 'how much MG, meal times, any data below', tag: 'not-ordered', ordered: false },
+    { id: 'e3', name: 'XXXXX - Supplement of choice', dose: '', window: 'evening', note: 'how much MG, meal times, any data below', tag: null,    ordered: true  },
+  ];
+
+  const STACK_WINDOWS = [
+    { key: 'morning', icon: '🌅', title: 'Morning', time: '7–10 AM', cutoffHour: 10 },
+    { key: 'lunch',   icon: '🍽️', title: 'Lunch',   time: '12–2 PM', cutoffHour: 14 },
+    { key: 'evening', icon: '🌙', title: 'Evening', time: '9–11 PM', cutoffHour: 23 },
+    { key: 'anytime', icon: '⏱️', title: 'Anytime', time: 'No fixed window', cutoffHour: null },
+  ];
+
+  // ====== SUPPLEMENT DATABASE — researched defaults ======
+  const SUPPLEMENT_DB = [
+    { name: 'Creatine monohydrate', dose: '5g', window: 'anytime', note: 'Daily — consistency matters more than timing', icon: '🏋️', aliases: ['creatine'] },
+    { name: 'Beta-alanine', dose: '2–5g', window: 'morning', note: 'Pre-workout — split doses to avoid tingles', icon: '🏋️', aliases: ['beta alanine'] },
+    { name: 'L-citrulline', dose: '6–8g', window: 'morning', note: '~30 min pre-workout for pump', icon: '🏋️', aliases: ['citrulline'] },
+    { name: 'BCAAs', dose: '5–10g', window: 'anytime', note: 'Around workout window', icon: '🏋️', aliases: ['bcaa'] },
+    { name: 'Whey protein', dose: '25–40g', window: 'anytime', note: 'Post-workout or to hit daily target', icon: '🥤', aliases: ['whey'] },
+    { name: 'Casein protein', dose: '25–40g', window: 'evening', note: 'Before bed for slow overnight aminos', icon: '🥤', aliases: ['casein'] },
+    { name: 'L-carnitine', dose: '1–2g', window: 'morning', note: 'With carbs for best uptake', icon: '🏋️', aliases: ['carnitine'] },
+    { name: 'Acetyl-L-carnitine', dose: '500mg–2g', window: 'morning', note: 'Cognitive variant — crosses BBB', icon: '🧠', aliases: ['alcar'] },
+    { name: 'HMB', dose: '3g', window: 'anytime', note: 'Split 3x daily — muscle preservation', icon: '🏋️', aliases: ['hmb'] },
+    { name: 'Glutamine', dose: '5g', window: 'anytime', note: 'Recovery — post-workout or before bed', icon: '🏋️', aliases: ['l-glutamine'] },
+    { name: 'Vitamin D3', dose: '2000–5000 IU', window: 'lunch', note: 'Fat-soluble — take with biggest meal', icon: '☀️', aliases: ['vit d', 'vitamin d', 'd3', 'cholecalciferol'] },
+    { name: 'Vitamin K2 (MK-7)', dose: '100–200 mcg', window: 'lunch', note: 'Pairs with D3 — same meal', icon: '💊', aliases: ['vit k', 'vitamin k', 'k2', 'mk7'] },
+    { name: 'Vitamin C', dose: '500–1000mg', window: 'morning', note: 'Water-soluble — split if over 500mg', icon: '🍊', aliases: ['vit c', 'ascorbic acid'] },
+    { name: 'Vitamin B12', dose: '500–1000mcg', window: 'morning', note: 'Methylcobalamin form preferred', icon: '⚡', aliases: ['b12', 'methylcobalamin'] },
+    { name: 'B-complex', dose: '1 cap', window: 'morning', note: 'All B vitamins — energy', icon: '⚡', aliases: ['b complex', 'b vitamins'] },
+    { name: 'Vitamin A', dose: '5000 IU', window: 'lunch', note: 'Fat-soluble — with fat', icon: '💊', aliases: ['vit a', 'retinol'] },
+    { name: 'Vitamin E', dose: '400 IU', window: 'lunch', note: 'Fat-soluble — with fat', icon: '💊', aliases: ['vit e', 'tocopherol'] },
+    { name: 'Folate', dose: '400–800mcg', window: 'morning', note: 'Methylfolate preferred', icon: '💊', aliases: ['folic acid', 'b9', 'methylfolate'] },
+    { name: 'Biotin', dose: '30mcg–5mg', window: 'anytime', note: 'Hair, skin, nails', icon: '💅', aliases: ['biotin', 'b7'] },
+    { name: 'Multivitamin', dose: '1 serving', window: 'lunch', note: 'Take with food', icon: '💊', aliases: ['multi', 'multivitamin'] },
+    { name: 'Magnesium glycinate', dose: '200–400mg', window: 'evening', note: '30–60 min before bed — sleep helper', icon: '🌙', aliases: ['magnesium', 'mag glycinate', 'bisglycinate'] },
+    { name: 'Magnesium L-threonate', dose: '144mg elemental', window: 'evening', note: 'Cognitive variant — crosses BBB', icon: '🧠', aliases: ['magtein', 'threonate'] },
+    { name: 'Magnesium citrate', dose: '200–400mg', window: 'evening', note: 'Also supports digestion', icon: '🌙', aliases: ['mag citrate'] },
+    { name: 'Zinc', dose: '15–30mg', window: 'evening', note: 'With food — not with calcium or iron', icon: '💊', aliases: ['zinc'] },
+    { name: 'Iron', dose: '18–65mg', window: 'morning', note: 'Empty stomach with vit C', icon: '💊', aliases: ['iron'] },
+    { name: 'Calcium', dose: '500mg', window: 'evening', note: 'With food — not with iron', icon: '🦴', aliases: ['calcium'] },
+    { name: 'Selenium', dose: '100–200mcg', window: 'anytime', note: 'Thyroid + antioxidant', icon: '💊', aliases: ['selenium'] },
+    { name: 'Iodine', dose: '150mcg', window: 'morning', note: 'Thyroid support', icon: '💊', aliases: ['iodine'] },
+    { name: 'Omega-3 (Fish oil)', dose: '2–3g EPA+DHA', window: 'lunch', note: 'With biggest fatty meal', icon: '🐟', aliases: ['omega 3', 'omega3', 'fish oil', 'epa', 'dha'] },
+    { name: 'Krill oil', dose: '500–1000mg', window: 'lunch', note: 'More absorbable than fish oil', icon: '🐟', aliases: ['krill'] },
+    { name: 'MCT oil', dose: '1–2 tbsp', window: 'morning', note: 'Fast energy — start low', icon: '🥥', aliases: ['mct'] },
+    { name: 'Flaxseed oil', dose: '1–2g', window: 'lunch', note: 'Plant omega-3 — with food', icon: '🌱', aliases: ['flax', 'flaxseed'] },
+    { name: 'L-theanine', dose: '100–200mg', window: 'morning', note: 'Stacks with caffeine 2:1', icon: '🧠', aliases: ['theanine'] },
+    { name: 'Caffeine', dose: '100–200mg', window: 'morning', note: 'Stack with L-theanine for cleaner focus', icon: '☕', aliases: ['caffeine'] },
+    { name: 'Rhodiola rosea', dose: '200–400mg', window: 'morning', note: 'Adaptogen — energy and stress', icon: '🌿', aliases: ['rhodiola'] },
+    { name: 'Lion\'s mane', dose: '500–1000mg', window: 'morning', note: 'Cognitive support — daily', icon: '🍄', aliases: ['lions mane', 'hericium'] },
+    { name: 'Bacopa monnieri', dose: '300–600mg', window: 'morning', note: 'With fat — long-term memory', icon: '🌿', aliases: ['bacopa'] },
+    { name: 'Ginkgo biloba', dose: '120–240mg', window: 'morning', note: 'Circulation and cognition', icon: '🌿', aliases: ['ginkgo'] },
+    { name: 'Alpha-GPC', dose: '300–600mg', window: 'morning', note: 'Choline — focus and learning', icon: '🧠', aliases: ['alpha gpc'] },
+    { name: 'Phosphatidylserine', dose: '100–300mg', window: 'evening', note: 'Cortisol regulation', icon: '🧠', aliases: ['ps'] },
+    { name: 'NAC', dose: '600–1800mg', window: 'morning', note: 'Glutathione precursor — split doses', icon: '💊', aliases: ['nac', 'n-acetyl cysteine'] },
+    { name: 'Melatonin', dose: '0.3–3mg', window: 'evening', note: '30–60 min before bed — start low', icon: '🌙', aliases: ['melatonin'] },
+    { name: 'Glycine', dose: '3g', window: 'evening', note: 'Body temp drop = better sleep onset', icon: '🌙', aliases: ['glycine'] },
+    { name: 'Apigenin', dose: '50mg', window: 'evening', note: 'From chamomile — before bed', icon: '🌙', aliases: ['apigenin'] },
+    { name: 'Ashwagandha', dose: '300–600mg', window: 'evening', note: 'KSM-66 form — stress and cortisol', icon: '🌿', aliases: ['ashwagandha', 'ksm-66'] },
+    { name: 'L-tryptophan', dose: '500mg–1g', window: 'evening', note: 'Serotonin precursor — sleep onset', icon: '🌙', aliases: ['tryptophan'] },
+    { name: 'GABA', dose: '500–750mg', window: 'evening', note: 'Calming — before bed', icon: '🌙', aliases: ['gaba'] },
+    { name: 'Valerian root', dose: '300–600mg', window: 'evening', note: 'Sleep onset support', icon: '🌙', aliases: ['valerian'] },
+    { name: 'Probiotics', dose: '10–50 billion CFU', window: 'morning', note: 'Empty stomach or with food', icon: '🦠', aliases: ['probiotic'] },
+    { name: 'Quercetin', dose: '500–1000mg', window: 'anytime', note: 'Pairs well with vitamin C', icon: '🌿', aliases: ['quercetin'] },
+    { name: 'Curcumin', dose: '500–1000mg', window: 'lunch', note: 'With black pepper + fat', icon: '🌿', aliases: ['curcumin', 'turmeric'] },
+    { name: 'Resveratrol', dose: '250–500mg', window: 'morning', note: 'With fat for absorption', icon: '🍇', aliases: ['resveratrol'] },
+    { name: 'CoQ10 / Ubiquinol', dose: '100–200mg', window: 'lunch', note: 'Fat-soluble — with biggest meal', icon: '💊', aliases: ['coq10', 'ubiquinol'] },
+    { name: 'Alpha lipoic acid', dose: '300–600mg', window: 'morning', note: 'Empty stomach for absorption', icon: '💊', aliases: ['ala', 'alpha lipoic'] },
+    { name: 'Glutathione', dose: '250–1000mg', window: 'morning', note: 'Liposomal form for absorption', icon: '💊', aliases: ['glutathione'] },
+    { name: 'Astaxanthin', dose: '4–12mg', window: 'lunch', note: 'Fat-soluble — with fatty meal', icon: '💊', aliases: ['astaxanthin'] },
+    { name: 'Berberine', dose: '500mg', window: 'lunch', note: 'Before meals — glucose support', icon: '💊', aliases: ['berberine'] },
+    { name: 'Milk thistle', dose: '200–400mg', window: 'anytime', note: 'Silymarin — liver support', icon: '🌿', aliases: ['milk thistle', 'silymarin'] },
+    { name: 'Spirulina', dose: '3–5g', window: 'morning', note: 'Algae — protein and antioxidants', icon: '🌱', aliases: ['spirulina'] },
+    { name: 'Chlorella', dose: '2–4g', window: 'morning', note: 'Algae — detox support', icon: '🌱', aliases: ['chlorella'] },
+    { name: 'Tongkat ali', dose: '200–400mg', window: 'morning', note: 'Cycle 8 weeks on/off', icon: '🌿', aliases: ['tongkat', 'longjack'] },
+    { name: 'Fadogia agrestis', dose: '600mg', window: 'morning', note: 'Cycle 8 weeks on/off', icon: '🌿', aliases: ['fadogia'] },
+    { name: 'DHEA', dose: '25–50mg', window: 'morning', note: 'Hormonal — consult doctor', icon: '💊', aliases: ['dhea'] },
+    { name: 'Pregnenolone', dose: '10–50mg', window: 'morning', note: 'Hormonal — consult doctor', icon: '💊', aliases: ['pregnenolone'] },
+    { name: 'Tribulus terrestris', dose: '250–750mg', window: 'morning', note: 'Libido and energy', icon: '🌿', aliases: ['tribulus'] },
+    { name: 'Maca root', dose: '1.5–3g', window: 'morning', note: 'Adaptogen — energy and libido', icon: '🌿', aliases: ['maca'] },
+    { name: 'Collagen peptides', dose: '10–20g', window: 'anytime', note: 'With vitamin C for synthesis', icon: '💅', aliases: ['collagen'] },
+    { name: 'Glucosamine', dose: '1500mg', window: 'lunch', note: 'With food', icon: '🦴', aliases: ['glucosamine'] },
+    { name: 'Chondroitin', dose: '1200mg', window: 'lunch', note: 'Often paired with glucosamine', icon: '🦴', aliases: ['chondroitin'] },
+    { name: 'MSM', dose: '1–3g', window: 'anytime', note: 'Joint support', icon: '🦴', aliases: ['msm'] },
+    { name: 'Hyaluronic acid', dose: '120–200mg', window: 'anytime', note: 'Skin and joint hydration', icon: '💅', aliases: ['hyaluronic', 'ha'] },
+    { name: 'Cordyceps', dose: '1–3g', window: 'morning', note: 'Energy and endurance', icon: '🍄', aliases: ['cordyceps'] },
+    { name: 'Reishi', dose: '1–2g', window: 'evening', note: 'Calming adaptogen', icon: '🍄', aliases: ['reishi', 'ganoderma'] },
+    { name: 'Chaga', dose: '1–2g', window: 'morning', note: 'Antioxidant and immune', icon: '🍄', aliases: ['chaga'] },
+  ];
+
+  let todayKey = `stack:taken:${getActiveDate()}`;
+
+  function getItems() {
+    const storedVersion = storeGet('stack:version');
+    const stored = storeGet('stack:items');
+    if (!stored || !Array.isArray(stored) || !stored.length || storedVersion !== TEMPLATE_VERSION) {
+      const fresh = JSON.parse(JSON.stringify(STACK_DEFAULTS));
+      storeSet('stack:items', fresh);
+      storeSet('stack:version', TEMPLATE_VERSION);
+      return fresh;
+    }
+    return stored;
+  }
+  function setItems(items) { storeSet('stack:items', items); }
+  function getTaken() { return storeGet(todayKey) || {}; }
+  function setTaken(map) { storeSet(todayKey, map); }
+  function getLow() { return storeGet('stack:low') || []; }
+  function setLow(arr) { storeSet('stack:low', arr); }
+
+  function toggleTaken(id) {
+    const taken = getTaken();
+    if (taken[id]) delete taken[id]; else taken[id] = Date.now();
+    setTaken(taken); render();
+  }
+  function toggleLow(id) {
+    const low = getLow();
+    if (low.includes(id)) setLow(low.filter(x => x !== id));
+    else { low.push(id); setLow(low); }
+    render();
+  }
+  function deleteItem(id) {
+    setItems(getItems().filter(i => i.id !== id));
+    const taken = getTaken();
+    delete taken[id];
+    setTaken(taken);
+    setLow(getLow().filter(x => x !== id));
+    render();
+  }
+  function addItem(name, dose, windowKey, note = '') {
+    const v = String(name || '').trim();
+    if (!v) return;
+    const items = getItems();
+    const id = 'custom_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6);
+    items.push({
+      id, name: v,
+      dose: String(dose || '').trim(),
+      window: ['morning','lunch','evening','anytime'].includes(windowKey) ? windowKey : 'anytime',
+      note: String(note || '').trim(),
+      tag: null, ordered: true
+    });
+    setItems(items);
+    render();
+  }
+  function updateItem(id, field, value) {
+    const items = getItems();
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item[field] = value;
+    setItems(items);
+  }
+
+  function render() {
+    const items = getItems();
+    const taken = getTaken();
+    const low = getLow();
+    const totalCount = items.length;
+    const takenCount = items.filter(i => taken[i.id]).length;
+    document.getElementById('stackProgressText').textContent =
+      `${takenCount} / ${totalCount} taken today · resets at 6 AM`;
+    const pct = totalCount === 0 ? 0 : (takenCount / totalCount) * 100;
+    document.getElementById('stackProgressBar').style.width = pct + '%';
+
+    const groupsEl = document.getElementById('stackGroups');
+    groupsEl.innerHTML = '';
+
+    const now = new Date();
+    const nowHour = now.getHours() + (now.getMinutes() / 60);
+
+    STACK_WINDOWS.forEach(win => {
+      const winItems = items.filter(i => (i.window || 'anytime') === win.key);
+      if (winItems.length === 0) return;
+
+      const group = document.createElement('div');
+      group.className = 'stack-window';
+      group.innerHTML = `
+        <div class="stack-window-header">
+          <span class="stack-window-icon">${win.icon}</span>
+          <span class="stack-window-title">${win.title}</span>
+          <span class="stack-window-time">${win.time}</span>
+        </div>`;
+
+      const isPastCutoff = win.cutoffHour !== null && nowHour > win.cutoffHour;
+
+      winItems.forEach(item => {
+        const isTaken = !!taken[item.id];
+        const isLow = low.includes(item.id);
+        const isMissed = !isTaken && isPastCutoff;
+
+        const row = document.createElement('div');
+        row.className = 'stack-item' + (isTaken ? ' taken' : '') + (isMissed ? ' missed' : '');
+
+        let tagHtml = '';
+        if (item.tag === 'stack') tagHtml = '<span class="stack-item-tag tag-stack">stack</span>';
+        else if (item.tag === 'not-ordered') tagHtml = '<span class="stack-item-tag tag-not-ordered">not ordered</span>';
+
+        row.innerHTML = `
+          <button class="stack-check ${isTaken ? 'checked' : ''}" data-action="toggle" data-id="${item.id}" aria-label="Mark taken">${isTaken ? '✓' : ''}</button>
+          <div class="stack-item-body">
+            <div class="stack-item-name" data-edit="name" data-id="${item.id}">
+              <span class="stack-item-name-text">${escapeHtml(item.name)}</span>${tagHtml}
+            </div>
+            <div class="stack-item-meta" data-edit="meta" data-id="${item.id}">${escapeHtml(metaText(item))}</div>
+          </div>
+          <button class="stack-low-btn ${isLow ? 'is-low' : ''}" data-action="low" data-id="${item.id}">↓ Running low</button>
+          <button class="stack-item-del" data-action="del" data-id="${item.id}" aria-label="Delete">×</button>`;
+
+        group.appendChild(row);
+      });
+
+      groupsEl.appendChild(group);
+    });
+
+    if (groupsEl.children.length === 0) {
+      groupsEl.innerHTML = `<div class="stack-window-empty">No items yet — add one below to start your stack.</div>`;
+    }
+
+    // Sync ticker after every render
+    renderTicker();
+  }
+
+  // ====== TICKER ======
+  let tickerIndex = 0;
+  let tickerInterval = null;
+  let cachedIssues = [];
+
+  function getStackIssues() {
+    const items = getItems();
+    const taken = getTaken();
+    const low = getLow();
+    const now = new Date();
+    const nowHour = now.getHours() + (now.getMinutes() / 60);
+
+    const missed = [];
+    const lowList = [];
+
+    items.forEach(item => {
+      const win = STACK_WINDOWS.find(w => w.key === (item.window || 'anytime'));
+      const isPastCutoff = win && win.cutoffHour !== null && nowHour > win.cutoffHour;
+      const isTaken = !!taken[item.id];
+      if (isPastCutoff && !isTaken) {
+        missed.push({
+          type: 'missed',
+          text: `${item.name} — missed ${win.title.toLowerCase()} dose`
+        });
+      }
+      if (low.includes(item.id)) {
+        lowList.push({
+          type: 'low',
+          text: `${item.name} — running low, reorder soon`
+        });
+      }
+    });
+
+    return [...missed, ...lowList];
+  }
+
+  function renderTicker() {
+    const issues = getStackIssues();
+    const tickerEl = document.getElementById('stackTicker');
+    const msgEl = document.getElementById('stackTickerMsg');
+    const countEl = document.getElementById('stackTickerCount');
+    const totalItems = getItems().length;
+
+    cachedIssues = issues;
+
+    if (issues.length === 0) {
+      msgEl.textContent = 'All caught up — keep it rolling';
+      tickerEl.classList.remove('status-low', 'status-missed');
+      countEl.textContent = `0/${totalItems}`;
+      tickerIndex = 0;
+      return;
+    }
+
+    const hasMissed = issues.some(i => i.type === 'missed');
+    tickerEl.classList.remove('status-low', 'status-missed');
+    tickerEl.classList.add(hasMissed ? 'status-missed' : 'status-low');
+
+    if (tickerIndex >= issues.length) tickerIndex = 0;
+    msgEl.textContent = issues[tickerIndex].text;
+    countEl.textContent = `${issues.length}/${totalItems}`;
+  }
+
+  function cycleTicker() {
+    if (cachedIssues.length <= 1) {
+      renderTicker();
+      return;
+    }
+    const msgEl = document.getElementById('stackTickerMsg');
+    msgEl.classList.add('is-fading');
+    setTimeout(() => {
+      tickerIndex++;
+      renderTicker();
+      msgEl.classList.remove('is-fading');
+    }, 280);
+  }
+
+  function startTicker() {
+    if (tickerInterval) clearInterval(tickerInterval);
+    tickerInterval = setInterval(cycleTicker, 5000);
+  }
+
+  function metaText(item) {
+    const parts = [];
+    if (item.dose) parts.push(item.dose);
+    if (item.note) parts.push(item.note);
+    return parts.join(' · ');
+  }
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  document.getElementById('stackGroups').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action]');
+    if (!btn) return;
+    e.stopPropagation();
+    const id = btn.dataset.id;
+    if (btn.dataset.action === 'toggle') toggleTaken(id);
+    else if (btn.dataset.action === 'low') toggleLow(id);
+    else if (btn.dataset.action === 'del') deleteItem(id);
+  });
+  document.getElementById('stackGroups').addEventListener('pointerdown', (e) => {
+    const btn = e.target.closest('[data-action="del"]');
+    if (!btn) return;
+    e.preventDefault(); e.stopPropagation();
+    deleteItem(btn.dataset.id);
+  });
+  document.getElementById('stackGroups').addEventListener('click', (e) => {
+    const editEl = e.target.closest('[data-edit]');
+    if (!editEl) return;
+    if (e.target.closest('[data-action]')) return;
+    if (editEl.getAttribute('contenteditable') === 'true') return;
+    startEdit(editEl);
+  });
+
+  function startEdit(el) {
+    const id = el.dataset.id;
+    const field = el.dataset.edit;
+    if (field === 'name') {
+      const textSpan = el.querySelector('.stack-item-name-text');
+      if (!textSpan) return;
+      textSpan.setAttribute('contenteditable', 'true');
+      textSpan.style.outline = '1px solid rgba(255,255,255,0.25)';
+      textSpan.style.outlineOffset = '4px';
+      textSpan.style.borderRadius = '4px';
+      textSpan.focus();
+      placeCaretAtEnd(textSpan);
+      const finish = (commit) => {
+        textSpan.removeAttribute('contenteditable');
+        textSpan.style.outline = ''; textSpan.style.outlineOffset = '';
+        if (commit) {
+          const newVal = textSpan.textContent.trim();
+          if (newVal) updateItem(id, 'name', newVal); else render();
+        } else render();
+      };
+      textSpan.addEventListener('blur', () => finish(true), { once: true });
+      textSpan.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); textSpan.blur(); }
+        if (e.key === 'Escape') { textSpan.blur(); render(); }
+      });
+    }
+    if (field === 'meta') {
+      el.setAttribute('contenteditable', 'true');
+      el.focus(); placeCaretAtEnd(el);
+      const finish = (commit) => {
+        el.removeAttribute('contenteditable');
+        if (commit) {
+          const text = el.textContent.trim();
+          const parts = text.split(/\s*·\s*/);
+          updateItem(id, 'dose', parts[0] || '');
+          updateItem(id, 'note', parts.slice(1).join(' · '));
+        }
+        render();
+      };
+      el.addEventListener('blur', () => finish(true), { once: true });
+      el.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); el.blur(); }
+        if (e.key === 'Escape') { el.blur(); render(); }
+      });
+    }
+  }
+
+  function placeCaretAtEnd(el) {
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    range.collapse(false);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  // ====== ADD FORM + SEARCH AUTOCOMPLETE ======
+  const nameInput = document.getElementById('stackAddName');
+  const doseInput = document.getElementById('stackAddDose');
+  const winSelect = document.getElementById('stackAddWindow');
+  const addBtn = document.getElementById('stackAddBtn');
+  const resultsEl = document.getElementById('stackSearchResults');
+
+  let pendingNote = ''; // hidden note auto-filled when a DB result is selected
+
+  function searchSupplements(q) {
+    const query = q.toLowerCase().trim();
+    if (!query) return [];
+    const starts = [];
+    const contains = [];
+    SUPPLEMENT_DB.forEach(s => {
+      const nameLC = s.name.toLowerCase();
+      const aliases = (s.aliases || []).map(a => a.toLowerCase());
+      const allNames = [nameLC, ...aliases];
+      if (allNames.some(n => n.startsWith(query))) starts.push(s);
+      else if (allNames.some(n => n.includes(query))) contains.push(s);
+    });
+    return [...starts, ...contains].slice(0, 6);
+  }
+
+  function renderSearchResults(q) {
+    const matches = searchSupplements(q);
+    if (!q.trim() || matches.length === 0) {
+      resultsEl.hidden = true;
+      resultsEl.innerHTML = '';
+      return;
+    }
+    resultsEl.hidden = false;
+    resultsEl.innerHTML = matches.map(s => {
+      const winMeta = STACK_WINDOWS.find(w => w.key === s.window) || STACK_WINDOWS[3];
+      return `
+        <button class="stack-result" data-name="${escapeHtml(s.name)}" data-dose="${escapeHtml(s.dose)}" data-window="${s.window}" data-note="${escapeHtml(s.note)}">
+          <div class="stack-result-icon">${s.icon || '💊'}</div>
+          <div class="stack-result-body">
+            <div class="stack-result-name">${escapeHtml(s.name)}</div>
+            <div class="stack-result-meta">${escapeHtml(s.dose)} · ${winMeta.icon} ${winMeta.title.toLowerCase()} · ${escapeHtml(s.note)}</div>
+          </div>
+        </button>`;
+    }).join('');
+  }
+
+  nameInput.addEventListener('input', () => {
+    renderSearchResults(nameInput.value);
+    pendingNote = ''; // reset note if user is typing manually
+  });
+  nameInput.addEventListener('focus', () => {
+    if (nameInput.value.trim()) renderSearchResults(nameInput.value);
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.stack-name-wrap')) resultsEl.hidden = true;
+  });
+
+  resultsEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.stack-result');
+    if (!btn) return;
+    nameInput.value = btn.dataset.name;
+    doseInput.value = btn.dataset.dose;
+    winSelect.value = btn.dataset.window;
+    pendingNote = btn.dataset.note;
+    resultsEl.hidden = true;
+    addBtn.focus();
+  });
+
+  addBtn.addEventListener('click', () => {
+    addItem(nameInput.value, doseInput.value, winSelect.value, pendingNote);
+    nameInput.value = '';
+    doseInput.value = '';
+    pendingNote = '';
+    resultsEl.hidden = true;
+    nameInput.focus();
+  });
+
+  [nameInput, doseInput].forEach(i => {
+    i.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        // If search dropdown is open with matches, pick the first one
+        if (!resultsEl.hidden && i === nameInput) {
+          const firstResult = resultsEl.querySelector('.stack-result');
+          if (firstResult) { e.preventDefault(); firstResult.click(); return; }
+        }
+        addBtn.click();
+      }
+      if (e.key === 'Escape') resultsEl.hidden = true;
+    });
+  });
+
+  setInterval(() => {
+    const newKey = `stack:taken:${getActiveDate()}`;
+    if (newKey !== todayKey) todayKey = newKey;
+    render();
+  }, 60 * 1000);
+
+  render();
+  startTicker();
+
+  // ============================================================
+  // CLOUD SYNC via Supabase
+  // ============================================================
+  const SUPABASE_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
+  const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
+  const APP_KEY = 'health-stack';
+  function pcKeyInScope(k) { return typeof k === 'string' && (k.indexOf('stack:') === 0 || k === 'po_water_v1' || k.indexOf('calorie_') === 0); }
+
+  let pcSupa = null;
+  let pcPushTimer = null;
+  let pcSuppressSync = false;
+  let pcPendingRemote = null;
+  let pcLastSyncedJson = null;
+
+  const _pcOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
+  const _pcOrigRemove = localStorage.removeItem.bind(localStorage);
+  window._pcTriggerSync = function(k) {
+    if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush();
+  };
+  localStorage.removeItem = function(k) {
+    _pcOrigRemove(k);
+    try { if (!pcSuppressSync && pcKeyInScope(k)) pcSchedulePush(); } catch (e) {}
+  };
+
+  function pcCollectState() {
+    const out = {};
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (!pcKeyInScope(k)) continue;
+      const v = localStorage.getItem(k);
+      if (v == null) continue;
+      try { out[k] = JSON.parse(v); } catch {}
+    }
+    return out;
+  }
+
+  function pcIsUserEditing() {
+    const ae = document.activeElement;
+    if (!ae) return false;
+    const tag = ae.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (ae.getAttribute && ae.getAttribute('contenteditable') === 'true') return true;
+    return false;
+  }
+
+  function pcRerender() {
+    try { render(); } catch {}
+  }
+
+  function pcApplyRemoteState(remote) {
+    if (!remote || typeof remote !== 'object') return false;
+    pcSuppressSync = true;
+    let changed = false;
+    try {
+      const localScopedKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (pcKeyInScope(k)) localScopedKeys.push(k);
+      }
+      const remoteKeys = Object.keys(remote);
+      for (const k of remoteKeys) {
+        if (!pcKeyInScope(k)) continue;
+        const incoming = JSON.stringify(remote[k]);
+        const local = localStorage.getItem(k);
+        if (local !== incoming) { try { _pcOrigSet(k, incoming); changed = true; } catch {} }
+      }
+      for (const k of localScopedKeys) {
+        if (remoteKeys.indexOf(k) === -1) {
+          try { _pcOrigRemove(k); changed = true; } catch {}
+        }
+      }
+    } finally {
+      pcSuppressSync = false;
+    }
+    if (changed) { try { pcRerender(); } catch (e) {} }
+    return changed;
+  }
+
+  function pcMaybeApplyRemote(remote) {
+    if (pcIsUserEditing()) { pcPendingRemote = remote; return; }
+    pcApplyRemoteState(remote);
+  }
+
+  function pcApplyPendingIfReady() {
+    if (pcPendingRemote && !pcIsUserEditing()) {
+      const r = pcPendingRemote;
+      pcPendingRemote = null;
+      pcApplyRemoteState(r);
+    }
+  }
+
+  async function pcPushNow() {
+    if (!pcSupa) return;
+    const syncState = pcCollectState();
+    const json = JSON.stringify(syncState);
+    if (json === pcLastSyncedJson) return;
+    try {
+      const { error } = await pcSupa
+        .from('app_state')
+        .upsert(
+          { key: APP_KEY, data: syncState, updated_at: new Date().toISOString() },
+          { onConflict: 'key' }
+        );
+      if (!error) { pcLastSyncedJson = json; }
+    } catch (_) {}
+  }
+
+  function pcSchedulePush() {
+    if (pcSuppressSync) return;
+    clearTimeout(pcPushTimer);
+    pcPushTimer = setTimeout(pcPushNow, 0);
+  }
+  window.pcSchedulePush = pcSchedulePush;
+
+  function pcFlushPushOnUnload() {
+    if (!pcSupa) return;
+    const syncState = pcCollectState();
+    const json = JSON.stringify(syncState);
+    if (json === pcLastSyncedJson) return;
+    try {
+      fetch(SUPABASE_URL + '/rest/v1/app_state?on_conflict=key', {
+        method: 'POST',
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': 'Bearer ' + SUPABASE_KEY,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates',
+        },
+        body: JSON.stringify({ key: APP_KEY, data: syncState, updated_at: new Date().toISOString() }),
+        keepalive: true,
+      }).catch(() => {});
+      pcLastSyncedJson = json;
+    } catch (_) {}
+  }
+
+  (async function pcInitCloudSync() {
+    if (!window.supabase || !SUPABASE_URL || !SUPABASE_KEY) return;
+    if (SUPABASE_URL.indexOf('PASTE-') === 0 || SUPABASE_KEY.indexOf('PASTE-') === 0) return;
+    pcSupa = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    try {
+      const { data, error } = await pcSupa
+        .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+      if (!error && data && data.data && Object.keys(data.data).length > 0) {
+        pcLastSyncedJson = JSON.stringify(data.data);
+        pcMaybeApplyRemote(data.data);
+      } else if (Object.keys(pcCollectState()).length > 0) {
+        pcSchedulePush();
+      }
+    } catch (_) {}
+    pcSupa.channel('app_state_' + APP_KEY)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'app_state',
+        filter: 'key=eq.' + APP_KEY,
+      }, (payload) => {
+        if (!payload.new || !payload.new.data) return;
+        const incoming = JSON.stringify(payload.new.data);
+        if (incoming === pcLastSyncedJson) return;
+        pcLastSyncedJson = incoming;
+        pcMaybeApplyRemote(payload.new.data);
+      })
+      .subscribe();
+    // Polling fallback — catches changes if realtime is not enabled on the table
+    setInterval(async () => {
+      if (!pcSupa) return;
+      try {
+        const { data, error } = await pcSupa
+          .from('app_state').select('data').eq('key', APP_KEY).maybeSingle();
+        if (!error && data && data.data) {
+          const incoming = JSON.stringify(data.data);
+          if (incoming !== pcLastSyncedJson) {
+            pcLastSyncedJson = incoming;
+            pcMaybeApplyRemote(data.data);
+          }
+        }
+      } catch (_) {}
+    }, 30000);
+  })();
+
+  document.addEventListener('focusout', () => {
+    setTimeout(pcApplyPendingIfReady, 0);
+  }, true);
+  window.addEventListener('pagehide', pcFlushPushOnUnload);
+  window.addEventListener('beforeunload', pcFlushPushOnUnload);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      if (pcSupa) {
+        pcSupa.from('app_state').select('data').eq('key', APP_KEY).maybeSingle()
+          .then(({ data, error }) => {
+            if (!error && data && data.data) {
+              const incoming = JSON.stringify(data.data);
+              if (incoming !== pcLastSyncedJson) {
+                pcLastSyncedJson = incoming;
+                pcMaybeApplyRemote(data.data);
+              }
+            }
+          }).catch(() => {});
+      }
+    } else {
+      pcFlushPushOnUnload();
+    }
+  });
+})();
+
+// ============================================================
+// WATER TRACKER
+// ============================================================
+(function () {
+  'use strict';
+
+  var LS_KEY = 'po_water_v1';
+
+  function wLoad() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY)) || {}; } catch (e) { return {}; }
+  }
+  function wSafeLoad() {
+    var d = wLoad();
+    var repaired = false;
+    if (d.history !== undefined) {
+      if (typeof d.history !== 'object' || d.history === null || Array.isArray(d.history)) {
+        d.history = {}; repaired = true;
+      } else {
+        Object.keys(d.history).forEach(function(k) {
+          var v = d.history[k];
+          if (typeof v !== 'number' || isNaN(v) || v > 99999) { delete d.history[k]; repaired = true; }
+        });
+      }
+    }
+    if (d.logs !== undefined && (typeof d.logs !== 'object' || d.logs === null || Array.isArray(d.logs))) {
+      d.logs = {}; repaired = true;
+    }
+    if (typeof d.logs === 'object' && d.logs !== null && !Array.isArray(d.logs)) {
+      Object.keys(d.logs).forEach(function(k) {
+        if (!Array.isArray(d.logs[k])) { d.logs[k] = []; repaired = true; }
+      });
+    }
+    if (d.settings !== undefined && (typeof d.settings !== 'object' || d.settings === null || Array.isArray(d.settings))) {
+      d.settings = {}; repaired = true;
+    }
+    if (repaired) { wSave(d); }
+    return d;
+  }
+  function wSave(data) {
+    localStorage.setItem(LS_KEY, JSON.stringify(data));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch (e) {}
+  }
+
+  function wDateStr(date) {
+    var y = date.getFullYear();
+    var m = String(date.getMonth() + 1).padStart(2, '0');
+    var d = String(date.getDate()).padStart(2, '0');
+    return y + '-' + m + '-' + d;
+  }
+  function wActiveDate() {
+    var now = new Date();
+    if (now.getHours() < 6) now.setDate(now.getDate() - 1);
+    return wDateStr(now);
+  }
+
+  var W_DEFAULTS = { bottleMl: 500, glassMl: 355 };
+
+  function wReadDashSex() {
+    try { var v = localStorage.getItem('dash_sex') || ''; return (v === 'female' || v === 'f') ? 'f' : 'm'; } catch(e) { return 'm'; }
+  }
+
+  function wReadDashNum(key) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (raw === null) return null;
+      var v = JSON.parse(raw);
+      if (typeof v === 'number' && !isNaN(v)) return v;
+      var f = parseFloat(v);
+      return isNaN(f) ? null : f;
+    } catch (e) {
+      var f2 = parseFloat(localStorage.getItem(key));
+      return isNaN(f2) ? null : f2;
+    }
+  }
+
+  function wGetSettings() { return Object.assign({}, W_DEFAULTS, wLoad().settings || {}); }
+  function wSaveSettings(s) { var d = wLoad(); d.settings = s; wSave(d); }
+  function wGetHistory() { return wLoad().history || {}; }
+  function wGetTodayMl() { return wGetHistory()[wActiveDate()] || 0; }
+  function wSetTodayMl(ml) {
+    var d = wLoad();
+    if (!d.history) d.history = {};
+    d.history[wActiveDate()] = Math.max(0, Math.round(ml));
+    wSave(d);
+  }
+
+  function wGetTodayLog() {
+    var logs = wLoad().logs || {};
+    var entry = logs[wActiveDate()];
+    return Array.isArray(entry) ? entry : [];
+  }
+
+  function wAddMl(ml) {
+    var d = wLoad();
+    var today = wActiveDate();
+    if (!d.history) d.history = {};
+    if (!d.logs) d.logs = {};
+    if (!Array.isArray(d.logs[today])) d.logs[today] = [];
+    d.history[today] = Math.max(0, (d.history[today] || 0) + Math.round(ml));
+    d.logs[today].push(Math.round(ml));
+    wSave(d);
+  }
+
+  function wUndoMl() {
+    var d = wLoad();
+    var today = wActiveDate();
+    if (!d.logs || !Array.isArray(d.logs[today]) || !d.logs[today].length) return;
+    var amount = d.logs[today].pop();
+    if (!d.history) d.history = {};
+    d.history[today] = Math.max(0, (d.history[today] || 0) - amount);
+    wSave(d);
+  }
+
+  function wSyncGymWeight() {
+    try {
+      var raw = localStorage.getItem('po_coach_weights');
+      if (!raw) return;
+      var entries = JSON.parse(raw);
+      if (!Array.isArray(entries) || !entries.length) return;
+      entries.sort(function(a, b) { return a.dateKey.localeCompare(b.dateKey); });
+      var latest = entries[entries.length - 1];
+      if (!latest || typeof latest.weight !== 'number' || latest.weight <= 0) return;
+      var gymUnit = 'kg';
+      try { gymUnit = (JSON.parse(localStorage.getItem('po_coach_v1') || '{}').units) || 'kg'; } catch(e) {}
+      var lbs = gymUnit === 'lb' ? latest.weight : latest.weight * 2.20462;
+      var wVal = JSON.stringify(Math.round(lbs * 10) / 10);
+      localStorage.setItem('dash_weight', wVal);
+      window.dispatchEvent(new StorageEvent('storage', { key: 'dash_weight', newValue: wVal }));
+    } catch (e) {}
+  }
+
+  function wTarget() {
+    var lbs = wReadDashNum('dash_weight');
+    if (!lbs || lbs <= 0) return null;
+    var kg = lbs / 2.205;
+    var base = kg * 35;
+    if (wReadDashSex() === 'm') base += 200;
+    base = Math.round(base / 50) * 50;
+    return Math.max(2000, Math.min(6000, base));
+  }
+
+  function wRender() {
+    var s = wGetSettings();
+    var target = wTarget();
+    var ml = wGetTodayMl();
+    var pct = (target !== null && target > 0) ? Math.min(100, Math.round((ml / target) * 100)) : 0;
+
+    document.getElementById('wMlBig').textContent = ml.toLocaleString() + ' ml';
+    document.getElementById('wMlTarget').textContent = target !== null
+      ? '/ ' + target.toLocaleString() + ' ml target'
+      : 'Set your weight in Settings to get a personalized target';
+
+    var bar = document.getElementById('wProgBar');
+    bar.style.width = pct + '%';
+    bar.className = 'wpbar-fill ' + (pct >= 100 ? 'green-bright' : pct >= 80 ? 'green' : pct >= 40 ? 'orange' : 'red');
+
+    var statusEl = document.getElementById('wStatus');
+    if (target === null) {
+      statusEl.textContent = 'Log your weight in the Fitness tab to set a target';
+      statusEl.className = 'wstatus warn';
+    } else if (pct >= 100) {
+      statusEl.textContent = 'Goal reached! 💧';
+      statusEl.className = 'wstatus good';
+    } else if (pct >= 60) {
+      statusEl.textContent = 'On track';
+      statusEl.className = 'wstatus ok';
+    } else {
+      statusEl.textContent = 'Behind — drink one in the next hour';
+      statusEl.className = 'wstatus warn';
+    }
+
+    document.getElementById('wUndoBtn').disabled = wGetTodayLog().length === 0;
+    document.getElementById('wBtnBottleLabel').textContent = '+ Bottle (' + s.bottleMl + 'ml)';
+    document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + s.glassMl + 'ml)';
+
+    wRenderWhyBody(s, target);
+    wRenderChart(target);
+  }
+
+  // Debounce wRender: if called multiple times within 100ms (e.g. from
+  // Supabase sync writing localStorage repeatedly) only execute the last call.
+  var _wRenderFn = wRender;
+  var _wRenderTimer = null;
+  wRender = function () {
+    if (_wRenderTimer) clearTimeout(_wRenderTimer);
+    _wRenderTimer = setTimeout(function () {
+      _wRenderTimer = null;
+      _wRenderFn();
+    }, 100);
+  };
+
+  function wRenderWhyBody(s, target) {
+    var rows = [];
+    var lbs = wReadDashNum('dash_weight');
+    if (lbs && lbs > 0) {
+      var kg = lbs / 2.205;
+      rows.push({ label: 'Base (' + Math.round(lbs) + ' lbs / ' + Math.round(kg) + ' kg \xD7 35 ml/kg)', val: Math.round(kg * 35) + ' ml' });
+      if (wReadDashSex() === 'm') rows.push({ label: 'Male adjustment', val: '+200 ml' });
+    } else {
+      rows.push({ label: 'Log weight in Fitness tab to personalise', val: '—' });
+    }
+    var body = document.getElementById('whyBody');
+    body.innerHTML = rows.map(function (r) {
+      return '<div class="why-row"><span class="why-label">' + r.label + '</span><span class="why-val">' + r.val + '</span></div>';
+    }).join('');
+    if (target !== null) {
+      body.innerHTML += '<div class="why-row total"><span class="why-label">Daily target</span><span class="why-val">' + target.toLocaleString() + ' ml</span></div>';
+    }
+  }
+
+  function wRenderChart(target) {
+    var hist = wGetHistory();
+    var today = wActiveDate();
+    var base = new Date();
+    if (base.getHours() < 6) base.setDate(base.getDate() - 1);
+    var days = [];
+    for (var i = 6; i >= 0; i--) {
+      var d = new Date(base);
+      d.setDate(base.getDate() - i);
+      var key = wDateStr(d);
+      days.push({
+        key: key,
+        label: d.toLocaleDateString('en-US', { weekday: 'short' }),
+        ml: hist[key] || 0,
+        isToday: key === today
+      });
+    }
+    var chartTarget = target !== null ? target : 2500;
+    var maxMl = Math.max(chartTarget * 1.1, 100);
+    days.forEach(function (d) { if (d.ml > maxMl) maxMl = d.ml; });
+
+    var chart = document.getElementById('wChart');
+    chart.innerHTML = days.map(function (d) {
+      var heightPct = maxMl > 0 ? Math.min(100, (d.ml / maxMl) * 100) : 0;
+      var dayPct = chartTarget > 0 ? d.ml / chartTarget : 0;
+      var barClass = d.ml === 0 ? 'wchart-bar empty' : (dayPct >= 1 ? 'wchart-bar hit' : dayPct >= 0.8 ? 'wchart-bar near' : 'wchart-bar miss');
+      var amtLabel = d.ml >= 1000 ? (d.ml / 1000).toFixed(1) + 'L' : (d.ml > 0 ? d.ml + '' : '');
+      return '<div class="wchart-col" data-key="' + d.key + '" data-day="' + d.label + '" data-ml="' + d.ml + '" style="cursor:pointer">' +
+        '<div class="wchart-amt">' + amtLabel + '</div>' +
+        '<div class="wchart-bar-wrap"><div class="' + barClass + '" style="height:' + heightPct.toFixed(1) + '%"></div></div>' +
+        '<div class="wchart-day' + (d.isToday ? ' today' : '') + '">' + d.label + '</div>' +
+        '</div>';
+    }).join('');
+  }
+
+  // ===== SETTINGS MODAL =====
+  function wOpenSettings() {
+    var saved = wLoad().settings || {};
+    var s = Object.assign({}, W_DEFAULTS, saved);
+    document.getElementById('setBottleMl').value = s.bottleMl;
+    document.getElementById('setGlassMl').value = s.glassMl;
+    document.getElementById('waterSetModalBg').classList.add('show');
+  }
+
+  function wCloseSettings() {
+    var d = wLoad();
+    var s = Object.assign({}, W_DEFAULTS, d.settings || {});
+    var bv = parseInt(document.getElementById('setBottleMl').value, 10);
+    s.bottleMl = (!isNaN(bv) && bv >= 100) ? bv : W_DEFAULTS.bottleMl;
+    var gv = parseInt(document.getElementById('setGlassMl').value, 10);
+    s.glassMl = (!isNaN(gv) && gv >= 50) ? gv : W_DEFAULTS.glassMl;
+    d.settings = s;
+    wSave(d);
+    document.getElementById('waterSetModalBg').classList.remove('show');
+    wRender();
+  }
+
+  // ===== EVENT WIRING =====
+  document.getElementById('waterSettingsBtn').addEventListener('click', wOpenSettings);
+  document.getElementById('waterSetClose').addEventListener('click', wCloseSettings);
+  document.getElementById('waterSetModalBg').addEventListener('click', function (e) {
+    if (e.target === this) wCloseSettings();
+  });
+
+  document.getElementById('whyToggle').addEventListener('click', function () {
+    var expanded = this.getAttribute('aria-expanded') === 'true';
+    this.setAttribute('aria-expanded', String(!expanded));
+    document.getElementById('whyBody').classList.toggle('show', !expanded);
+  });
+
+  document.getElementById('wBtnBottle').addEventListener('click', function () {
+    wAddMl(wGetSettings().bottleMl);
+    wRender();
+  });
+
+  document.getElementById('wBtnGlass').addEventListener('click', function () {
+    var s = wGetSettings();
+    wAddMl(s.glassMl || W_DEFAULTS.glassMl);
+    wRender();
+  });
+
+  document.getElementById('wUndoBtn').addEventListener('click', function () {
+    wUndoMl();
+    wRender();
+  });
+
+  document.getElementById('setBottleMl').addEventListener('input', function () {
+    var bv = parseInt(this.value);
+    if (isNaN(bv) || bv < 100) return;
+    var s = wGetSettings();
+    s.bottleMl = bv;
+    wSaveSettings(s);
+    document.getElementById('wBtnBottleLabel').textContent = '+ Bottle (' + bv + 'ml)';
+    wRender();
+  });
+
+  document.getElementById('setGlassMl').addEventListener('input', function () {
+    var gv = parseInt(this.value);
+    if (isNaN(gv) || gv < 50) return;
+    var s = wGetSettings();
+    s.glassMl = gv;
+    wSaveSettings(s);
+    document.getElementById('wBtnGlassLabel').textContent = '+ Glass (' + gv + 'ml)';
+    wRender();
+  });
+
+  document.getElementById('setExport').addEventListener('click', function () {
+    var blob = new Blob([JSON.stringify(wLoad(), null, 2)], { type: 'application/json' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'water-data.json';
+    a.click();
+  });
+
+  document.getElementById('setImport').addEventListener('click', function () {
+    document.getElementById('setImportFile').click();
+  });
+
+  document.getElementById('setImportFile').addEventListener('change', function () {
+    var file = this.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        wSave(JSON.parse(e.target.result));
+        wOpenSettings();
+        wRender();
+      } catch (err) { alert('Invalid JSON file'); }
+    };
+    reader.readAsText(file);
+  });
+
+  document.getElementById('setReset').addEventListener('click', function () {
+    if (confirm('Reset all water tracker data? This cannot be undone.')) {
+      wSave({});
+      wOpenSettings();
+      wRender();
+    }
+  });
+
+  document.getElementById('waterSetResetData').addEventListener('click', function () {
+    if (confirm('Reset all water data? This cannot be undone.')) {
+      wSave({});
+      document.getElementById('waterSetModalBg').classList.remove('show');
+      wRender();
+    }
+  });
+
+  // ===== CHART TAP-TO-EDIT =====
+  var wChartEditKey = null;
+
+  document.getElementById('wChart').addEventListener('click', function (e) {
+    var col = e.target.closest('.wchart-col');
+    if (!col) return;
+    wChartEditKey = col.dataset.key;
+    document.getElementById('wChartEditDay').textContent = col.dataset.day;
+    var inp = document.getElementById('wChartEditInput');
+    inp.value = col.dataset.ml && col.dataset.ml !== '0' ? col.dataset.ml : '';
+    document.getElementById('wChartEdit').classList.add('show');
+    inp.focus();
+    inp.select();
+  });
+
+  function wCommitChartEdit() {
+    if (!wChartEditKey) return;
+    var val = parseInt(document.getElementById('wChartEditInput').value, 10);
+    if (!isNaN(val) && val >= 0) {
+      var d = wLoad();
+      if (!d.history) d.history = {};
+      d.history[wChartEditKey] = val;
+      wSave(d);
+    }
+    document.getElementById('wChartEdit').classList.remove('show');
+    wChartEditKey = null;
+    wRender();
+  }
+
+  document.getElementById('wChartEditSave').addEventListener('click', wCommitChartEdit);
+
+  document.getElementById('wChartEditCancel').addEventListener('click', function () {
+    document.getElementById('wChartEdit').classList.remove('show');
+    wChartEditKey = null;
+  });
+
+  document.getElementById('wChartEditInput').addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); wCommitChartEdit(); }
+    if (e.key === 'Escape') { document.getElementById('wChartEditCancel').click(); }
+  });
+
+  window.addEventListener('storage', function(e) {
+    if (e.key === 'po_coach_weights') { wSyncGymWeight(); wRender(); }
+    else if (e.key === 'dash_weight' || e.key === 'dash_sex') wRender();
+  });
+
+  wSafeLoad();
+  wSyncGymWeight();
+  wRender();
+})();
+
+// ============================================================
+// CALORIE TRACKER
+// ============================================================
+(function () {
+  'use strict';
+
+  const CAL_TARGETS_KEY = 'calorie_targets_v1';
+
+  /* ---- date (midnight boundary for calories) ---- */
+  function calDateStr(date) {
+    const d = date || new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${dd}`;
+  }
+  function calLogKey(ds) { return `calorie_log_${ds || calDateStr()}`; }
+
+  /* ---- targets ---- */
+  function calLoadTargets() {
+    try { const t = JSON.parse(localStorage.getItem(CAL_TARGETS_KEY)); if (t && typeof t === 'object') return t; } catch {}
+    return null;
+  }
+  function calEstimateTargets() {
+    try {
+      const raw = localStorage.getItem('dash_weight');
+      const lbs = raw ? parseFloat(JSON.parse(raw)) : NaN;
+      const sex = localStorage.getItem('dash_sex') || 'm';
+      if (!isNaN(lbs) && lbs > 0) {
+        const kg = lbs / 2.205;
+        const isMale = sex !== 'female' && sex !== 'f';
+        const rawKcal = kg * (isMale ? 36 : 33);
+        const kcal = Math.max(1500, Math.min(4000, Math.round(rawKcal / 50) * 50));
+        const protein = Math.round(kg * 1.6 / 5) * 5;
+        const fat = Math.round(kcal * 0.28 / 9 / 5) * 5;
+        const carbs = Math.max(50, Math.round((kcal - protein * 4 - fat * 9) / 4 / 5) * 5);
+        return { kcal, protein, carbs, fat };
+      }
+    } catch {}
+    return { kcal: 2000, protein: 150, carbs: 250, fat: 65 };
+  }
+  function calGetTargets() { return calLoadTargets() || calEstimateTargets(); }
+  function calSaveTargets(t) {
+    localStorage.setItem(CAL_TARGETS_KEY, JSON.stringify(t));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch {}
+  }
+
+  /* ---- log ---- */
+  function calGetLog(ds) {
+    try { const v = JSON.parse(localStorage.getItem(calLogKey(ds))); return Array.isArray(v) ? v : []; } catch { return []; }
+  }
+  function calSaveLog(log, ds) {
+    localStorage.setItem(calLogKey(ds), JSON.stringify(log));
+    try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch {}
+  }
+
+  /* ---- maths ---- */
+  function calSum(log) {
+    return log.reduce((acc, e) => {
+      acc.kcal    += e.kcal    || 0;
+      acc.protein += e.protein || 0;
+      acc.carbs   += e.carbs   || 0;
+      acc.fat     += e.fat     || 0;
+      return acc;
+    }, { kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  }
+
+  /* ---- escape ---- */
+  function escCal(s) {
+    return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /* ---- render summary ---- */
+  function calRenderSummary() {
+    const log = calGetLog();
+    const t = calGetTargets();
+    const tot = calSum(log);
+    const pct = (val, max) => max > 0 ? Math.min(100, (val / max) * 100).toFixed(1) + '%' : '0%';
+
+    document.getElementById('calKcalBig').textContent   = Math.round(tot.kcal).toLocaleString();
+    document.getElementById('calKcalTarget').textContent = `/ ${t.kcal.toLocaleString()} kcal target`;
+
+    document.getElementById('calKcalLabel').textContent    = `${Math.round(tot.kcal)} / ${t.kcal} kcal`;
+    document.getElementById('calKcalBar').style.width       = pct(tot.kcal, t.kcal);
+    document.getElementById('calProteinLabel').textContent = `${Math.round(tot.protein)}g / ${t.protein}g`;
+    document.getElementById('calProteinBar').style.width    = pct(tot.protein, t.protein);
+    document.getElementById('calCarbsLabel').textContent   = `${Math.round(tot.carbs)}g / ${t.carbs}g`;
+    document.getElementById('calCarbsBar').style.width      = pct(tot.carbs, t.carbs);
+    document.getElementById('calFatLabel').textContent     = `${Math.round(tot.fat)}g / ${t.fat}g`;
+    document.getElementById('calFatBar').style.width        = pct(tot.fat, t.fat);
+
+    document.getElementById('calProteinVal').textContent = `${Math.round(tot.protein)}g`;
+    document.getElementById('calCarbsVal').textContent   = `${Math.round(tot.carbs)}g`;
+    document.getElementById('calFatVal').textContent     = `${Math.round(tot.fat)}g`;
+  }
+
+  /* ---- render meal log ---- */
+  function calRenderMealLog() {
+    const log = calGetLog();
+    const el  = document.getElementById('calMealLog');
+    if (!log.length) {
+      el.innerHTML = '<div class="cal-meal-empty">No meals logged yet — search or use the camera to add one.</div>';
+      return;
+    }
+    el.innerHTML = log.slice().reverse().map((entry, ri) => {
+      const realIdx = log.length - 1 - ri;
+      const time = entry.time
+        ? new Date(entry.time).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+        : '';
+      const macros = `${Math.round(entry.protein || 0)}g P · ${Math.round(entry.carbs || 0)}g C · ${Math.round(entry.fat || 0)}g F`;
+      return `<div class="cal-meal-row">
+        <div class="cal-meal-info">
+          <div class="cal-meal-name">${escCal(entry.name)}</div>
+          <div class="cal-meal-meta">${time ? time + ' · ' : ''}${macros}</div>
+        </div>
+        <span class="cal-meal-kcal">${Math.round(entry.kcal || 0)}</span>
+        <button class="cal-meal-del" data-idx="${realIdx}" aria-label="Delete">×</button>
+      </div>`;
+    }).join('');
+  }
+
+  /* ---- render chart ---- */
+  function calRenderChart() {
+    const t = calGetTargets();
+    const today = calDateStr();
+    const base  = new Date();
+    const days  = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(base);
+      d.setDate(base.getDate() - i);
+      const ds   = calDateStr(d);
+      const kcal = calSum(calGetLog(ds)).kcal;
+      days.push({ ds, label: d.toLocaleDateString('en-US', { weekday: 'short' }), kcal, isToday: ds === today });
+    }
+    const maxKcal = Math.max(t.kcal * 1.1, ...days.map(d => d.kcal), 100);
+    document.getElementById('calChart').innerHTML = days.map(d => {
+      const heightPct = maxKcal > 0 ? Math.min(100, (d.kcal / maxKcal) * 100).toFixed(1) : 0;
+      const pct = t.kcal > 0 ? d.kcal / t.kcal : 0;
+      const barClass = d.kcal === 0 ? 'wchart-bar empty'
+        : pct >= 1 ? 'wchart-bar hit'
+        : pct >= 0.8 ? 'wchart-bar near'
+        : 'wchart-bar miss';
+      const amtLabel = d.kcal >= 1000 ? (d.kcal / 1000).toFixed(1) + 'k' : (d.kcal > 0 ? Math.round(d.kcal) + '' : '');
+      return `<div class="wchart-col">
+        <div class="wchart-amt">${amtLabel}</div>
+        <div class="wchart-bar-wrap"><div class="${barClass}" style="height:${heightPct}%"></div></div>
+        <div class="wchart-day${d.isToday ? ' today' : ''}">${d.label}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function calFullRender() {
+    calRenderSummary();
+    calRenderMealLog();
+    calRenderChart();
+  }
+
+  /* ====== SEARCH (Open Food Facts) ====== */
+  let calSearchTimer = null;
+  let calSelectedFood = null;
+
+  async function calSearchFood(q) {
+    if (!q.trim()) { document.getElementById('calSearchResults').hidden = true; return; }
+    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=8&fields=product_name,brands,nutriments`;
+    try {
+      const res  = await fetch(url);
+      const data = await res.json();
+      calRenderSearchResults(data.products || []);
+    } catch { document.getElementById('calSearchResults').hidden = true; }
+  }
+
+  function calRenderSearchResults(products) {
+    const el    = document.getElementById('calSearchResults');
+    const valid = products.filter(p => {
+      if (!p.product_name) return false;
+      const n = p.nutriments || {};
+      return (n['energy-kcal_100g'] != null) || (n['energy_100g'] != null);
+    }).slice(0, 6);
+    if (!valid.length) { el.hidden = true; return; }
+    el.hidden = false;
+    el.innerHTML = valid.map((p) => {
+      const n    = p.nutriments || {};
+      const kcal = Math.round(n['energy-kcal_100g'] != null ? n['energy-kcal_100g'] : (n['energy_100g'] || 0) / 4.184);
+      const pro  = Math.round((n['proteins_100g']       || 0) * 10) / 10;
+      const carb = Math.round((n['carbohydrates_100g']  || 0) * 10) / 10;
+      const fat  = Math.round((n['fat_100g']            || 0) * 10) / 10;
+      const brand = p.brands ? ` · ${p.brands.split(',')[0].trim()}` : '';
+      return `<div class="cal-search-result"
+          data-name="${escCal(p.product_name)}"
+          data-kcal="${kcal}" data-pro="${pro}" data-carb="${carb}" data-fat="${fat}">
+        <div class="cal-search-result-name">${escCal(p.product_name)}</div>
+        <div class="cal-search-result-meta">${kcal} kcal · ${pro}g P · ${carb}g C · ${fat}g F per 100g${brand}</div>
+      </div>`;
+    }).join('');
+  }
+
+  function calSelectFood(el) {
+    calSelectedFood = {
+      name: el.dataset.name,
+      kcal: parseFloat(el.dataset.kcal),
+      pro:  parseFloat(el.dataset.pro),
+      carb: parseFloat(el.dataset.carb),
+      fat:  parseFloat(el.dataset.fat),
+    };
+    document.getElementById('calSelectedFoodName').textContent = calSelectedFood.name;
+    document.getElementById('calPortionG').value = '100';
+    document.getElementById('calPortionRow').hidden = false;
+    document.getElementById('calSearchResults').hidden = true;
+    document.getElementById('calSearchInput').value = calSelectedFood.name;
+    calUpdatePreview();
+    document.getElementById('calPortionG').focus();
+  }
+
+  function calUpdatePreview() {
+    if (!calSelectedFood) return;
+    const g = parseFloat(document.getElementById('calPortionG').value) || 0;
+    const f = g / 100;
+    const kcal = Math.round(calSelectedFood.kcal * f);
+    const pro  = Math.round(calSelectedFood.pro  * f * 10) / 10;
+    const carb = Math.round(calSelectedFood.carb * f * 10) / 10;
+    const fat  = Math.round(calSelectedFood.fat  * f * 10) / 10;
+    document.getElementById('calPortionPreview').textContent =
+      `${g}g → ${kcal} kcal · ${pro}g protein · ${carb}g carbs · ${fat}g fat`;
+  }
+
+  function calLogFood() {
+    if (!calSelectedFood) return;
+    const g = parseFloat(document.getElementById('calPortionG').value);
+    if (!g || g <= 0) return;
+    const f = g / 100;
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name:    calSelectedFood.name + (g !== 100 ? ` (${g}g)` : ''),
+      time:    Date.now(),
+      kcal:    Math.round(calSelectedFood.kcal * f),
+      protein: Math.round(calSelectedFood.pro  * f * 10) / 10,
+      carbs:   Math.round(calSelectedFood.carb * f * 10) / 10,
+      fat:     Math.round(calSelectedFood.fat  * f * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    calSelectedFood = null;
+    document.getElementById('calSearchInput').value = '';
+    document.getElementById('calPortionRow').hidden = true;
+    document.getElementById('calPortionPreview').textContent = '';
+    calFullRender();
+  }
+
+  /* ====== PHOTO ANALYSIS (Claude vision) ====== */
+  let calPhotoEstimate = null;
+  let calPhotoPending  = null; // { base64, mimeType } waiting for "Find Calories" tap
+
+  async function calAnalyzePhoto(base64, mimeType, context) {
+    document.getElementById('calPhotoStep2').hidden  = true;
+    document.getElementById('calPhotoResult').hidden = true;
+    calShowPhotoStatus('⏳ Analysing your meal…');
+
+    const contextNote = context ? `\nAdditional context from the user: "${context}"` : '';
+    const prompt = `Analyse this meal photo and estimate its nutritional content.${contextNote} Return ONLY a JSON object:
+{
+  "name": "brief meal description (e.g. 'Grilled chicken with rice and salad')",
+  "kcal": total estimated calories as number,
+  "protein": estimated protein in grams as number,
+  "carbs": estimated carbohydrates in grams as number,
+  "fat": estimated fat in grams as number,
+  "confidence": "short note on confidence, e.g. 'Medium — portion size estimated from typical serving'"
+}
+Be realistic. Return valid JSON only, no other text.`;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{
+            role: 'user',
+            content: [
+              { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64 } },
+              { type: 'text',  text: prompt }
+            ]
+          }]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
+      // Consume SSE stream and collect text deltas
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6);
+          if (raw === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta')
+              fullText += evt.delta.text;
+          } catch {}
+        }
+      }
+      const match = fullText.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON in response');
+      const result = JSON.parse(match[0]);
+      calShowPhotoStatus('');
+      calShowPhotoResult(result);
+    } catch (e) {
+      // Re-show step2 so user can retry
+      document.getElementById('calPhotoStep2').hidden = false;
+      calShowPhotoStatus(`⚠️ ${e.message}`);
+    }
+  }
+
+  function calShowPhotoStatus(msg) {
+    const el = document.getElementById('calPhotoStatus');
+    if (!msg) { el.hidden = true; return; }
+    el.textContent = msg;
+    el.hidden = false;
+  }
+
+  function calShowPhotoResult(result) {
+    calPhotoEstimate = result;
+    const el = document.getElementById('calPhotoResult');
+    el.hidden = false;
+    el.innerHTML = `
+      <div class="cal-photo-result-header">
+        <div class="cal-photo-result-name">${escCal(result.name || 'Estimated meal')}</div>
+        <div>
+          <span class="cal-photo-result-kcal">${Math.round(result.kcal || 0)}</span>
+          <span class="cal-photo-result-kcal-unit">kcal</span>
+        </div>
+      </div>
+      <div class="cal-photo-result-macros">
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.protein || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Protein</div>
+        </div>
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.carbs || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Carbs</div>
+        </div>
+        <div class="cal-photo-result-macro">
+          <div class="cal-photo-result-macro-val">${Math.round(result.fat || 0)}g</div>
+          <div class="cal-photo-result-macro-lbl">Fat</div>
+        </div>
+      </div>
+      ${result.confidence ? `<div class="cal-photo-result-confidence">🔍 ${escCal(result.confidence)}</div>` : ''}
+      <button class="cal-photo-log-btn" id="calPhotoLogBtn">Log this meal</button>`;
+    document.getElementById('calPhotoLogBtn').addEventListener('click', calLogPhotoEstimate);
+  }
+
+  function calResetPhotoPanel() {
+    calPhotoEstimate = null;
+    calPhotoPending  = null;
+    document.getElementById('calPhotoResult').hidden     = true;
+    document.getElementById('calPhotoPreviewImg').hidden = true;
+    document.getElementById('calPhotoStep2').hidden      = true;
+    document.getElementById('calPhotoContext').value     = '';
+    document.getElementById('calPhotoLabel').classList.remove('has-photo');
+    document.getElementById('calPhotoLabelText').textContent = 'Tap to take photo or upload';
+    calShowPhotoStatus('');
+  }
+
+  function calLogPhotoEstimate() {
+    if (!calPhotoEstimate) return;
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name:    calPhotoEstimate.name || 'Photo meal',
+      time:    Date.now(),
+      kcal:    Math.round(calPhotoEstimate.kcal    || 0),
+      protein: Math.round((calPhotoEstimate.protein || 0) * 10) / 10,
+      carbs:   Math.round((calPhotoEstimate.carbs   || 0) * 10) / 10,
+      fat:     Math.round((calPhotoEstimate.fat     || 0) * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    calResetPhotoPanel();
+    calFullRender();
+  }
+
+  /* ====== SETTINGS ====== */
+  function calOpenSettings() {
+    const t = calGetTargets();
+    document.getElementById('setCalKcal').value    = t.kcal;
+    document.getElementById('setCalProtein').value = t.protein;
+    document.getElementById('setCalCarbs').value   = t.carbs;
+    document.getElementById('setCalFat').value     = t.fat;
+    document.getElementById('calSetModalBg').classList.add('show');
+  }
+
+  function calSaveSettings() {
+    const kcal    = parseInt(document.getElementById('setCalKcal').value,    10);
+    const protein = parseInt(document.getElementById('setCalProtein').value, 10);
+    const carbs   = parseInt(document.getElementById('setCalCarbs').value,   10);
+    const fat     = parseInt(document.getElementById('setCalFat').value,     10);
+    if (!isNaN(kcal) && kcal >= 500) {
+      calSaveTargets({
+        kcal,
+        protein: isNaN(protein) ? 150 : protein,
+        carbs:   isNaN(carbs)   ? 250 : carbs,
+        fat:     isNaN(fat)     ? 65  : fat,
+      });
+    }
+    document.getElementById('calSetModalBg').classList.remove('show');
+    calFullRender();
+  }
+
+  /* ====== MANUAL ENTRY ====== */
+  function calLogManual() {
+    const name = document.getElementById('calManualName').value.trim();
+    if (!name) { document.getElementById('calManualName').focus(); return; }
+    const kcal    = parseFloat(document.getElementById('calManualKcal').value)    || 0;
+    const protein = parseFloat(document.getElementById('calManualProtein').value) || 0;
+    const carbs   = parseFloat(document.getElementById('calManualCarbs').value)   || 0;
+    const fat     = parseFloat(document.getElementById('calManualFat').value)     || 0;
+    if (kcal <= 0) { document.getElementById('calManualKcal').focus(); return; }
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name,
+      time:    Date.now(),
+      kcal:    Math.round(kcal),
+      protein: Math.round(protein * 10) / 10,
+      carbs:   Math.round(carbs   * 10) / 10,
+      fat:     Math.round(fat     * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    document.getElementById('calManualName').value    = '';
+    document.getElementById('calManualKcal').value    = '';
+    document.getElementById('calManualProtein').value = '';
+    document.getElementById('calManualCarbs').value   = '';
+    document.getElementById('calManualFat').value     = '';
+    calFullRender();
+  }
+
+  /* ====== AI SEARCH ====== */
+  let calAIEstimate = null;
+
+  async function calDoAISearch() {
+    const desc = document.getElementById('calAIInput').value.trim();
+    if (!desc) { document.getElementById('calAIInput').focus(); return; }
+
+    const statusEl = document.getElementById('calAIStatus');
+    statusEl.textContent = '⏳ Searching…';
+    statusEl.hidden = false;
+    document.getElementById('calAIResult').hidden = true;
+    calAIEstimate = null;
+
+    const prompt = `You are a nutrition expert. The user wants the nutrition info for: ${desc}. Search your knowledge for this specific menu item or food. Return ONLY a JSON object with: name, calories, protein, carbs, fat, confidence (high/medium/low), source (e.g. 'Tim Hortons official nutrition data'). No other text.`;
+
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Server error ${res.status}`);
+      }
+      const reader  = res.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+      let buf = '';
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buf += decoder.decode(value, { stream: true });
+        const lines = buf.split('\n');
+        buf = lines.pop();
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const raw = line.slice(6);
+          if (raw === '[DONE]') continue;
+          try {
+            const evt = JSON.parse(raw);
+            if (evt.type === 'content_block_delta' && evt.delta?.type === 'text_delta')
+              fullText += evt.delta.text;
+          } catch {}
+        }
+      }
+      const match = fullText.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON in response');
+      const result = JSON.parse(match[0]);
+      statusEl.hidden = true;
+      calShowAIResult(result);
+    } catch (e) {
+      statusEl.textContent = `Error: ${e.message}`;
+    }
+  }
+
+  function calShowAIResult(result) {
+    calAIEstimate = result;
+    const el = document.getElementById('calAIResult');
+    el.hidden = false;
+    const isLow = (result.confidence || '').toLowerCase() === 'low';
+    el.innerHTML = `
+      <div class="cal-photo-result-name">${escCal(result.name || 'Food item')}</div>
+      <div class="cal-photo-result-macros">
+        <span>${Math.round(result.calories || 0)} kcal</span>
+        <span>${Math.round(result.protein  || 0)}g protein</span>
+        <span>${Math.round(result.carbs    || 0)}g carbs</span>
+        <span>${Math.round(result.fat      || 0)}g fat</span>
+      </div>
+      <div class="cal-photo-result-confidence">Confidence: ${escCal(result.confidence || 'unknown')}</div>
+      ${result.source ? `<div class="cal-ai-source">Source: ${escCal(result.source)}</div>` : ''}
+      ${isLow ? `<div class="cal-ai-warning">⚠️ Low confidence — this estimate may not be accurate. Consider checking the official nutrition info.</div>` : ''}
+      <button class="cal-photo-log-btn" id="calAILogBtn">Log this meal</button>`;
+    document.getElementById('calAILogBtn').addEventListener('click', calLogAIEstimate);
+  }
+
+  function calLogAIEstimate() {
+    if (!calAIEstimate) return;
+    const entry = {
+      id:      Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+      name:    calAIEstimate.name || 'AI search result',
+      time:    Date.now(),
+      kcal:    Math.round(calAIEstimate.calories || 0),
+      protein: Math.round((calAIEstimate.protein || 0) * 10) / 10,
+      carbs:   Math.round((calAIEstimate.carbs   || 0) * 10) / 10,
+      fat:     Math.round((calAIEstimate.fat     || 0) * 10) / 10,
+    };
+    const log = calGetLog();
+    log.push(entry);
+    calSaveLog(log);
+    calAIEstimate = null;
+    document.getElementById('calAIResult').hidden = true;
+    document.getElementById('calAIStatus').hidden = true;
+    document.getElementById('calAIInput').value   = '';
+    calFullRender();
+  }
+
+  /* ====== EVENT WIRING ====== */
+  // Tabs
+  function calSwitchTab(tab) {
+    ['Search', 'Photo', 'Manual', 'AI'].forEach(t => {
+      document.getElementById(`calTab${t}`).classList.toggle('active', t === tab);
+      document.getElementById(`calPanel${t}`).hidden = t !== tab;
+    });
+  }
+  document.getElementById('calTabSearch').addEventListener('click', () => calSwitchTab('Search'));
+  document.getElementById('calTabPhoto').addEventListener('click',  () => calSwitchTab('Photo'));
+  document.getElementById('calTabManual').addEventListener('click', () => calSwitchTab('Manual'));
+  document.getElementById('calTabAI').addEventListener('click',     () => calSwitchTab('AI'));
+
+  // Search
+  document.getElementById('calSearchInput').addEventListener('input', (e) => {
+    clearTimeout(calSearchTimer);
+    const q = e.target.value.trim();
+    if (!q) { document.getElementById('calSearchResults').hidden = true; return; }
+    calSearchTimer = setTimeout(() => calSearchFood(q), 400);
+  });
+  document.getElementById('calSearchResults').addEventListener('click', (e) => {
+    const r = e.target.closest('.cal-search-result');
+    if (r) calSelectFood(r);
+  });
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#calPanelSearch')) document.getElementById('calSearchResults').hidden = true;
+  });
+
+  // Portion
+  document.getElementById('calPortionG').addEventListener('input', calUpdatePreview);
+  document.getElementById('calLogFoodBtn').addEventListener('click', calLogFood);
+  document.getElementById('calPortionG').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calLogFood();
+  });
+
+  // Manual
+  document.getElementById('calManualLogBtn').addEventListener('click', calLogManual);
+  document.getElementById('calManualFat').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calLogManual();
+  });
+
+  // AI Search
+  document.getElementById('calAISearchBtn').addEventListener('click', calDoAISearch);
+  document.getElementById('calAIInput').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') calDoAISearch();
+  });
+
+  // Photo — step 1: file selected → show preview + context + button
+  document.getElementById('calPhotoInput').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const mimeType = file.type || 'image/jpeg';
+    const imgEl   = document.getElementById('calPhotoPreviewImg');
+    imgEl.src     = URL.createObjectURL(file);
+    imgEl.hidden  = false;
+    document.getElementById('calPhotoStep2').hidden = false;
+    document.getElementById('calPhotoResult').hidden = true;
+    calShowPhotoStatus('');
+    const labelEl = document.getElementById('calPhotoLabel');
+    labelEl.classList.add('has-photo');
+    document.getElementById('calPhotoLabelText').textContent = 'Tap to change photo';
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      calPhotoPending = { base64: ev.target.result.split(',')[1], mimeType };
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+
+  // Photo — step 2: "Find Calories" tapped → send to AI
+  document.getElementById('calFindCalsBtn').addEventListener('click', async () => {
+    if (!calPhotoPending) return;
+    const context = document.getElementById('calPhotoContext').value.trim();
+    await calAnalyzePhoto(calPhotoPending.base64, calPhotoPending.mimeType, context);
+  });
+
+  // Meal log delete
+  document.getElementById('calMealLog').addEventListener('click', (e) => {
+    const btn = e.target.closest('.cal-meal-del');
+    if (!btn) return;
+    const idx = parseInt(btn.dataset.idx, 10);
+    const log = calGetLog();
+    if (idx >= 0 && idx < log.length) {
+      log.splice(idx, 1);
+      calSaveLog(log);
+      calFullRender();
+    }
+  });
+
+  // Settings
+  document.getElementById('calSettingsBtn').addEventListener('click', calOpenSettings);
+  document.getElementById('calSetSave').addEventListener('click', calSaveSettings);
+  document.getElementById('calSetCancel').addEventListener('click', () => {
+    document.getElementById('calSetModalBg').classList.remove('show');
+  });
+  document.getElementById('calSetModalBg').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('calSetModalBg'))
+      document.getElementById('calSetModalBg').classList.remove('show');
+  });
+
+  // Re-render when profile changes (weight/sex affects estimated targets)
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'dash_weight' || e.key === 'dash_sex') calRenderSummary();
+  });
+
+  // Midnight date-change guard
+  setInterval(calFullRender, 60000);
+
+  calFullRender();
+})();
+
+</script>
+<script>
+// ─── Water sheet ───────────────────────────────────────────────
+(function () {
+  var wsCustom = 250;
+
+  function wsSheetSync() {
+    var mlEl = document.getElementById('wMlBig');
+    var tgtEl = document.getElementById('wMlTarget');
+    var pctEl = document.getElementById('wPctText');
+    var shTxt = document.getElementById('sheetWaterText');
+    var shFill = document.getElementById('sheetWaterFill');
+    var shTgt = document.getElementById('sheetWaterTarget');
+    if (shTxt && mlEl) shTxt.textContent = mlEl.textContent;
+    if (shTgt && tgtEl) shTgt.textContent = tgtEl.textContent.replace('/ ', '');
+    if (shFill && pctEl) shFill.style.width = pctEl.textContent;
+  }
+  window.wsSheetSync = wsSheetSync;
+
+  function wsUpdateCustom() {
+    var amtEl = document.getElementById('wsCustomAmt');
+    var btnEl = document.getElementById('wsAddCustomBtn');
+    if (amtEl) amtEl.textContent = wsCustom;
+    if (btnEl) btnEl.textContent = 'Add ' + wsCustom + ' ml';
+  }
+
+  document.addEventListener('DOMContentLoaded', function () {
+    var decBtn = document.getElementById('wsDecBtn');
+    var incBtn = document.getElementById('wsIncBtn');
+    var addBtn = document.getElementById('wsAddCustomBtn');
+
+    if (decBtn) decBtn.addEventListener('click', function () {
+      wsCustom = Math.max(50, wsCustom - 50);
+      wsUpdateCustom();
+    });
+    if (incBtn) incBtn.addEventListener('click', function () {
+      wsCustom = Math.min(2000, wsCustom + 50);
+      wsUpdateCustom();
+    });
+    if (addBtn) addBtn.addEventListener('click', function () {
+      // Inject directly into po_water_v1 using same logic as wBtnBottle
+      var bottleBtn = document.getElementById('wBtnBottle');
+      var glassBtn  = document.getElementById('wBtnGlass');
+      // Temporarily override and fire
+      var wData = null;
+      try { wData = JSON.parse(localStorage.getItem('po_water_v1')) || {}; } catch(e) { wData = {}; }
+      if (!wData.history) wData.history = {};
+      if (!wData.logs) wData.logs = {};
+      var today = (function() {
+        var n = new Date(); if (n.getHours() < 6) n.setDate(n.getDate() - 1);
+        return n.getFullYear() + '-' + String(n.getMonth()+1).padStart(2,'0') + '-' + String(n.getDate()).padStart(2,'0');
+      })();
+      if (!Array.isArray(wData.logs[today])) wData.logs[today] = [];
+      wData.history[today] = Math.max(0, (wData.history[today] || 0) + wsCustom);
+      wData.logs[today].push(wsCustom);
+      localStorage.setItem('po_water_v1', JSON.stringify(wData));
+      try { if (typeof window.pcSchedulePush === 'function') window.pcSchedulePush(); } catch(e) {}
+      // Re-render water tracker
+      var ev = new StorageEvent('storage', { key: 'po_water_v1' });
+      window.dispatchEvent(ev);
+      // Trigger wRender indirectly via wBtnBottle listener hack — actually just fire wBtnBottle then undo last twice
+      // Simpler: page refresh... No.
+      // Best: trigger the render by flipping a storage key the water tracker listens to
+      // Water wRender is in a closure, so we re-render by firing its storage listener
+      // Actually: wBtnBottle click adds 500ml, too much. Skip that.
+      // Instead, dispatch a custom event that wRender picks up.
+      // Since wRender watches po_water_v1 changes, just updating localStorage should be enough
+      // if the main page's water JS also watches storage events.
+      // The water tracker does watch: window.addEventListener('storage', function(e) {
+      //   if (e.key === 'po_water_v1') ... but only for cross-tab events.
+      // So we need a workaround: fire a fake storage event to same tab.
+      // Trigger wRender via the storage listener the water tracker already has
+      window.dispatchEvent(new StorageEvent('storage', {
+        key: 'dash_weight', newValue: localStorage.getItem('dash_weight')
+      }));
+      wsSheetSync();
+    });
+  });
+})();
+
+// ─── Water pct badge ───────────────────────────────────────────
+// Patch wRender to also update wPctText after it runs
+(function () {
+  var _origRender = null;
+  Object.defineProperty(window, '_wPctPatchScheduled', { value: true });
+  document.addEventListener('DOMContentLoaded', function () {
+    var pct = document.getElementById('wPctText');
+    if (!pct) return;
+    var track = document.getElementById('wProgBar');
+    if (!track) return;
+    var observer = new MutationObserver(function () {
+      var width = parseFloat(track.style.width) || 0;
+      pct.textContent = Math.round(width) + '%';
+    });
+    observer.observe(track, { attributes: true, attributeFilter: ['style'] });
+  });
+})();
+</script>
 </body>
 </html>
