@@ -98,69 +98,17 @@ body{
   background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.022));
   border:1px solid rgba(255,255,255,.08);
   border-radius:24px;
-  padding:22px 20px 18px;
+  padding:20px;
   margin-bottom:14px;
   box-shadow:inset 0 1px 0 rgba(255,255,255,.07);
 }
 
-.stack-ticker{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:10px 14px;
-  margin-bottom:14px;
-  background:rgba(0,0,0,.28);
-  border:1px solid rgba(255,255,255,.04);
-  border-radius:10px;
-  font-size:12px;
-  min-height:36px;
-}
-.stack-ticker-dot{
-  width:8px;height:8px;
-  border-radius:50%;
-  background:#6BE3A4;
-  flex-shrink:0;
-  transition:background .3s;
-}
-.stack-ticker.status-low .stack-ticker-dot{background:#FF8A4D}
-.stack-ticker.status-missed .stack-ticker-dot{
-  background:#FF6B6B;
-  animation:ticker-pulse 1.5s ease-in-out infinite;
-}
-@keyframes ticker-pulse{
-  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.5)}
-  50%{box-shadow:0 0 0 5px rgba(239,68,68,0)}
-}
-.stack-ticker-label{
+.stack-count{
   font-family:var(--font-mono);
-  font-size:10px;
-  font-weight:700;
-  letter-spacing:.16em;
-  text-transform:uppercase;
-  color:var(--text-tertiary);
-  flex-shrink:0;
-}
-.stack-ticker-sep{color:var(--text-quaternary);flex-shrink:0}
-.stack-ticker-msg{
-  flex:1;
   font-size:12px;
-  font-weight:600;
-  color:var(--text-primary);
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  transition:opacity .28s;
-}
-.stack-ticker-msg.is-fading{opacity:0}
-.stack-ticker-count{
-  font-family:var(--font-mono);
-  font-size:11px;
-  color:var(--text-tertiary);
+  color:var(--accent);
   font-variant-numeric:tabular-nums;
-  flex-shrink:0;
 }
-
-.stack-head{margin-bottom:12px}
 .sf-eyebrow{
   font-family:var(--font-mono);
   font-size:11px;
@@ -178,66 +126,17 @@ body{
   line-height:1.15;
   margin-bottom:2px;
 }
-.stack-progress-text{
-  font-family:var(--font-mono);
-  font-size:12px;
-  color:var(--text-tertiary);
-  font-variant-numeric:tabular-nums;
-  margin-top:6px;
-}
-
-.stack-progress-track{
-  height:5px;
-  background:rgba(255,255,255,.05);
-  border-radius:999px;
-  overflow:hidden;
-  margin:14px 0 18px;
-}
-.stack-progress-fill{
-  height:100%;
-  width:0%;
-  background:#FFFFFF;
-  border-radius:999px;
-  transition:width .5s cubic-bezier(.22,1,.36,1);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);
-}
-
-.stack-window{margin-bottom:14px}
-.stack-window-header{
-  display:flex;align-items:center;gap:8px;
-  margin-bottom:8px;padding-bottom:6px;
-  border-bottom:1px solid var(--border-soft);
-}
-.stack-window-icon{font-size:16px}
-.stack-window-title{font-size:13px;font-weight:700;color:var(--text-primary)}
-.stack-window-time{font-size:11px;color:var(--text-tertiary);font-weight:500}
-
 .stack-item{
   display:grid;
-  grid-template-columns:32px 1fr auto auto;
-  gap:10px;
+  grid-template-columns:22px 1fr auto;
+  gap:13px;
   align-items:center;
-  padding:10px 12px;
-  border-radius:10px;
-  background:var(--bg-secondary);
-  margin-bottom:6px;
-  border:1px solid transparent;
-  transition:background .2s,border-color .2s;
+  padding:14px 0;
+  border-bottom:1px solid rgba(255,255,255,.05);
 }
-.stack-item:hover{background:rgba(255,255,255,.05)}
-.stack-item.taken{background:rgba(29,158,117,.08)}
+.stack-item:last-child{border-bottom:none}
 .stack-item.taken .stack-item-name{text-decoration:line-through;color:var(--text-tertiary)}
-
-@keyframes pulse-red{
-  0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.4)}
-  50%{box-shadow:0 0 0 8px rgba(239,68,68,0)}
-}
-.stack-item.missed{
-  border:1px solid rgba(239,68,68,.45);
-  animation:pulse-red 1.5s ease-in-out infinite;
-}
 .stack-item.missed .stack-check{border-color:rgba(239,68,68,.55)}
-.stack-item.taken.missed{animation:none;border-color:transparent}
 .stack-item.taken.missed .stack-check{border-color:var(--accent)}
 
 .stack-check{
@@ -260,9 +159,9 @@ body{
 
 .stack-item-body{min-width:0}
 .stack-item-name{
-  font-size:14px;font-weight:600;
-  color:var(--text-primary);
-  line-height:1.2;
+  font-size:15px;font-weight:500;
+  color:rgba(255,255,255,.9);
+  line-height:1.25;
   display:inline-flex;align-items:center;
   gap:8px;flex-wrap:wrap;
   outline:none;
@@ -272,7 +171,7 @@ body{
   outline-offset:4px;border-radius:4px;
 }
 .stack-item-meta{
-  font-size:11px;color:var(--text-tertiary);
+  font-size:12.5px;color:var(--text-tertiary);
   margin-top:2px;outline:none;cursor:text;
 }
 .stack-item-meta[contenteditable="true"]{
@@ -296,12 +195,31 @@ body{
 .stack-item-tag.tag-stack{background:var(--tag-stack-bg);color:var(--tag-stack)}
 .stack-item-tag.tag-not-ordered{background:var(--warning-bg);color:var(--text-tertiary)}
 
+.stack-item-right{
+  display:flex;align-items:center;gap:8px;justify-self:end;
+}
+.stack-item-window{
+  font-family:var(--font-mono);font-size:11px;
+  color:rgba(255,255,255,.38);
+  text-transform:lowercase;white-space:nowrap;
+}
+.stack-item.missed .stack-item-window{color:#FF6B6B}
+.stack-item-actions{
+  display:flex;align-items:center;gap:6px;
+  opacity:0;pointer-events:none;transition:opacity .15s;
+}
+.stack-item:hover .stack-item-actions,
+.stack-item:focus-within .stack-item-actions,
+.stack-item:has(.stack-low-btn.is-low) .stack-item-actions{
+  opacity:1;pointer-events:auto;
+}
+
 .stack-low-btn{
   background:transparent;
   border:1px solid var(--border-strong);
   color:var(--text-tertiary);
   font-size:10px;
-  padding:5px 9px;border-radius:6px;
+  padding:4px 8px;border-radius:6px;
   cursor:pointer;
   font-family:var(--font-mono);
   font-weight:600;letter-spacing:.04em;
@@ -321,28 +239,24 @@ body{
   border:1px solid var(--border-strong);
   color:var(--text-tertiary);
   cursor:pointer;
-  font-size:16px;
-  padding:4px 10px;border-radius:6px;
-  opacity:.7;
-  transition:opacity .15s,color .15s,border-color .15s,background .15s;
-  font-family:inherit;
-  line-height:1;
-  min-width:28px;min-height:28px;
+  font-size:15px;
+  padding:0;border-radius:6px;
+  width:26px;height:26px;line-height:1;
   display:inline-flex;align-items:center;justify-content:center;
+  font-family:inherit;
+  transition:color .15s,border-color .15s,background .15s;
 }
-.stack-item:hover .stack-item-del{opacity:1}
 .stack-item-del:hover,.stack-item-del:active{
   color:#FF6B6B;
   border-color:rgba(239,68,68,.45);
   background:rgba(239,68,68,.08);
-  opacity:1;
 }
 
 .stack-window-empty{
-  font-size:12px;
+  font-size:13px;
   color:var(--text-quaternary);
   font-style:italic;
-  padding:8px 12px;
+  padding:14px 0;
 }
 
 .stack-add-wrap{
@@ -843,8 +757,7 @@ body{
 
 @media(max-width:480px){
   .wml-big{font-size:30px}
-  .stack-item{grid-template-columns:28px 1fr auto;gap:8px}
-  .stack-item .stack-low-btn{grid-column:2/4;margin-top:4px;justify-self:start}
+  .stack-item{grid-template-columns:22px 1fr auto;gap:11px}
   .stack-search-results{width:100%}
 }
 </style>
@@ -855,21 +768,9 @@ body{
 
   <!-- ═══ SUPPLEMENT STACK ═══ -->
   <div class="stack-card">
-    <div class="stack-ticker" id="stackTicker">
-      <span class="stack-ticker-dot"></span>
-      <span class="stack-ticker-label">STACK</span>
-      <span class="stack-ticker-sep">·</span>
-      <span class="stack-ticker-msg" id="stackTickerMsg">All caught up — keep it rolling</span>
-      <span class="stack-ticker-count" id="stackTickerCount">0/0</span>
-    </div>
-
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
       <span style="font-family:var(--font-mono);font-size:11px;letter-spacing:.16em;color:var(--text-tertiary);text-transform:uppercase">Daily stack</span>
-      <span class="stack-progress-text" id="stackProgressText">— / —</span>
-    </div>
-
-    <div class="stack-progress-track">
-      <div id="stackProgressBar" class="stack-progress-fill"></div>
+      <span class="stack-count" id="stackProgressText">— / —</span>
     </div>
 
     <div id="stackGroups"></div>
@@ -1467,10 +1368,9 @@ body{
     const low = getLow();
     const totalCount = items.length;
     const takenCount = items.filter(i => taken[i.id]).length;
-    document.getElementById('stackProgressText').textContent =
-      `${takenCount} / ${totalCount} taken today · resets at 6 AM`;
-    const pct = totalCount === 0 ? 0 : (takenCount / totalCount) * 100;
-    document.getElementById('stackProgressBar').style.width = pct + '%';
+    document.getElementById('stackProgressText').textContent = `${takenCount} / ${totalCount}`;
+    const bar = document.getElementById('stackProgressBar');
+    if (bar) bar.style.width = (totalCount === 0 ? 0 : (takenCount / totalCount) * 100) + '%';
 
     const groupsEl = document.getElementById('stackGroups');
     groupsEl.innerHTML = '';
@@ -1481,15 +1381,6 @@ body{
     STACK_WINDOWS.forEach(win => {
       const winItems = items.filter(i => (i.window || 'anytime') === win.key);
       if (winItems.length === 0) return;
-
-      const group = document.createElement('div');
-      group.className = 'stack-window';
-      group.innerHTML = `
-        <div class="stack-window-header">
-          <span class="stack-window-icon">${win.icon}</span>
-          <span class="stack-window-title">${win.title}</span>
-          <span class="stack-window-time">${win.time}</span>
-        </div>`;
 
       const isPastCutoff = win.cutoffHour !== null && nowHour > win.cutoffHour;
 
@@ -1513,13 +1404,16 @@ body{
             </div>
             <div class="stack-item-meta" data-edit="meta" data-id="${item.id}">${escapeHtml(metaText(item))}</div>
           </div>
-          <button class="stack-low-btn ${isLow ? 'is-low' : ''}" data-action="low" data-id="${item.id}">↓ Running low</button>
-          <button class="stack-item-del" data-action="del" data-id="${item.id}" aria-label="Delete">×</button>`;
+          <div class="stack-item-right">
+            <span class="stack-item-window">${escapeHtml(win.title.toLowerCase())}</span>
+            <div class="stack-item-actions">
+              <button class="stack-low-btn ${isLow ? 'is-low' : ''}" data-action="low" data-id="${item.id}">↓ Low</button>
+              <button class="stack-item-del" data-action="del" data-id="${item.id}" aria-label="Delete">×</button>
+            </div>
+          </div>`;
 
-        group.appendChild(row);
+        groupsEl.appendChild(row);
       });
-
-      groupsEl.appendChild(group);
     });
 
     if (groupsEl.children.length === 0) {
@@ -1567,13 +1461,13 @@ body{
   }
 
   function renderTicker() {
-    const issues = getStackIssues();
     const tickerEl = document.getElementById('stackTicker');
     const msgEl = document.getElementById('stackTickerMsg');
     const countEl = document.getElementById('stackTickerCount');
-    const totalItems = getItems().length;
-
+    const issues = getStackIssues();
     cachedIssues = issues;
+    if (!tickerEl || !msgEl || !countEl) return;
+    const totalItems = getItems().length;
 
     if (issues.length === 0) {
       msgEl.textContent = 'All caught up — keep it rolling';
@@ -1598,6 +1492,7 @@ body{
       return;
     }
     const msgEl = document.getElementById('stackTickerMsg');
+    if (!msgEl) { renderTicker(); return; }
     msgEl.classList.add('is-fading');
     setTimeout(() => {
       tickerIndex++;
