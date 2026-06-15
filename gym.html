@@ -1177,29 +1177,65 @@ img, video, canvas, svg { max-width: 100%; }
 .wl-log-btn:active { transform: scale(0.97); }
 .wl-log-btn.flash { background: linear-gradient(180deg, #6ee7b7 0%, #4ade80 100%); border-color: #6ee7b7; color: #000; }
 
-/* Sets list */
-.wl-sets-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
-.wl-set-group-label {
-  font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
-  text-transform: uppercase; color: var(--text-3); margin: 8px 0 4px;
+/* Session summary card (Volume / Sets / Time) */
+.wl-summary {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+  border-radius: 20px; padding: 18px 20px; margin-bottom: 14px;
+  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
+  border: 1px solid rgba(45,232,162,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(45,232,162,0.35);
 }
-.wl-set-group-label:first-child { margin-top: 0; }
-.wl-set-row {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 12px;
-  background: rgba(255,255,255,0.04);
-  border: 1px solid var(--border); border-radius: 10px;
-  font-size: 13px; color: var(--text-1);
+.wl-sum-label {
+  font-family: var(--font-mono); font-size: 10.5px; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--text-3); margin-bottom: 6px;
+}
+.wl-sum-val { font-size: 24px; font-weight: 600; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+.wl-sum-unit { font-size: 13px; font-weight: 500; color: var(--text-3); margin-left: 3px; }
+
+/* Sets list — grouped into exercise cards */
+.wl-sets-list { display: flex; flex-direction: column; margin-bottom: 16px; }
+@keyframes wlIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+
+.wl-ex-card {
+  border-radius: 16px; padding: 16px 16px 14px; margin-bottom: 12px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
   animation: wlIn 0.22s ease;
 }
-@keyframes wlIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
-.wl-set-text { flex: 1; font-variant-numeric: tabular-nums; }
-.wl-set-del {
-  background: transparent; border: none; color: var(--text-4);
-  font-size: 18px; cursor: pointer; padding: 0 4px; line-height: 1;
-  -webkit-tap-highlight-color: transparent;
+.wl-ex-card:last-child { margin-bottom: 0; }
+.wl-ex-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.wl-ex-card-title { display: flex; align-items: center; gap: 9px; font-size: 16px; font-weight: 600; color: #fff; min-width: 0; }
+.wl-ex-card-title span.wl-ex-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.wl-ex-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); flex-shrink: 0; }
+.wl-ex-card-count { font-family: var(--font-mono); font-size: 11px; color: var(--good); flex-shrink: 0; margin-left: 10px; }
+.wl-ex-card-sets { display: flex; flex-direction: column; gap: 8px; }
+
+/* Set pill row */
+.wl-set-row { display: flex; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 13px; }
+.wl-set-num { width: 18px; text-align: center; color: var(--text-4); flex-shrink: 0; }
+.wl-set-pill {
+  flex: 1; min-width: 0; height: 38px;
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 10px 0 14px; border-radius: 11px;
+  background: rgba(45,232,162,0.08); border: 1px solid rgba(45,232,162,0.2);
+  cursor: pointer; font-family: inherit; text-align: left;
+  -webkit-tap-highlight-color: transparent; transition: border-color 0.15s, background 0.15s;
 }
-.wl-set-del:hover { color: var(--bad); }
+.wl-set-pill:hover { border-color: rgba(45,232,162,0.4); }
+.wl-set-pill:active { background: rgba(45,232,162,0.14); }
+.wl-set-val { color: rgba(255,255,255,0.9); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.wl-set-reps { color: var(--text-3); white-space: nowrap; margin-left: auto; }
+.wl-set-check {
+  width: 20px; height: 20px; border-radius: 6px; background: var(--good);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.wl-set-del {
+  width: 28px; height: 28px; flex-shrink: 0;
+  background: transparent; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text-4); font-size: 16px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.wl-set-del:hover { color: var(--bad); border-color: rgba(239,68,68,0.4); background: rgba(239,68,68,0.08); }
 
 /* Recent exercises */
 .wl-recents-wrap { margin-bottom: 16px; display: none; }
@@ -1235,7 +1271,7 @@ img, video, canvas, svg { max-width: 100%; }
 .wl-done-btn.is-done { background: rgba(110,231,183,0.28); border-color: rgba(110,231,183,0.45); }
 
 /* ── Set row inline edit ── */
-.wl-set-row--editing { background: rgba(255,255,255,0.07); gap: 6px; flex-wrap: wrap; }
+.wl-set-row--editing { background: rgba(255,255,255,0.07); gap: 6px; flex-wrap: wrap; padding: 8px 10px; border-radius: 11px; }
 .wl-set-edit {
   background: transparent; border: none; color: var(--text-4);
   font-size: 14px; cursor: pointer; padding: 0 5px; line-height: 1;
@@ -1824,7 +1860,8 @@ img, video, canvas, svg { max-width: 100%; }
     <!-- 3. Log Set -->
     <button class="wl-log-btn" id="wlLogBtn" type="button">Log Set</button>
 
-    <!-- 4. Today's sets -->
+    <!-- 4. Session summary + today's sets -->
+    <div class="wl-summary hidden" id="wlSummary"></div>
     <div class="wl-sets-list" id="wlSetsList"></div>
 
     <!-- 5. Recent exercises -->
@@ -2526,9 +2563,34 @@ img, video, canvas, svg { max-width: 100%; }
     return result;
   }
 
+  function wlRenderSummary() {
+    const el = $('wlSummary');
+    if (!el) return;
+    const sets = wlTodaySets();
+    if (!sets.length) { el.classList.add('hidden'); el.innerHTML = ''; return; }
+    const sum = summarizeDay(sets);
+    let timeStr = '—', timeUnit = '';
+    if (sets.length >= 2) {
+      const first = new Date(sets[0].log.date).getTime();
+      const last = new Date(sets[sets.length - 1].log.date).getTime();
+      if (isFinite(first) && isFinite(last)) {
+        timeStr = String(Math.max(0, Math.round((last - first) / 60000)));
+        timeUnit = '<span class="wl-sum-unit">min</span>';
+      }
+    }
+    const u = state.units;
+    el.classList.remove('hidden');
+    el.innerHTML =
+      '<div class="wl-sum-stat"><div class="wl-sum-label">Volume</div><div class="wl-sum-val">'
+        + Math.round(sum.totalVol).toLocaleString() + '<span class="wl-sum-unit">' + escape(u) + '</span></div></div>'
+      + '<div class="wl-sum-stat"><div class="wl-sum-label">Sets</div><div class="wl-sum-val">' + sum.totalSets + '</div></div>'
+      + '<div class="wl-sum-stat"><div class="wl-sum-label">Time</div><div class="wl-sum-val">' + timeStr + timeUnit + '</div></div>';
+  }
+
   function wlRenderSets() {
     const list = $('wlSetsList');
     if (!list) return;
+    wlRenderSummary();
     const sets = wlTodaySets();
     if (!sets.length) { list.innerHTML = ''; return; }
     const groups = {}, order = [];
@@ -2537,21 +2599,29 @@ img, video, canvas, svg { max-width: 100%; }
       groups[item.ex.id].push(item);
     });
     const u = state.units;
+    const CHECK_SVG = '<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.3 5 8.8l4.5-5.4" stroke="#04140d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
     let html = '';
     order.forEach(exId => {
       const g = groups[exId];
-      html += '<div class="wl-set-group-label">' + escape(g[0].ex.name) + '</div>';
+      const bw = !!g[0].ex.bw;
+      html += '<div class="wl-ex-card">'
+        + '<div class="wl-ex-card-head">'
+        +   '<div class="wl-ex-card-title"><span class="wl-ex-dot"></span><span class="wl-ex-name">' + escape(g[0].ex.name) + '</span></div>'
+        +   '<span class="wl-ex-card-count">' + g.length + ' set' + (g.length > 1 ? 's' : '') + '</span>'
+        + '</div>'
+        + '<div class="wl-ex-card-sets">';
       g.forEach((item, i) => {
         const l = item.log;
-        const text = item.ex.bw
-          ? 'Set ' + (i + 1) + ' · ' + l.reps + ' reps'
-          : 'Set ' + (i + 1) + ' · ' + l.weight + ' ' + u + ' · ' + l.reps + ' reps';
-        html += '<div class="wl-set-row" data-exid="' + escape(exId) + '" data-idx="' + item.logIdx + '" data-bw="' + (item.ex.bw ? '1' : '0') + '">'
-          + '<span class="wl-set-text">' + text + '</span>'
-          + '<button class="wl-set-edit" aria-label="Edit set" title="Edit">✏</button>'
+        const valHtml = bw
+          ? '<span class="wl-set-val">Bodyweight</span><span class="wl-set-reps">' + l.reps + ' reps</span>'
+          : '<span class="wl-set-val">' + l.weight + ' ' + escape(u) + '</span><span class="wl-set-reps">' + l.reps + ' reps</span>';
+        html += '<div class="wl-set-row" data-exid="' + escape(exId) + '" data-idx="' + item.logIdx + '" data-bw="' + (bw ? '1' : '0') + '">'
+          + '<span class="wl-set-num">' + (i + 1) + '</span>'
+          + '<button class="wl-set-pill" type="button" aria-label="Edit set">' + valHtml + '<span class="wl-set-check">' + CHECK_SVG + '</span></button>'
           + '<button class="wl-set-del" aria-label="Delete set">×</button>'
           + '</div>';
       });
+      html += '</div></div>';
     });
     list.innerHTML = html;
     list.querySelectorAll('.wl-set-del').forEach(btn => {
@@ -2569,7 +2639,7 @@ img, video, canvas, svg { max-width: 100%; }
         if (typeof wtRender === 'function') wtRender();
       });
     });
-    list.querySelectorAll('.wl-set-edit').forEach(btn => {
+    list.querySelectorAll('.wl-set-pill').forEach(btn => {
       btn.addEventListener('click', () => {
         const row = btn.closest('.wl-set-row');
         const exId = row.dataset.exid;
@@ -2578,8 +2648,8 @@ img, video, canvas, svg { max-width: 100%; }
         const arr = state.logs[exId] || [];
         const log = arr[idx];
         if (!log) return;
-        const setLabel = row.querySelector('.wl-set-text').textContent.split('·')[0].trim();
-        let editHtml = '<span class="wl-set-text">' + escape(setLabel) + '</span>';
+        const numText = (row.querySelector('.wl-set-num') || {}).textContent || '';
+        let editHtml = '<span class="wl-set-num">' + escape(numText) + '</span>';
         if (!isBW) {
           editHtml += '<input type="number" class="wl-edit-input wl-edit-w" value="' + (log.weight || 0) + '" min="0" step="0.5" inputmode="decimal">'
             + '<span class="wl-edit-unit">' + escape(u) + '</span>';
