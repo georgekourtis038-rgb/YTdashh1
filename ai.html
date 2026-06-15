@@ -1335,12 +1335,12 @@ Available tools:
   }
 
   async function syncAfterAction(tool) {
-    // health-stack scope  (same as health.html)
+    // health scope  (same row key health.html uses)
     if (tool === 'set_water_target' || tool === 'set_calorie_target') {
       const data = _collectScope(function(k){
         return k === 'po_water_v1' || k.indexOf('calorie_') === 0 || k.indexOf('stack:') === 0;
       });
-      await _supaUpsert('health-stack', data);
+      await _supaUpsert('health', data);
     }
     // goals scope  (same as index.html)
     if (tool === 'update_goal' || tool === 'delete_goal') {
