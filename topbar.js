@@ -225,7 +225,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
 
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
-  <a href="landing.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
+  <a href="ai.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
     <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
       <defs>
         <filter id="tbAxisGlow" x="-50%" y="-50%" width="200%" height="200%">
