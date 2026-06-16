@@ -474,6 +474,18 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       try { sessionStorage.setItem('dash_prev_page', window.location.href); } catch(e) {}
     }
     injectStyleAndHTML();
+    const logoLink = document.getElementById('topbarLogoLink');
+    if (logoLink) {
+      logoLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        if (isAIPage()) {
+          window.location.href = sessionStorage.getItem('axisReturnUrl') || 'index.html';
+        } else {
+          sessionStorage.setItem('axisReturnUrl', window.location.href);
+          window.location.href = 'ai.html';
+        }
+      });
+    }
     const btn = document.getElementById('topbarWaterAdd');
     if (btn) btn.addEventListener('click', (e) => { e.preventDefault(); addWater(); });
     render();
