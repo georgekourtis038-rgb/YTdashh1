@@ -161,13 +161,59 @@ body{
 .goal-bar-blue{height:100%;border-radius:6px;background:linear-gradient(90deg,#4a72c8,#6f9bff);box-shadow:0 0 12px rgba(111,155,255,.45)}
 /* Empty / error states */
 .empty-state{font-size:13.5px;color:rgba(255,255,255,.35);text-align:center;padding:16px 0}
+
+/* ── Animations ── */
+@keyframes axRise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes axPop{0%{transform:scale(.5)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+@keyframes axRowIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+.reveal{opacity:0;animation:axRise .55s cubic-bezier(.22,1,.36,1) forwards}
+.todo-check-done svg{animation:axPop .32s cubic-bezier(.22,1.5,.4,1)}
+.goal-bar-green,.goal-bar-blue{transition:width .9s cubic-bezier(.22,1,.36,1)}
+
+/* Todo row interactivity */
+.todo-text-undone,.todo-text-done{flex:1;min-width:0;cursor:pointer}
+.todo-actions{display:flex;align-items:center;gap:2px;flex:0 0 auto}
+.todo-act{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  color:rgba(255,255,255,.26);cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .15s,background .15s;flex:0 0 auto;
+}
+.todo-act:active{background:rgba(255,255,255,.08);color:rgba(255,255,255,.7)}
+.todo-act.del:active{color:#FF6B6B;background:rgba(239,68,68,.1)}
+.todo-edit-input{
+  flex:1;min-width:0;background:rgba(255,255,255,.07);
+  border:1px solid rgba(45,232,162,.4);border-radius:8px;
+  color:#fff;font-family:'Geist',sans-serif;font-size:16px;
+  padding:7px 10px;outline:none;-webkit-appearance:none;
+}
+
+/* Long-term goal row — tappable to edit */
+.goal-row{cursor:pointer;padding:8px;border-radius:12px;margin:0 -8px 10px;transition:background .15s}
+.goal-row:last-child{margin-bottom:-8px}
+.goal-row:active{background:rgba(255,255,255,.04)}
+
+/* Modal delete button */
+.ltg-btn-del{
+  padding:13px 16px;border-radius:12px;
+  border:1px solid rgba(239,68,68,.3);
+  background:rgba(239,68,68,.08);color:#FF8585;
+  font-family:'Geist',sans-serif;font-size:14px;font-weight:600;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+}
+
+@media (prefers-reduced-motion:reduce){
+  .reveal{animation:none;opacity:1}
+  *{animation-duration:.01ms!important;transition-duration:.01ms!important}
+}
 </style>
 </head>
 <body>
 <div class="page">
 
   <!-- HEADER -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
+  <div class="reveal" style="animation-delay:.02s;display:flex;align-items:center;justify-content:space-between;margin-bottom:22px">
     <div>
       <div id="axDate" style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase"></div>
       <h1 id="axGreeting" style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:29px;letter-spacing:-.02em;color:#fff;margin-top:5px">Good morning</h1>
@@ -176,7 +222,7 @@ body{
   </div>
 
   <!-- DAY PROGRESS RING CARD -->
-  <div style="position:relative;border-radius:24px;padding:24px;margin-bottom:14px;background:linear-gradient(180deg,rgba(45,232,162,.08),rgba(255,255,255,.022));border:1px solid rgba(45,232,162,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 30px -14px rgba(45,232,162,.35);overflow:hidden">
+  <div class="reveal" style="animation-delay:.09s;position:relative;border-radius:24px;padding:24px;margin-bottom:14px;background:linear-gradient(180deg,rgba(45,232,162,.08),rgba(255,255,255,.022));border:1px solid rgba(45,232,162,.16);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 30px -14px rgba(45,232,162,.35);overflow:hidden">
     <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(45,232,162,.18),transparent 70%);filter:blur(6px)"></div>
     <div style="display:flex;align-items:center;gap:22px;position:relative">
       <div style="position:relative;width:128px;height:128px;flex:0 0 auto">
@@ -198,7 +244,7 @@ body{
   </div>
 
   <!-- TODAY TODOS CARD -->
-  <div style="border-radius:24px;padding:20px 20px 12px;margin-bottom:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)">
+  <div class="reveal" style="animation-delay:.16s;border-radius:24px;padding:20px 20px 12px;margin-bottom:14px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
       <span style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.16em;color:rgba(255,255,255,.42);text-transform:uppercase">Today</span>
       <div style="display:flex;align-items:center;gap:8px">
@@ -216,7 +262,7 @@ body{
   </div>
 
   <!-- LONG-TERM GOALS CARD -->
-  <div style="border-radius:24px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)">
+  <div class="reveal" style="animation-delay:.23s;border-radius:24px;padding:20px;background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.022));border:1px solid rgba(255,255,255,.08);box-shadow:inset 0 1px 0 rgba(255,255,255,.07)">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
       <span style="font-family:'Geist Mono',monospace;font-size:11px;letter-spacing:.16em;color:rgba(255,255,255,.42);text-transform:uppercase">Long-term goals</span>
       <button class="ax-add-btn" id="goalAddBtn" type="button">+ Add</button>
@@ -263,6 +309,7 @@ body{
       <input type="date" class="ltg-minput" id="ltgDeadline">
     </div>
     <div class="ltg-modal-btns">
+      <button type="button" class="ltg-btn-del" id="ltgDeleteBtn" style="display:none">Delete</button>
       <button type="button" class="ltg-btn-cancel" id="ltgCancelBtn">Cancel</button>
       <button type="button" class="ltg-btn-save"   id="ltgSaveBtn">Save Goal</button>
     </div>
@@ -310,6 +357,36 @@ body{
     let sleep = pm(localStorage.getItem('dash_sleep_time'), 24);
     if (sleep <= wake) sleep += 1440;
     return { wake, sleep };
+  }
+
+  // ── Shared persistence ───────────────────────────────────────
+  function genId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  function ensureGoalIds(goals) {
+    let changed = false;
+    goals.forEach(function(g){ if (!g.id) { g.id = genId('g'); changed = true; } });
+    return changed;
+  }
+  async function syncAppData() {
+    if (!_supa) return;
+    try {
+      await _supa.from('app_state').upsert(
+        { key: APP_KEY, data: _appData, updated_at: new Date().toISOString() },
+        { onConflict: 'key' }
+      );
+    } catch(_) {}
+  }
+  function persistTodos() {
+    const key = 'goals:' + getActiveDateString();
+    _appData[key] = _todos;
+    try { localStorage.setItem(key, JSON.stringify(_todos)); } catch(_) {}
+    syncAppData();
+  }
+  function persistGoals(goals) {
+    _appData['axis_goals'] = goals;
+    try { localStorage.setItem('axis_goals', JSON.stringify(goals)); } catch(_) {}
+    syncAppData();
   }
 
   // ── Day ring ─────────────────────────────────────────────────
@@ -385,7 +462,7 @@ body{
   // ── Todos ────────────────────────────────────────────────────
   let _todos = [];
 
-  function renderTodos(todos) {
+  function renderTodos(todos, editIdx) {
     _todos = todos;
     const listEl  = document.getElementById('todoList');
     const countEl = document.getElementById('todayCount');
@@ -400,40 +477,75 @@ body{
     todos.forEach(function(todo, i) {
       const row = document.createElement('div');
       row.className = 'todo-row';
-      row.innerHTML =
-        '<div class="' + (todo.done ? 'todo-check-done' : 'todo-check-undone') + '">' +
-          (todo.done
-            ? '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.3 5 8.8l4.5-5.4" stroke="#04140d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>'
-            : '') +
-        '</div>' +
-        '<span class="' + (todo.done ? 'todo-text-done' : 'todo-text-undone') + '">' + esc(todo.text) + '</span>';
-      row.addEventListener('click', function() { toggleTodo(i); });
+
+      const check = document.createElement('div');
+      check.className = todo.done ? 'todo-check-done' : 'todo-check-undone';
+      check.style.cursor = 'pointer';
+      if (todo.done) check.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6.3 5 8.8l4.5-5.4" stroke="#04140d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+      check.addEventListener('click', function(){ toggleTodo(i); });
+      row.appendChild(check);
+
+      if (i === editIdx) {
+        const inp = document.createElement('input');
+        inp.className = 'todo-edit-input';
+        inp.type = 'text'; inp.maxLength = 200; inp.value = todo.text;
+        row.appendChild(inp);
+        const commit = function(save) {
+          if (save) { const v = inp.value.trim(); if (v) { _todos[i].text = v; persistTodos(); } }
+          renderTodos(_todos);
+        };
+        inp.addEventListener('keydown', function(e){
+          if (e.key === 'Enter') { e.preventDefault(); commit(true); }
+          else if (e.key === 'Escape') { commit(false); }
+        });
+        inp.addEventListener('blur', function(){ commit(true); });
+        setTimeout(function(){ inp.focus(); inp.select(); }, 0);
+      } else {
+        const text = document.createElement('span');
+        text.className = todo.done ? 'todo-text-done' : 'todo-text-undone';
+        text.textContent = todo.text;
+        text.addEventListener('click', function(){ toggleTodo(i); });
+        row.appendChild(text);
+
+        const actions = document.createElement('div');
+        actions.className = 'todo-actions';
+        const editBtn = document.createElement('div');
+        editBtn.className = 'todo-act'; editBtn.setAttribute('aria-label', 'Edit');
+        editBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L18 10l-4-4L4 16v4ZM13 7l4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+        editBtn.addEventListener('click', function(e){ e.stopPropagation(); renderTodos(_todos, i); });
+        const delBtn = document.createElement('div');
+        delBtn.className = 'todo-act del'; delBtn.setAttribute('aria-label', 'Delete');
+        delBtn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5h6v2M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+        delBtn.addEventListener('click', function(e){ e.stopPropagation(); deleteTodo(i); });
+        actions.appendChild(editBtn);
+        actions.appendChild(delBtn);
+        row.appendChild(actions);
+      }
       listEl.appendChild(row);
     });
   }
 
-  async function toggleTodo(i) {
-    const todos = _todos.map(function(t,j) {
-      if (j !== i) return t;
-      const next = !t.done;
-      return Object.assign({}, t, { done: next, doneAt: next ? new Date().toISOString() : undefined });
-    });
-    const key = 'goals:' + getActiveDateString();
-    _appData[key] = todos;
-    try { localStorage.setItem(key, JSON.stringify(todos)); } catch(_) {}
-    renderTodos(todos);
-    if (_supa) {
-      try {
-        await _supa.from('app_state').upsert(
-          { key: APP_KEY, data: _appData, updated_at: new Date().toISOString() },
-          { onConflict: 'key' }
-        );
-      } catch(_) {}
-    }
+  function toggleTodo(i) {
+    if (!_todos[i]) return;
+    const next = !_todos[i].done;
+    _todos[i] = Object.assign({}, _todos[i], { done: next, doneAt: next ? new Date().toISOString() : undefined });
+    persistTodos();
+    renderTodos(_todos);
+  }
+  function deleteTodo(i) {
+    if (!_todos[i]) return;
+    _todos.splice(i, 1);
+    persistTodos();
+    renderTodos(_todos);
   }
 
   // ── Long-term goals ──────────────────────────────────────────
   function renderGoals(goals) {
+    // Backfill ids so AI tools and edit/delete can target goals reliably
+    if (ensureGoalIds(goals)) {
+      _appData['axis_goals'] = goals;
+      try { localStorage.setItem('axis_goals', JSON.stringify(goals)); } catch(_) {}
+    }
     const container = document.getElementById('goalsList');
     if (!goals.length) {
       container.innerHTML = '<p class="empty-state">No long-term goals yet.</p>';
@@ -465,8 +577,12 @@ body{
           '<span style="font-size:15px;color:rgba(255,255,255,.9);font-weight:500">' + esc(goal.title) + '</span>' +
           '<span style="font-family:\'Geist Mono\',monospace;font-size:12px;color:rgba(255,255,255,.5)">' + sub + '</span>' +
         '</div>' +
-        '<div class="goal-bar-track"><div class="' + (useBlue ? 'goal-bar-blue' : 'goal-bar-green') + '" style="width:' + pct.toFixed(1) + '%"></div></div>';
+        '<div class="goal-bar-track"><div class="' + (useBlue ? 'goal-bar-blue' : 'goal-bar-green') + '" style="width:0%"></div></div>';
+      row.addEventListener('click', function(){ openGoalModal(goal); });
       container.appendChild(row);
+      // Animate the progress bar from 0 → target on next frame
+      const bar = row.querySelector('.goal-bar-green, .goal-bar-blue');
+      requestAnimationFrame(function(){ requestAnimationFrame(function(){ bar.style.width = pct.toFixed(1) + '%'; }); });
     });
   }
 
@@ -482,25 +598,16 @@ body{
       if (row.style.display === 'flex') { input.value = ''; input.focus(); }
     });
 
-    async function commitTodo() {
+    function commitTodo() {
       const text = input.value.trim();
       if (!text) return;
       const key = 'goals:' + getActiveDateString();
-      const todos = Array.isArray(_appData[key]) ? _appData[key].slice() : [];
-      todos.push({ text: text, done: false });
-      _appData[key] = todos;
-      try { localStorage.setItem(key, JSON.stringify(todos)); } catch(_) {}
-      renderTodos(todos);
+      _todos = Array.isArray(_appData[key]) ? _appData[key].slice() : [];
+      _todos.push({ text: text, done: false });
+      persistTodos();
+      renderTodos(_todos);
       input.value = '';
       row.style.display = 'none';
-      if (_supa) {
-        try {
-          await _supa.from('app_state').upsert(
-            { key: APP_KEY, data: _appData, updated_at: new Date().toISOString() },
-            { onConflict: 'key' }
-          );
-        } catch(_) {}
-      }
     }
 
     sub.addEventListener('click', commitTodo);
@@ -510,63 +617,67 @@ body{
     });
   })();
 
-  // ── Add goal modal ───────────────────────────────────────────
+  // ── Goal modal (add · edit · delete) ─────────────────────────
+  let _editingGoalId = null;
+  function openGoalModal(goal) {
+    _editingGoalId = (goal && goal.id) ? goal.id : null;
+    document.querySelector('.ltg-modal-title').textContent = goal ? 'Edit Goal' : 'New Goal';
+    document.getElementById('ltgDeleteBtn').style.display = goal ? '' : 'none';
+    document.getElementById('ltgSaveBtn').textContent = goal ? 'Save Changes' : 'Save Goal';
+    document.getElementById('ltgCat').value      = (goal && goal.category) || 'weight';
+    document.getElementById('ltgTitle').value    = (goal && goal.title) || '';
+    document.getElementById('ltgTarget').value   = (goal && goal.targetValue != null) ? goal.targetValue : '';
+    document.getElementById('ltgUnit').value     = (goal && goal.unit) || '';
+    document.getElementById('ltgStart').value    = (goal && goal.startValue != null) ? goal.startValue : '';
+    document.getElementById('ltgCurVal').value   = (goal && goal.currentValue != null) ? goal.currentValue : '';
+    document.getElementById('ltgDeadline').value = (goal && goal.deadline) || '';
+    document.getElementById('ltgModalBg').classList.add('open');
+    document.body.classList.add('topbar-modal-open');
+  }
+  function closeGoalModal() {
+    document.getElementById('ltgModalBg').classList.remove('open');
+    document.body.classList.remove('topbar-modal-open');
+  }
   (function wireGoalModal() {
-    const bg      = document.getElementById('ltgModalBg');
-    const addBtn  = document.getElementById('goalAddBtn');
-    const saveBtn = document.getElementById('ltgSaveBtn');
-    const cancelBtn = document.getElementById('ltgCancelBtn');
+    const bg = document.getElementById('ltgModalBg');
+    document.getElementById('goalAddBtn').addEventListener('click', function(){ openGoalModal(null); });
+    document.getElementById('ltgCancelBtn').addEventListener('click', closeGoalModal);
+    bg.addEventListener('click', function(e){ if (e.target === bg) closeGoalModal(); });
 
-    function openModal() {
-      document.getElementById('ltgTitle').value   = '';
-      document.getElementById('ltgTarget').value  = '';
-      document.getElementById('ltgUnit').value    = '';
-      document.getElementById('ltgStart').value   = '';
-      document.getElementById('ltgCurVal').value  = '';
-      document.getElementById('ltgDeadline').value = '';
-      document.getElementById('ltgCat').value     = 'weight';
-      bg.classList.add('open');
-      document.body.classList.add('topbar-modal-open');
-    }
-    function closeModal() {
-      bg.classList.remove('open');
-      document.body.classList.remove('topbar-modal-open');
-    }
+    document.getElementById('ltgDeleteBtn').addEventListener('click', function() {
+      if (!_editingGoalId) return;
+      let goals = Array.isArray(_appData['axis_goals']) ? _appData['axis_goals'].slice() : [];
+      goals = goals.filter(function(g){ return g.id !== _editingGoalId; });
+      persistGoals(goals);
+      renderGoals(goals);
+      closeGoalModal();
+    });
 
-    addBtn.addEventListener('click', openModal);
-    cancelBtn.addEventListener('click', closeModal);
-    bg.addEventListener('click', function(e) { if (e.target === bg) closeModal(); });
-
-    saveBtn.addEventListener('click', async function() {
+    document.getElementById('ltgSaveBtn').addEventListener('click', function() {
       const title = document.getElementById('ltgTitle').value.trim();
       if (!title) { document.getElementById('ltgTitle').focus(); return; }
       const targetRaw = document.getElementById('ltgTarget').value.trim();
       const startRaw  = document.getElementById('ltgStart').value.trim();
       const curRaw    = document.getElementById('ltgCurVal').value.trim();
-      const newGoal = {
+      const fields = {
         category:     document.getElementById('ltgCat').value,
         title:        title,
-        targetValue:  targetRaw  !== '' ? parseFloat(targetRaw)  : null,
+        targetValue:  targetRaw !== '' ? parseFloat(targetRaw) : null,
         unit:         document.getElementById('ltgUnit').value.trim(),
-        startValue:   startRaw   !== '' ? parseFloat(startRaw)   : null,
-        currentValue: curRaw     !== '' ? parseFloat(curRaw)     : (startRaw !== '' ? parseFloat(startRaw) : null),
-        startDate:    new Date().toISOString().slice(0, 10),
+        startValue:   startRaw  !== '' ? parseFloat(startRaw)  : null,
+        currentValue: curRaw    !== '' ? parseFloat(curRaw)    : (startRaw !== '' ? parseFloat(startRaw) : null),
         deadline:     document.getElementById('ltgDeadline').value || null,
       };
-      const goals = Array.isArray(_appData['axis_goals']) ? _appData['axis_goals'].slice() : [];
-      goals.push(newGoal);
-      _appData['axis_goals'] = goals;
-      try { localStorage.setItem('axis_goals', JSON.stringify(goals)); } catch(_) {}
-      renderGoals(goals);
-      closeModal();
-      if (_supa) {
-        try {
-          await _supa.from('app_state').upsert(
-            { key: APP_KEY, data: _appData, updated_at: new Date().toISOString() },
-            { onConflict: 'key' }
-          );
-        } catch(_) {}
+      let goals = Array.isArray(_appData['axis_goals']) ? _appData['axis_goals'].slice() : [];
+      if (_editingGoalId) {
+        const idx = goals.findIndex(function(g){ return g.id === _editingGoalId; });
+        if (idx >= 0) goals[idx] = Object.assign({}, goals[idx], fields);
+      } else {
+        goals.push(Object.assign({ id: genId('g'), startDate: new Date().toISOString().slice(0, 10) }, fields));
       }
+      persistGoals(goals);
+      renderGoals(goals);
+      closeGoalModal();
     });
   })();
 

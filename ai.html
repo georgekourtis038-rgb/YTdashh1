@@ -572,6 +572,16 @@ body {
       if (window._pcTriggerSync) window._pcTriggerSync(k);
     } catch (_) {}
   }
+  function _genId(prefix) {
+    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+  // Resolve a tool "when" value to a goals: date key
+  function _resolveDayKey(when) {
+    if (!when || when === 'today') return activeDate();
+    if (when === 'tomorrow') return tomorrowDate();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(when)) return when;
+    return activeDate();
+  }
 
   // ── Briefing session ID (fixed, never deleted) ───────────────────
   const BRIEFING_SESSION_ID = 'axis_daily_briefing';
@@ -664,7 +674,14 @@ body {
     } catch (_) {}
     return { latestLbs, trendStr };
   }
-  function getLtGoals() { try { return JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; } }
+  function getLtGoals() {
+    let g;
+    try { g = JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; }
+    let changed = false;
+    g.forEach(function(x){ if (!x.id) { x.id = _genId('g'); changed = true; } });
+    if (changed) lsSet('axis_goals', g);
+    return g;
+  }
   function getGymSplitToday() {
     try {
       const cycle = lsGet('dash_gym_cycle');
@@ -920,9 +937,9 @@ body {
 You can write directly to the app by embedding action tags in your response. Rules:
 - Only use actions when the user explicitly asks you to change or update something.
 - Always explain what you are about to do in plain prose first, then include the action tag.
-- Never fabricate goal IDs — only use IDs from the LONG-TERM GOALS list above.
+- Never fabricate goal IDs — only use IDs from the LONG-TERM GOALS list above (update_goal/delete_goal).
 - Never fabricate email IDs — only use IDs from the UNREAD EMAILS list above.
-- Never include multiple actions for the same tool in one response.
+- You may include several add_todo / delete_todo / update_todo actions in one response (e.g. to add multiple tasks); otherwise avoid repeating the same tool.
 
 Syntax: <action>{"tool": "tool_name", "params": {...}}</action>
 
@@ -931,14 +948,26 @@ Available tools:
     params: { kcal: number, protein?: number, carbs?: number, fat?: number }
   set_water_target     — update daily water intake target
     params: { target_ml: number }
-  update_goal          — edit an existing long-term goal
-    params: { id: string, title?: string, target?: number, deadline?: string }
+  add_goal             — create a new long-term goal
+    params: { title: string, target?: number, unit?: string, start?: number, current?: number, deadline?: "YYYY-MM-DD", category?: "weight"|"fitness"|"reading"|"custom" }
+  update_goal          — edit an existing long-term goal (incl. progress)
+    params: { id: string, title?: string, target?: number, unit?: string, start?: number, current?: number, deadline?: string }
   delete_goal          — remove a long-term goal
     params: { id: string }
+  add_todo             — add a daily goal/task
+    params: { text: string, when?: "today"|"tomorrow" }
+  update_todo          — edit or check off a daily goal (match by text)
+    params: { text: string, when?: "today"|"tomorrow", new_text?: string, done?: boolean }
+  delete_todo          — remove a daily goal (match by text)
+    params: { text: string, when?: "today"|"tomorrow" }
   add_calendar_event   — add an event to Google Calendar
     params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
   mark_email_read      — mark an email as read in Gmail
     params: { id: string }
+
+Notes:
+- For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
+- To log progress on a long-term goal (e.g. a new weight), use update_goal with "current".
 ===`;
     return p;
   }
@@ -1343,7 +1372,8 @@ Available tools:
       await _supaUpsert('health', data);
     }
     // goals scope  (same as index.html)
-    if (tool === 'update_goal' || tool === 'delete_goal') {
+    if (tool === 'add_goal' || tool === 'update_goal' || tool === 'delete_goal' ||
+        tool === 'add_todo' || tool === 'update_todo' || tool === 'delete_todo') {
       const data = _collectScope(function(k){
         return k === 'axis_goals' || k === 'goal_streak_v1' || k.indexOf('goals:') === 0;
       });
@@ -1363,13 +1393,33 @@ Available tools:
       state.settings.targetMl = params.target_ml;
       lsSet('po_water_v1', state);
       result = 'Water target updated to ' + params.target_ml + ' ml/day';
+    } else if (tool === 'add_goal') {
+      const goals = lsGet('axis_goals') || [];
+      const start = params.start != null ? params.start : null;
+      const goal = {
+        id: _genId('g'),
+        category: params.category || 'custom',
+        title: params.title,
+        targetValue: params.target != null ? params.target : null,
+        unit: params.unit || '',
+        startValue: start,
+        currentValue: params.current != null ? params.current : start,
+        startDate: new Date().toISOString().slice(0, 10),
+        deadline: params.deadline || null,
+      };
+      goals.push(goal);
+      lsSet('axis_goals', goals);
+      result = 'Long-term goal "' + params.title + '" created';
     } else if (tool === 'update_goal') {
       const goals = lsGet('axis_goals') || [];
       const idx   = goals.findIndex(function(g){ return g.id === params.id; });
       if (idx===-1) return 'Goal not found: ' + params.id;
-      if (params.title    != null) goals[idx].title       = params.title;
-      if (params.target   != null) goals[idx].targetValue = params.target;
-      if (params.deadline != null) goals[idx].deadline    = params.deadline;
+      if (params.title    != null) goals[idx].title        = params.title;
+      if (params.target   != null) goals[idx].targetValue  = params.target;
+      if (params.unit     != null) goals[idx].unit         = params.unit;
+      if (params.start    != null) goals[idx].startValue   = params.start;
+      if (params.current  != null) goals[idx].currentValue = params.current;
+      if (params.deadline != null) goals[idx].deadline     = params.deadline;
       lsSet('axis_goals', goals);
       result = 'Goal "' + goals[idx].title + '" updated';
     } else if (tool === 'delete_goal') {
@@ -1380,6 +1430,38 @@ Available tools:
       goals.splice(idx, 1);
       lsSet('axis_goals', goals);
       result = 'Goal "' + title + '" deleted';
+    } else if (tool === 'add_todo') {
+      if (!params.text) return 'No task text provided';
+      const dayKey = _resolveDayKey(params.when);
+      const todos = lsGet('goals:' + dayKey) || [];
+      todos.push({ text: params.text, done: false });
+      lsSet('goals:' + dayKey, todos);
+      result = 'Added "' + params.text + '" to ' + (params.when === 'tomorrow' ? 'tomorrow' : 'today');
+    } else if (tool === 'update_todo') {
+      const dayKey = _resolveDayKey(params.when);
+      const todos = lsGet('goals:' + dayKey) || [];
+      const q = String(params.text || '').toLowerCase();
+      let idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase() === q; });
+      if (idx === -1) idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase().indexOf(q) !== -1; });
+      if (idx === -1) return 'Task not found: ' + params.text;
+      if (params.new_text != null) todos[idx].text = params.new_text;
+      if (params.done != null) {
+        todos[idx].done = !!params.done;
+        todos[idx].doneAt = params.done ? new Date().toISOString() : undefined;
+      }
+      lsSet('goals:' + dayKey, todos);
+      result = 'Updated "' + todos[idx].text + '"' + (params.done != null ? (params.done ? ' — marked done' : ' — marked not done') : '');
+    } else if (tool === 'delete_todo') {
+      const dayKey = _resolveDayKey(params.when);
+      const todos = lsGet('goals:' + dayKey) || [];
+      const q = String(params.text || '').toLowerCase();
+      let idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase() === q; });
+      if (idx === -1) idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase().indexOf(q) !== -1; });
+      if (idx === -1) return 'Task not found: ' + params.text;
+      const removed = todos[idx].text;
+      todos.splice(idx, 1);
+      lsSet('goals:' + dayKey, todos);
+      result = 'Deleted "' + removed + '"';
     } else if (tool === 'add_calendar_event') {
       return await addCalendarEvent(params);
     } else if (tool === 'mark_email_read') {
