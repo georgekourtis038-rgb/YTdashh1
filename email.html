@@ -23,6 +23,7 @@
   --text-secondary: rgba(255,255,255,0.6);
   --text-tertiary: rgba(255,255,255,0.3);
   --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SF Mono, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -38,13 +39,51 @@ html, body {
 .em-page {
   max-width: 540px;
   margin: 0 auto;
-  padding: 12px 16px 120px;
+  padding: 14px 16px 120px;
+}
+
+/* Header — Inbox title + unread pill */
+.em-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.em-title {
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 29px;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+}
+.em-unread-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border-radius: 11px;
+  background: rgba(45,232,162,0.1);
+  border: 1px solid rgba(45,232,162,0.25);
+}
+.em-pill-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 7px var(--mint);
+  flex-shrink: 0;
+}
+.em-pill-text {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--mint);
 }
 
 /* Search */
 .em-search-wrap {
   position: relative;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 .em-search-icon {
   position: absolute;
@@ -58,7 +97,7 @@ html, body {
   width: 100%;
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 12px 14px 12px 42px;
   color: var(--text-primary);
   font-size: 16px;
@@ -66,41 +105,106 @@ html, body {
   outline: none;
   -webkit-appearance: none;
   appearance: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, background 0.2s;
 }
 .em-search::placeholder { color: var(--text-tertiary); }
-.em-search:focus { border-color: var(--mint-border); }
+.em-search:focus {
+  border-color: rgba(45,232,162,0.4);
+  background: rgba(45,232,162,0.04);
+}
 
-/* Filter tabs */
+/* Filter chips */
 .em-tabs {
   display: flex;
   gap: 8px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 .em-tab {
-  padding: 7px 16px;
-  border-radius: 999px;
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
+  font-family: var(--font);
+  padding: 7px 14px;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.05);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
   transition: all 0.15s;
-  font-family: var(--font);
 }
 .em-tab.active {
-  background: var(--mint-dim);
-  border-color: var(--mint-border);
-  color: var(--mint);
+  background: var(--mint);
+  border-color: transparent;
+  color: #04140d;
 }
+
+/* Axis inbox summary banner */
+.em-triage {
+  position: relative;
+  border-radius: 20px;
+  padding: 16px 18px;
+  margin-bottom: 16px;
+  background: linear-gradient(180deg, rgba(45,232,162,0.1), rgba(255,255,255,0.02));
+  border: 1px solid rgba(45,232,162,0.18);
+  overflow: hidden;
+}
+.em-triage-glow {
+  position: absolute;
+  top: -26px;
+  right: -16px;
+  width: 110px;
+  height: 110px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(45,232,162,0.14), transparent 70%);
+  filter: blur(4px);
+  pointer-events: none;
+}
+.em-triage-inner {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  position: relative;
+}
+.em-orb {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: conic-gradient(from 180deg, #2de8a2, #6f9bff, #2de8a2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.em-orb-core {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #0a1512;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.em-orb-ring {
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid var(--mint);
+  border-radius: 50%;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+}
+.em-triage-text {
+  flex: 1;
+  font-size: 13px;
+  line-height: 1.45;
+  color: rgba(255,255,255,0.82);
+}
+.em-triage-text strong { color: var(--mint); font-weight: 500; }
 
 /* Auth card */
 .auth-card {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  border-radius: 16px;
+  border-radius: 24px;
   padding: 28px 20px;
   text-align: center;
   margin-bottom: 14px;
@@ -128,7 +232,7 @@ html, body {
   padding: 13px 24px;
   background: var(--mint-dim);
   border: 1.5px solid var(--mint);
-  border-radius: 12px;
+  border-radius: 14px;
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 600;
@@ -139,74 +243,53 @@ html, body {
 }
 .auth-btn:active { background: rgba(45,232,162,0.22); }
 
-/* Section header */
-.em-section-header {
+/* Email list — individual row cards */
+.em-feed {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-}
-.em-section-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.em-unread-badge {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--mint);
-  background: var(--mint-dim);
-  border: 1px solid var(--mint-border);
-  border-radius: 999px;
-  padding: 2px 8px;
-}
-
-/* Email list */
-.em-list {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 24px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  flex-direction: column;
+  gap: 8px;
 }
 .em-row {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(255,255,255,0.04);
+  gap: 13px;
+  padding: 15px 14px;
+  border-radius: 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.1s;
+  transition: background 0.1s, transform 0.08s;
   position: relative;
 }
-.em-row:last-child { border-bottom: none; }
-.em-row:active { background: rgba(255,255,255,0.04); }
+.em-row:active { background: rgba(255,255,255,0.07); transform: scale(0.992); }
+.em-row.read { opacity: 0.72; }
 
-.em-unread-dot {
-  width: 8px;
-  height: 8px;
+.em-avatar {
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
   border-radius: 50%;
-  background: var(--mint);
-  flex-shrink: 0;
-  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 15px;
+  color: #fff;
 }
-.em-unread-dot.hidden { background: transparent; }
 
 .em-row-body { flex: 1; min-width: 0; }
 .em-row-top {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 .em-sender {
-  font-size: 14px;
-  font-weight: 400;
-  color: var(--text-secondary);
+  font-size: 14.5px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.85);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -214,50 +297,61 @@ html, body {
   min-width: 0;
 }
 .em-row.unread .em-sender {
-  font-weight: 700;
-  color: var(--text-primary);
+  font-weight: 600;
+  color: #fff;
 }
 .em-time {
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-tertiary);
+  color: rgba(255,255,255,0.35);
   flex-shrink: 0;
   white-space: nowrap;
 }
 .em-subject {
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 400;
-  color: var(--text-secondary);
+  color: rgba(255,255,255,0.6);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 .em-row.unread .em-subject {
-  font-weight: 600;
-  color: var(--text-primary);
+  font-weight: 500;
+  color: rgba(255,255,255,0.78);
 }
 .em-snippet {
-  font-size: 12px;
-  color: var(--text-tertiary);
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.35);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.em-row.unread .em-snippet { color: rgba(255,255,255,0.42); }
 .em-labels {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
-  margin-top: 5px;
+  margin-top: 6px;
 }
 .em-chip {
   font-size: 10px;
   font-weight: 600;
   letter-spacing: 0.3px;
-  padding: 2px 7px;
+  padding: 2px 8px;
   border-radius: 999px;
   border: 1px solid rgba(255,255,255,0.1);
   background: rgba(255,255,255,0.06);
   color: var(--text-tertiary);
+}
+.em-unread-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--mint);
+  box-shadow: 0 0 7px var(--mint);
+  flex: 0 0 auto;
+  margin-top: 6px;
 }
 
 /* Empty / loading states */
@@ -280,6 +374,27 @@ html, body {
 }
 @keyframes spin { to { transform: rotate(360deg) translateZ(0); } }
 
+/* Compose FAB — opens Gmail compose */
+.em-compose {
+  position: fixed;
+  right: 18px;
+  bottom: 86px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 44;
+  border: none;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 10px 28px -8px rgba(45,232,162,0.7);
+  transition: transform 0.12s;
+}
+.em-compose:active { transform: scale(0.94); }
+
 /* Detail sheet */
 .sheet-bg {
   display: none;
@@ -292,11 +407,11 @@ html, body {
 .email-sheet {
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  background: #141c1a;
+  background: radial-gradient(130% 80% at 50% -8%, #0e1715 0%, #0a0e0d 60%);
   border: 1px solid rgba(255,255,255,0.12);
   border-bottom: none;
-  border-radius: 20px 20px 0 0;
-  padding: 0 20px max(28px, env(safe-area-inset-bottom));
+  border-radius: 28px 28px 0 0;
+  padding: 0 22px max(28px, env(safe-area-inset-bottom));
   z-index: 51;
   max-height: 82vh;
   overflow-y: auto;
@@ -312,31 +427,75 @@ html, body {
   width: 36px; height: 4px;
   background: rgba(255,255,255,0.18);
   border-radius: 2px;
-  margin: 12px auto 16px;
+  margin: 12px auto 18px;
+}
+.sheet-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.sheet-avatar {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font);
+  font-weight: 600;
+  font-size: 17px;
+  color: #fff;
+}
+.sheet-from-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sheet-from-addr {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-tertiary);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .sheet-subject {
-  font-size: 19px;
-  font-weight: 700;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   margin-bottom: 10px;
   line-height: 1.3;
+}
+.sheet-labels {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
 }
 .sheet-meta {
   display: flex;
   flex-direction: column;
   gap: 5px;
   margin-bottom: 12px;
-  padding-bottom: 12px;
+  padding-bottom: 14px;
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .sheet-meta-row {
   display: flex;
   gap: 8px;
-  font-size: 13px;
+  font-size: 12.5px;
 }
 .sheet-meta-label {
+  font-family: var(--font-mono);
   color: var(--text-tertiary);
-  min-width: 36px;
+  min-width: 40px;
   flex-shrink: 0;
 }
 .sheet-meta-val {
@@ -349,13 +508,7 @@ html, body {
   line-height: 1.7;
   white-space: pre-wrap;
   word-break: break-word;
-  margin-top: 12px;
-}
-.sheet-labels {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
-  margin-bottom: 14px;
+  margin-top: 14px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -367,6 +520,13 @@ html, body {
 </head>
 <body>
 <div class="em-page" id="emPage">
+
+  <div class="em-head" id="emHead">
+    <h1 class="em-title">Inbox</h1>
+    <div class="em-unread-badge" id="emUnreadBadge" style="display:none">
+      <span class="em-pill-dot"></span><span class="em-pill-text" id="emUnreadText"></span>
+    </div>
+  </div>
 
   <div class="em-search-wrap">
     <svg class="em-search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -396,21 +556,38 @@ html, body {
     </button>
   </div>
 
-  <div id="emStateWrap"></div>
-
-  <div class="em-section-header" id="emSectionHeader" style="display:none">
-    <span class="em-section-label">Inbox</span>
-    <span class="em-unread-badge" id="emUnreadBadge" style="display:none"></span>
+  <div class="em-triage" id="emTriage" style="display:none">
+    <div class="em-triage-glow"></div>
+    <div class="em-triage-inner">
+      <div class="em-orb"><div class="em-orb-core"><div class="em-orb-ring"></div></div></div>
+      <p class="em-triage-text" id="emTriageText"></p>
+    </div>
   </div>
 
-  <div class="em-list" id="emList" style="display:none"></div>
+  <div id="emStateWrap"></div>
+
+  <div class="em-feed" id="emList" style="display:none"></div>
 
 </div>
+
+<!-- Compose — opens Gmail compose -->
+<button class="em-compose" id="emCompose" aria-label="Compose">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="#04140d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+</button>
 
 <!-- Email detail sheet -->
 <div class="sheet-bg" id="sheetBg">
   <div class="email-sheet" id="emailSheet">
     <div class="sheet-handle"></div>
+    <div class="sheet-head" id="sheetHead">
+      <div class="sheet-avatar" id="sheetAvatar"></div>
+      <div style="flex:1;min-width:0">
+        <div class="sheet-from-name" id="sheetFromName"></div>
+        <div class="sheet-from-addr" id="sheetFromAddr"></div>
+      </div>
+    </div>
     <div class="sheet-subject" id="sheetSubject"></div>
     <div class="sheet-labels" id="sheetLabels"></div>
     <div class="sheet-meta" id="sheetMeta"></div>
@@ -439,8 +616,10 @@ let searchQuery = '';
 function showAuthCard() {
   document.getElementById('authCard').style.display = '';
   document.getElementById('emStateWrap').innerHTML = '';
-  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emHead').style.display = 'none';
+  document.getElementById('emTriage').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
+  document.getElementById('emCompose').style.display = 'none';
 }
 
 function authenticate() {
@@ -453,6 +632,7 @@ GoogleAuth.init({
     console.log('[Gmail] Token valid — loading inbox');
     accessToken = tok;
     document.getElementById('authCard').style.display = 'none';
+    document.getElementById('emCompose').style.display = 'flex';
     loadInbox();
   },
   onNeedAuth: function() {
@@ -541,7 +721,7 @@ function showApiError(result, context) {
     } else {
       showState(`<strong style="color:rgba(255,200,120,0.95)">Gmail access not granted</strong><br>
         Your current sign-in doesn't include Gmail permission.<br>
-        <button onclick="reauthorize()" style="margin-top:12px;padding:10px 20px;background:var(--mint-dim);border:1.5px solid var(--mint);border-radius:10px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Grant Gmail Access</button><br>
+        <button onclick="reauthorize()" style="margin-top:12px;padding:10px 20px;background:var(--mint-dim);border:1.5px solid var(--mint);border-radius:12px;color:#fff;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Grant Gmail Access</button><br>
         <small style="opacity:.5;display:block;margin-top:6px">Error: ${esc(msg)}</small>`);
     }
     return;
@@ -555,7 +735,8 @@ function showApiError(result, context) {
 // -------------------------------------------------------
 async function loadInbox() {
   showState('<div class="spinner"></div>Loading inbox…');
-  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emHead').style.display = 'none';
+  document.getElementById('emTriage').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 
   console.log('[Gmail] Fetching inbox message list…');
@@ -568,7 +749,7 @@ async function loadInbox() {
 
   const ids = (listData.messages || []).map(m => m.id);
   if (!ids.length) {
-    document.getElementById('emSectionHeader').style.display = '';
+    document.getElementById('emHead').style.display = '';
     showState('Your inbox is empty.');
     return;
   }
@@ -604,7 +785,8 @@ async function loadInbox() {
 // -------------------------------------------------------
 async function runSearch(q) {
   showState('<div class="spinner"></div>Searching…');
-  document.getElementById('emSectionHeader').style.display = 'none';
+  document.getElementById('emHead').style.display = 'none';
+  document.getElementById('emTriage').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 
   console.log('[Gmail] Searching:', q);
@@ -640,6 +822,26 @@ const LABEL_MAP = {
 };
 const HIDE_LABELS = new Set(['INBOX','UNREAD','SENT','TRASH','DRAFT','SPAM']);
 
+// Avatar gradients — picked deterministically from sender name
+const AVATAR_GRADS = [
+  'linear-gradient(150deg,#3a5bbf,#6f9bff)',
+  'linear-gradient(150deg,#b5743a,#d9b25a)',
+  'linear-gradient(150deg,#2c8a5f,#2de8a2)',
+  'linear-gradient(150deg,#7a3a9f,#b06fff)',
+  'linear-gradient(150deg,#b53a5b,#ff6f9b)',
+  'linear-gradient(150deg,#2f8f8a,#2de8d0)',
+];
+function avatarGrad(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return AVATAR_GRADS[h % AVATAR_GRADS.length];
+}
+function avatarInitial(name) {
+  const t = (name || '').trim();
+  const ch = t.charAt(0);
+  return ch ? ch.toUpperCase() : '?';
+}
+
 function isUnread(msg) { return (msg.labelIds || []).includes('UNREAD'); }
 function isImportant(msg) { return (msg.labelIds || []).includes('IMPORTANT'); }
 
@@ -652,6 +854,12 @@ function parseSender(from) {
   const m = from.match(/^(.+?)\s*<[^>]+>$/);
   if (m) return m[1].replace(/^"|"$/g, '').trim();
   return from.split('@')[0];
+}
+
+function parseSenderAddr(from) {
+  const m = from.match(/<([^>]+)>/);
+  if (m) return m[1].trim();
+  return from.trim();
 }
 
 function fmtDate(dateStr) {
@@ -684,21 +892,40 @@ function filterEmails() {
   });
 }
 
+function updateTriage(unreadCount, total) {
+  const banner = document.getElementById('emTriage');
+  const text = document.getElementById('emTriageText');
+  // Only show the summary banner on the unfiltered inbox view
+  if (activeFilter !== 'all' || !total) {
+    banner.style.display = 'none';
+    return;
+  }
+  if (unreadCount > 0) {
+    const noun = unreadCount === 1 ? 'message needs' : 'messages need';
+    text.innerHTML = `<strong>${unreadCount} unread</strong> ${noun} a look — ${total} in your inbox.`;
+  } else {
+    text.innerHTML = `You're all caught up — nothing unread across ${total} messages.`;
+  }
+  banner.style.display = '';
+}
+
 function renderList() {
   const list = document.getElementById('emList');
-  const header_ = document.getElementById('emSectionHeader');
+  const head = document.getElementById('emHead');
   const badge = document.getElementById('emUnreadBadge');
+  const badgeText = document.getElementById('emUnreadText');
 
   const visible = filterEmails();
   const unreadCount = allEmails.filter(isUnread).length;
 
   if (unreadCount > 0) {
-    badge.textContent = unreadCount + ' unread';
+    badgeText.textContent = unreadCount + ' unread';
     badge.style.display = '';
   } else {
     badge.style.display = 'none';
   }
-  header_.style.display = '';
+  head.style.display = '';
+  updateTriage(unreadCount, allEmails.length);
 
   if (!visible.length) {
     list.style.display = 'none';
@@ -722,8 +949,8 @@ function renderList() {
       `<span class="em-chip"${l.color ? ` style="color:${l.color};border-color:${l.color}40"` : ''}>${esc(l.label)}</span>`
     ).join('');
 
-    return `<div class="em-row${unread ? ' unread' : ''}" data-idx="${i}">
-      <div class="em-unread-dot${unread ? '' : ' hidden'}"></div>
+    return `<div class="em-row ${unread ? 'unread' : 'read'}" data-idx="${i}">
+      <div class="em-avatar" style="background:${avatarGrad(sender)}">${esc(avatarInitial(sender))}</div>
       <div class="em-row-body">
         <div class="em-row-top">
           <span class="em-sender">${esc(sender)}</span>
@@ -733,6 +960,7 @@ function renderList() {
         <div class="em-snippet">${esc(snippet)}</div>
         ${chipHtml ? `<div class="em-labels">${chipHtml}</div>` : ''}
       </div>
+      ${unread ? '<div class="em-unread-dot"></div>' : ''}
     </div>`;
   }).join('');
 
@@ -749,6 +977,17 @@ async function openDetail(idx) {
   const msg = visible[idx];
   if (!msg) return;
 
+  const from = header(msg, 'From');
+  const sender = parseSender(from);
+  const addr = parseSenderAddr(from);
+
+  // Header — avatar + sender
+  const avatar = document.getElementById('sheetAvatar');
+  avatar.style.background = avatarGrad(sender);
+  avatar.textContent = avatarInitial(sender);
+  document.getElementById('sheetFromName').textContent = sender;
+  document.getElementById('sheetFromAddr').textContent = addr;
+
   document.getElementById('sheetSubject').textContent = header(msg, 'Subject') || '(No subject)';
 
   // Labels chips
@@ -758,7 +997,6 @@ async function openDetail(idx) {
   ).join('');
 
   // Meta
-  const from = header(msg, 'From');
   const date = header(msg, 'Date');
   document.getElementById('sheetMeta').innerHTML =
     `<div class="sheet-meta-row"><span class="sheet-meta-label">From</span><span class="sheet-meta-val">${esc(from)}</span></div>` +
@@ -829,6 +1067,11 @@ document.getElementById('authBtn').addEventListener('click', authenticate);
 
 document.getElementById('sheetBg').addEventListener('click', e => {
   if (e.target === document.getElementById('sheetBg')) closeSheet();
+});
+
+// Compose — open Gmail's compose window in a new tab
+document.getElementById('emCompose').addEventListener('click', () => {
+  window.open('https://mail.google.com/mail/?view=cm&fs=1&tf=1', '_blank', 'noopener');
 });
 
 // Filter tabs
