@@ -833,7 +833,7 @@ async function loadMessages() {
   console.log('[Gmail] Fetching metadata for', ids.length, 'messages in parallel…');
 
   const metas = await Promise.all(ids.map(id =>
-    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,To,Subject,Date`).catch(err => {
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date`).catch(err => {
       console.error('[Gmail] Metadata fetch threw for', id, err);
       return null;
     })
@@ -877,7 +877,7 @@ async function runSearch(q) {
 
   showState('<div class="spinner"></div>Loading ' + ids.length + ' results…');
   const metas = await Promise.all(ids.map(id =>
-    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,To,Subject,Date`).catch(() => null)
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=To&metadataHeaders=Subject&metadataHeaders=Date`).catch(() => null)
   ));
   allEmails = metas.filter(m => m && !m._error);
   document.getElementById('emStateWrap').innerHTML = '';
