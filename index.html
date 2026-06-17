@@ -295,7 +295,7 @@ body{
       <div style="position:relative;width:128px;height:128px;flex:0 0 auto">
         <svg width="128" height="128" viewBox="0 0 128 128" style="transform:rotate(-90deg)">
           <circle cx="64" cy="64" r="56" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="9"></circle>
-          <circle id="dayRingFill" cx="64" cy="64" r="56" fill="none" stroke="#2de8a2" stroke-width="9" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="filter:drop-shadow(0 0 6px rgba(45,232,162,.6));transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1),stroke .7s"></circle>
+          <circle id="dayRingFill" cx="64" cy="64" r="56" fill="none" stroke="#2de8a2" stroke-width="9" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="filter:drop-shadow(0 0 5px rgba(45,232,162,.95)) drop-shadow(0 0 16px rgba(45,232,162,.55));transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1),stroke .7s,filter .7s"></circle>
         </svg>
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
           <span id="dayRingPercent" style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:34px;color:#fff;line-height:1;letter-spacing:-.03em">—</span>
@@ -498,6 +498,10 @@ body{
     return [255,255,255];
   }
   function rgbStr(c) { return 'rgb('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+')'; }
+  function ringGlow(c) {
+    const r=Math.round(c[0]), g=Math.round(c[1]), b=Math.round(c[2]);
+    return 'drop-shadow(0 0 5px rgba('+r+','+g+','+b+',.95)) drop-shadow(0 0 16px rgba('+r+','+g+','+b+',.55))';
+  }
 
   const C = 2 * Math.PI * 56; // circumference for r=56
   const fillEl      = document.getElementById('dayRingFill');
@@ -515,6 +519,7 @@ body{
     if (nowMins < WAKE_MIN) {
       fillEl.setAttribute('stroke-dashoffset', C);
       fillEl.style.stroke = '#4D4B47';
+      fillEl.style.filter = 'none';
       percentEl.textContent = '—';
       phaseEl.textContent   = 'SLEEPING';
       statusEl.textContent  = 'Still sleeping';
@@ -524,6 +529,7 @@ body{
     if (nowMins >= SLEEP_MIN) {
       fillEl.setAttribute('stroke-dashoffset', 0);
       fillEl.style.stroke = '#E25D7A';
+      fillEl.style.filter = ringGlow([226,93,122]);
       percentEl.innerHTML = '100<span style="font-size:18px;color:rgba(255,255,255,.5)">%</span>';
       phaseEl.textContent   = 'PAST BEDTIME';
       statusEl.textContent  = 'Past bedtime';
@@ -534,7 +540,9 @@ body{
     const span = SLEEP_MIN - WAKE_MIN;
     const pct  = (nowMins - WAKE_MIN) / span * 100;
     fillEl.setAttribute('stroke-dashoffset', C * (1 - pct/100));
-    fillEl.style.stroke = rgbStr(paletteAt(pct));
+    const ringCol = paletteAt(pct);
+    fillEl.style.stroke = rgbStr(ringCol);
+    fillEl.style.filter = ringGlow(ringCol);
     percentEl.innerHTML = Math.floor(pct) + '<span style="font-size:18px;color:rgba(255,255,255,.5)">%</span>';
 
     let phase, status;
