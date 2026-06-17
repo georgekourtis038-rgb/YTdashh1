@@ -551,6 +551,169 @@ html, body {
   margin-top: 14px;
 }
 
+/* Compose sheet */
+.compose-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.compose-title {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-primary);
+}
+.compose-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.compose-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 2px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.compose-field label {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-tertiary);
+  min-width: 52px;
+  flex-shrink: 0;
+}
+.compose-field input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 15px;
+}
+.compose-field input::placeholder { color: var(--text-tertiary); }
+.compose-body {
+  width: 100%;
+  min-height: 140px;
+  resize: vertical;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: var(--font);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 14px 0;
+}
+.compose-body::placeholder { color: var(--text-tertiary); }
+.compose-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.compose-attachments:empty { margin-bottom: 0; }
+.compose-attach {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  flex: 0 0 auto;
+}
+.compose-attach img { width: 100%; height: 100%; object-fit: cover; }
+.compose-attach-remove {
+  position: absolute;
+  top: 3px; right: 3px;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.compose-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.07);
+}
+.compose-icon-btn {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.05);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s;
+}
+.compose-icon-btn:active { background: rgba(255,255,255,0.1); }
+.compose-send {
+  flex: 1;
+  height: 42px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  color: #04140d;
+  font-family: var(--font);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  box-shadow: 0 8px 24px -10px rgba(45,232,162,0.7);
+  transition: transform 0.1s, opacity 0.15s;
+}
+.compose-send:active { transform: scale(0.98); }
+.compose-send:disabled { opacity: 0.5; cursor: default; box-shadow: none; }
+
+/* Toast */
+.em-toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  transform: translateX(-50%) translateY(20px);
+  background: rgba(20,28,26,0.96);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text-primary);
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 11px 18px;
+  border-radius: 12px;
+  box-shadow: 0 14px 40px -10px rgba(0,0,0,0.7);
+  z-index: 60;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  max-width: 88vw;
+  text-align: center;
+}
+.em-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.em-toast.err { border-color: rgba(255,120,120,0.4); }
+
 @media (prefers-reduced-motion: reduce) {
   .email-sheet { transition: none; }
   .spinner { animation: none; }
@@ -626,12 +789,48 @@ html, body {
 
 </div>
 
-<!-- Compose — opens Gmail compose -->
+<!-- Compose — opens in-app composer -->
 <button class="em-compose" id="emCompose" aria-label="Compose">
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
     <path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="#04140d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
   </svg>
 </button>
+
+<!-- Compose sheet -->
+<div class="sheet-bg" id="composeBg">
+  <div class="email-sheet" id="composeSheet">
+    <div class="sheet-handle"></div>
+    <div class="compose-head">
+      <span class="compose-title">New message</span>
+      <button class="compose-close" id="composeClose" aria-label="Close">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <div class="compose-field">
+      <label for="cTo">To</label>
+      <input id="cTo" type="text" inputmode="email" placeholder="name@example.com, …" autocomplete="off" autocorrect="off" spellcheck="false">
+    </div>
+    <div class="compose-field">
+      <label for="cSubject">Subject</label>
+      <input id="cSubject" type="text" placeholder="Subject">
+    </div>
+    <textarea class="compose-body" id="cBody" placeholder="Write your message…"></textarea>
+    <div class="compose-attachments" id="cAttachments"></div>
+    <div class="compose-actions">
+      <button class="compose-icon-btn" id="cAttachFile" aria-label="Attach photo" title="Attach photo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.7"/><circle cx="8.5" cy="9.5" r="1.6" fill="currentColor"/><path d="m4 18 5-5 4 4 3-3 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="compose-icon-btn" id="cAttachCamera" aria-label="Take a picture" title="Take a picture">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 8h3l1.5-2.5h7L17 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><circle cx="12" cy="13" r="3.2" stroke="currentColor" stroke-width="1.7"/></svg>
+      </button>
+      <button class="compose-send" id="cSend">Send</button>
+    </div>
+    <input type="file" id="cFileInput" accept="image/*" multiple hidden>
+    <input type="file" id="cCameraInput" accept="image/*" capture="environment" hidden>
+  </div>
+</div>
+
+<div class="em-toast" id="emToast"></div>
 
 <!-- Email detail sheet -->
 <div class="sheet-bg" id="sheetBg">
@@ -654,11 +853,12 @@ html, body {
 <script>
 // =================================================================
 // Uses same GOOGLE_CLIENT_ID and token as calendar.html
-// Scopes: calendar + gmail.readonly
+// Scopes (granted in google-auth.js): calendar + gmail.readonly + gmail.modify
+// gmail.modify covers messages.send, so the in-app composer can send mail.
 // IMPORTANT: Gmail API must also be enabled at console.cloud.google.com
 // =================================================================
 const GOOGLE_CLIENT_ID = '199459906303-10ecosetgbh9tucisnoufu942dkoj13k.apps.googleusercontent.com';
-const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly';
+const SCOPES = 'https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.modify';
 const GMAIL_API = 'https://www.googleapis.com/gmail/v1/users/me';
 
 let accessToken = null;
@@ -1151,10 +1351,184 @@ document.getElementById('sheetBg').addEventListener('click', e => {
   if (e.target === document.getElementById('sheetBg')) closeSheet();
 });
 
-// Compose — open Gmail's compose window in a new tab
-document.getElementById('emCompose').addEventListener('click', () => {
-  window.open('https://mail.google.com/mail/?view=cm&fs=1&tf=1', '_blank', 'noopener');
+// -------------------------------------------------------
+// Compose — in-app email composer (To / Subject / Body + photo attachments)
+// Sending uses the gmail.modify scope already granted at sign-in.
+// -------------------------------------------------------
+let composeAttachments = []; // { name, mime, b64, url }
+const MAX_ATTACH_BYTES = 10 * 1024 * 1024; // 10 MB per file
+
+function openCompose() {
+  document.getElementById('composeBg').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('cTo').focus(), 320);
+}
+
+function closeCompose() {
+  document.getElementById('composeBg').classList.remove('show');
+  document.body.style.overflow = '';
+}
+
+function resetCompose() {
+  document.getElementById('cTo').value = '';
+  document.getElementById('cSubject').value = '';
+  document.getElementById('cBody').value = '';
+  composeAttachments.forEach(a => { try { URL.revokeObjectURL(a.url); } catch (_) {} });
+  composeAttachments = [];
+  renderAttachments();
+}
+
+function renderAttachments() {
+  const wrap = document.getElementById('cAttachments');
+  wrap.innerHTML = composeAttachments.map((a, i) =>
+    `<div class="compose-attach">
+      <img src="${a.url}" alt="${esc(a.name)}">
+      <button class="compose-attach-remove" data-idx="${i}" aria-label="Remove">✕</button>
+    </div>`
+  ).join('');
+  wrap.querySelectorAll('.compose-attach-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const i = parseInt(btn.dataset.idx);
+      const a = composeAttachments[i];
+      if (a) { try { URL.revokeObjectURL(a.url); } catch (_) {} }
+      composeAttachments.splice(i, 1);
+      renderAttachments();
+    });
+  });
+}
+
+function readFileB64(file) {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => {
+      const res = String(r.result || '');
+      const comma = res.indexOf(',');
+      resolve(comma >= 0 ? res.slice(comma + 1) : res);
+    };
+    r.onerror = () => reject(r.error || new Error('read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+async function addFiles(fileList) {
+  const files = Array.from(fileList || []);
+  for (const file of files) {
+    if (!file.type.startsWith('image/')) { toast('Only images can be attached', false); continue; }
+    if (file.size > MAX_ATTACH_BYTES) { toast(`${file.name} is over 10 MB`, false); continue; }
+    try {
+      const b64 = await readFileB64(file);
+      composeAttachments.push({
+        name: file.name || ('photo-' + Date.now() + '.jpg'),
+        mime: file.type || 'image/jpeg',
+        b64,
+        url: URL.createObjectURL(file),
+      });
+    } catch (err) {
+      console.error('[Gmail] Attachment read failed', err);
+      toast('Could not attach ' + (file.name || 'file'), false);
+    }
+  }
+  renderAttachments();
+}
+
+// RFC 2047 encode a header value when it contains non-ASCII
+function encodeHeader(str) {
+  if (!str) return '';
+  if (/^[\x00-\x7F]*$/.test(str)) return str;
+  return '=?UTF-8?B?' + btoa(unescape(encodeURIComponent(str))) + '?=';
+}
+
+// base64url-encode a full MIME string (handles UTF-8 + raw base64 parts)
+function toBase64Url(str) {
+  return btoa(unescape(encodeURIComponent(str)))
+    .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function buildMime(to, subject, body) {
+  const nl = '\r\n';
+  const headersTop = 'To: ' + to + nl +
+    'Subject: ' + encodeHeader(subject) + nl +
+    'MIME-Version: 1.0' + nl;
+
+  if (!composeAttachments.length) {
+    return headersTop +
+      'Content-Type: text/plain; charset="UTF-8"' + nl + nl +
+      body;
+  }
+
+  const boundary = 'axis_' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  let m = headersTop +
+    'Content-Type: multipart/mixed; boundary="' + boundary + '"' + nl + nl +
+    '--' + boundary + nl +
+    'Content-Type: text/plain; charset="UTF-8"' + nl + nl +
+    body + nl + nl;
+  for (const a of composeAttachments) {
+    const wrapped = a.b64.replace(/(.{76})/g, '$1' + nl);
+    m += '--' + boundary + nl +
+      'Content-Type: ' + a.mime + '; name="' + a.name + '"' + nl +
+      'Content-Transfer-Encoding: base64' + nl +
+      'Content-Disposition: attachment; filename="' + a.name + '"' + nl + nl +
+      wrapped + nl;
+  }
+  m += '--' + boundary + '--';
+  return m;
+}
+
+async function sendEmail() {
+  const to = document.getElementById('cTo').value.trim();
+  const subject = document.getElementById('cSubject').value.trim();
+  const body = document.getElementById('cBody').value;
+  if (!to) { toast('Add at least one recipient', false); document.getElementById('cTo').focus(); return; }
+
+  const sendBtn = document.getElementById('cSend');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending…';
+
+  const raw = toBase64Url(buildMime(to, subject, body));
+  const result = await gmailFetch('/messages/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ raw }),
+  });
+
+  sendBtn.disabled = false;
+  sendBtn.textContent = 'Send';
+
+  if (result && result._error) {
+    if (result._status === 403) {
+      toast('Sending needs permission — please sign in again', false);
+    } else {
+      toast(result._message || 'Could not send', false);
+    }
+    return;
+  }
+
+  toast('Message sent');
+  resetCompose();
+  closeCompose();
+  if (activeFolder === 'sent' && accessToken) loadMessages();
+}
+
+let _toastTimer = null;
+function toast(msg, ok) {
+  const el = document.getElementById('emToast');
+  el.textContent = msg;
+  el.classList.toggle('err', ok === false);
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+document.getElementById('emCompose').addEventListener('click', openCompose);
+document.getElementById('composeClose').addEventListener('click', closeCompose);
+document.getElementById('composeBg').addEventListener('click', e => {
+  if (e.target === document.getElementById('composeBg')) closeCompose();
 });
+document.getElementById('cSend').addEventListener('click', sendEmail);
+document.getElementById('cAttachFile').addEventListener('click', () => document.getElementById('cFileInput').click());
+document.getElementById('cAttachCamera').addEventListener('click', () => document.getElementById('cCameraInput').click());
+document.getElementById('cFileInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+document.getElementById('cCameraInput').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
 
 // Scope a search query to the folder currently open
 function scopedSearch(q) {
