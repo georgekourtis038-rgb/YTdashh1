@@ -113,13 +113,53 @@ html, body {
   background: rgba(45,232,162,0.04);
 }
 
-/* Filter chips */
-.em-tabs {
+/* Folder switcher — Inbox / Sent / Spam */
+.em-folders {
+  display: flex;
+  gap: 5px;
+  padding: 4px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+}
+.em-folder {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 6px;
+  border: none;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.em-folder svg { opacity: 0.75; }
+.em-folder.active {
+  background: rgba(45,232,162,0.12);
+  color: var(--mint);
+}
+.em-folder.active svg { opacity: 1; }
+
+/* Category chips — inbox only */
+.em-cats {
   display: flex;
   gap: 8px;
   margin-bottom: 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
-.em-tab {
+.em-cats::-webkit-scrollbar { display: none; }
+.em-cat {
+  flex: 0 0 auto;
   font-family: var(--font);
   padding: 7px 14px;
   border-radius: 11px;
@@ -132,7 +172,7 @@ html, body {
   -webkit-tap-highlight-color: transparent;
   transition: all 0.15s;
 }
-.em-tab.active {
+.em-cat.active {
   background: var(--mint);
   border-color: transparent;
   color: #04140d;
@@ -522,7 +562,7 @@ html, body {
 <div class="em-page" id="emPage">
 
   <div class="em-head" id="emHead">
-    <h1 class="em-title">Inbox</h1>
+    <h1 class="em-title" id="emTitle">Inbox</h1>
     <div class="em-unread-badge" id="emUnreadBadge" style="display:none">
       <span class="em-pill-dot"></span><span class="em-pill-text" id="emUnreadText"></span>
     </div>
@@ -535,10 +575,26 @@ html, body {
     <input type="search" class="em-search" id="emSearch" placeholder="Search mail…" autocomplete="off" autocorrect="off" spellcheck="false">
   </div>
 
-  <div class="em-tabs" id="emTabs">
-    <button class="em-tab active" data-filter="all">All</button>
-    <button class="em-tab" data-filter="unread">Unread</button>
-    <button class="em-tab" data-filter="important">Important</button>
+  <div class="em-folders" id="emFolders">
+    <button class="em-folder active" data-folder="inbox">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 13h4l2 3h4l2-3h4M4 13l2.4-7h11.2L20 13v5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-5Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+      Inbox
+    </button>
+    <button class="em-folder" data-folder="sent">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 4 3 11l6.5 2.5M21 4l-3.5 15-7-5.5M21 4 9.5 13.5" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round"/></svg>
+      Sent
+    </button>
+    <button class="em-folder" data-folder="spam">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 4 6v5c0 5 3.4 8 8 9 4.6-1 8-4 8-9V6l-8-3Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 8v4.5M12 16h.01" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      Spam
+    </button>
+  </div>
+
+  <div class="em-cats" id="emCats">
+    <button class="em-cat active" data-cat="primary">Primary</button>
+    <button class="em-cat" data-cat="promotions">Promotions</button>
+    <button class="em-cat" data-cat="social">Social</button>
+    <button class="em-cat" data-cat="updates">Updates</button>
   </div>
 
   <div class="auth-card" id="authCard" style="display:none">
@@ -607,7 +663,8 @@ const GMAIL_API = 'https://www.googleapis.com/gmail/v1/users/me';
 
 let accessToken = null;
 let allEmails = [];
-let activeFilter = 'all';
+let activeFolder = 'inbox';      // inbox | sent | spam
+let activeCategory = 'primary';  // primary | promotions | social | updates
 let searchQuery = '';
 
 // -------------------------------------------------------
@@ -633,7 +690,7 @@ GoogleAuth.init({
     accessToken = tok;
     document.getElementById('authCard').style.display = 'none';
     document.getElementById('emCompose').style.display = 'flex';
-    loadInbox();
+    loadMessages();
   },
   onNeedAuth: function() {
     console.log('[Gmail] No token — showing auth card');
@@ -731,17 +788,35 @@ function showApiError(result, context) {
 }
 
 // -------------------------------------------------------
-// Inbox load
+// Folder / category query
 // -------------------------------------------------------
-async function loadInbox() {
-  showState('<div class="spinner"></div>Loading inbox…');
+function buildQuery() {
+  if (activeFolder === 'sent') return 'in:sent';
+  if (activeFolder === 'spam') return 'in:spam';
+  return 'in:inbox category:' + activeCategory;
+}
+
+function emptyMessage() {
+  if (activeFolder === 'sent') return "You haven't sent anything yet.";
+  if (activeFolder === 'spam') return 'No spam — your spam folder is clear.';
+  const labels = { primary: 'Primary', promotions: 'Promotions', social: 'Social', updates: 'Updates' };
+  return 'Nothing in ' + (labels[activeCategory] || 'this category') + '.';
+}
+
+// -------------------------------------------------------
+// Message load (folder + category aware)
+// -------------------------------------------------------
+async function loadMessages() {
+  applyChrome();
+  showState('<div class="spinner"></div>Loading…');
   document.getElementById('emHead').style.display = 'none';
   document.getElementById('emTriage').style.display = 'none';
   document.getElementById('emList').style.display = 'none';
 
-  console.log('[Gmail] Fetching inbox message list…');
-  const listData = await gmailFetch('/messages?q=in%3Ainbox&maxResults=40');
-  if (listData && listData._error) { showApiError(listData, 'inbox'); return; }
+  const q = buildQuery();
+  console.log('[Gmail] Fetching message list…', q);
+  const listData = await gmailFetch('/messages?q=' + encodeURIComponent(q) + '&maxResults=40');
+  if (listData && listData._error) { showApiError(listData, activeFolder); return; }
   if (!listData) { showState('Unexpected error — no response from Gmail.'); return; }
 
   console.log('[Gmail] List response: resultSizeEstimate =', listData.resultSizeEstimate,
@@ -750,7 +825,7 @@ async function loadInbox() {
   const ids = (listData.messages || []).map(m => m.id);
   if (!ids.length) {
     document.getElementById('emHead').style.display = '';
-    showState('Your inbox is empty.');
+    showState(emptyMessage());
     return;
   }
 
@@ -758,7 +833,7 @@ async function loadInbox() {
   console.log('[Gmail] Fetching metadata for', ids.length, 'messages in parallel…');
 
   const metas = await Promise.all(ids.map(id =>
-    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`).catch(err => {
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,To,Subject,Date`).catch(err => {
       console.error('[Gmail] Metadata fetch threw for', id, err);
       return null;
     })
@@ -796,13 +871,13 @@ async function runSearch(q) {
 
   const ids = (listData.messages || []).map(m => m.id);
   if (!ids.length) {
-    showState(`No results for "<em>${esc(q)}</em>".`);
+    showState(`No results for "<em>${esc(searchQuery)}</em>".`);
     return;
   }
 
   showState('<div class="spinner"></div>Loading ' + ids.length + ' results…');
   const metas = await Promise.all(ids.map(id =>
-    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,Subject,Date`).catch(() => null)
+    gmailFetch(`/messages/${id}?format=metadata&metadataHeaders=From,To,Subject,Date`).catch(() => null)
   ));
   allEmails = metas.filter(m => m && !m._error);
   document.getElementById('emStateWrap').innerHTML = '';
@@ -847,7 +922,15 @@ function isImportant(msg) { return (msg.labelIds || []).includes('IMPORTANT'); }
 
 function header(msg, name) {
   const hdrs = (msg.payload && msg.payload.headers) || [];
-  return (hdrs.find(h => h.name === name) || {}).value || '';
+  const lname = name.toLowerCase();
+  return (hdrs.find(h => h.name && h.name.toLowerCase() === lname) || {}).value || '';
+}
+
+// Update title + category-row visibility for the active folder
+function applyChrome() {
+  const titles = { inbox: 'Inbox', sent: 'Sent', spam: 'Spam' };
+  document.getElementById('emTitle').textContent = titles[activeFolder] || 'Inbox';
+  document.getElementById('emCats').style.display = activeFolder === 'inbox' ? '' : 'none';
 }
 
 function parseSender(from) {
@@ -884,19 +967,11 @@ function esc(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function filterEmails() {
-  return allEmails.filter(msg => {
-    if (activeFilter === 'unread' && !isUnread(msg)) return false;
-    if (activeFilter === 'important' && !isImportant(msg)) return false;
-    return true;
-  });
-}
-
 function updateTriage(unreadCount, total) {
   const banner = document.getElementById('emTriage');
   const text = document.getElementById('emTriageText');
-  // Only show the summary banner on the unfiltered inbox view
-  if (activeFilter !== 'all' || !total) {
+  // Summary banner only on inbox folders (not Sent / Spam) and not while searching
+  if (activeFolder !== 'inbox' || searchQuery || !total) {
     banner.style.display = 'none';
     return;
   }
@@ -915,7 +990,8 @@ function renderList() {
   const badge = document.getElementById('emUnreadBadge');
   const badgeText = document.getElementById('emUnreadText');
 
-  const visible = filterEmails();
+  const visible = allEmails;
+  const sentView = activeFolder === 'sent';
   const unreadCount = allEmails.filter(isUnread).length;
 
   if (unreadCount > 0) {
@@ -938,8 +1014,10 @@ function renderList() {
   list.style.display = '';
   list.innerHTML = visible.map((msg, i) => {
     const unread = isUnread(msg);
-    const from   = header(msg, 'From');
-    const sender = parseSender(from);
+    // In Sent, the meaningful party is the recipient, not yourself
+    const partyRaw = sentView ? (header(msg, 'To') || header(msg, 'From')) : header(msg, 'From');
+    const party = parseSender(partyRaw);
+    const display = sentView ? ('To ' + party) : party;
     const subject = header(msg, 'Subject') || '(No subject)';
     const date = fmtDate(header(msg, 'Date'));
     const snippet = msg.snippet || '';
@@ -950,10 +1028,10 @@ function renderList() {
     ).join('');
 
     return `<div class="em-row ${unread ? 'unread' : 'read'}" data-idx="${i}">
-      <div class="em-avatar" style="background:${avatarGrad(sender)}">${esc(avatarInitial(sender))}</div>
+      <div class="em-avatar" style="background:${avatarGrad(party)}">${esc(avatarInitial(party))}</div>
       <div class="em-row-body">
         <div class="em-row-top">
-          <span class="em-sender">${esc(sender)}</span>
+          <span class="em-sender">${esc(display)}</span>
           <span class="em-time">${esc(date)}</span>
         </div>
         <div class="em-subject">${esc(subject)}</div>
@@ -973,19 +1051,22 @@ function renderList() {
 // Email detail
 // -------------------------------------------------------
 async function openDetail(idx) {
-  const visible = filterEmails();
-  const msg = visible[idx];
+  const msg = allEmails[idx];
   if (!msg) return;
 
+  const sentView = activeFolder === 'sent';
   const from = header(msg, 'From');
-  const sender = parseSender(from);
-  const addr = parseSenderAddr(from);
+  const to = header(msg, 'To');
+  // Avatar/name reflect the other party (recipient in Sent, sender elsewhere)
+  const partyRaw = sentView ? (to || from) : from;
+  const party = parseSender(partyRaw);
+  const addr = parseSenderAddr(partyRaw);
 
-  // Header — avatar + sender
+  // Header — avatar + party
   const avatar = document.getElementById('sheetAvatar');
-  avatar.style.background = avatarGrad(sender);
-  avatar.textContent = avatarInitial(sender);
-  document.getElementById('sheetFromName').textContent = sender;
+  avatar.style.background = avatarGrad(party);
+  avatar.textContent = avatarInitial(party);
+  document.getElementById('sheetFromName').textContent = sentView ? ('To ' + party) : party;
   document.getElementById('sheetFromAddr').textContent = addr;
 
   document.getElementById('sheetSubject').textContent = header(msg, 'Subject') || '(No subject)';
@@ -1000,6 +1081,7 @@ async function openDetail(idx) {
   const date = header(msg, 'Date');
   document.getElementById('sheetMeta').innerHTML =
     `<div class="sheet-meta-row"><span class="sheet-meta-label">From</span><span class="sheet-meta-val">${esc(from)}</span></div>` +
+    (to ? `<div class="sheet-meta-row"><span class="sheet-meta-label">To</span><span class="sheet-meta-val">${esc(to)}</span></div>` : '') +
     (date ? `<div class="sheet-meta-row"><span class="sheet-meta-label">Date</span><span class="sheet-meta-val">${esc(new Date(date).toLocaleString())}</span></div>` : '');
 
   // Show sheet immediately with snippet, fetch full body async
@@ -1074,13 +1156,34 @@ document.getElementById('emCompose').addEventListener('click', () => {
   window.open('https://mail.google.com/mail/?view=cm&fs=1&tf=1', '_blank', 'noopener');
 });
 
-// Filter tabs
-document.getElementById('emTabs').addEventListener('click', e => {
-  const tab = e.target.closest('.em-tab');
-  if (!tab) return;
-  activeFilter = tab.dataset.filter;
-  document.querySelectorAll('.em-tab').forEach(t => t.classList.toggle('active', t === tab));
-  if (allEmails.length) renderList();
+// Scope a search query to the folder currently open
+function scopedSearch(q) {
+  const prefix = activeFolder === 'sent' ? 'in:sent ' : activeFolder === 'spam' ? 'in:spam ' : 'in:inbox ';
+  searchQuery = q;
+  runSearch(prefix + q);
+}
+
+// Folder switcher — Inbox / Sent / Spam
+document.getElementById('emFolders').addEventListener('click', e => {
+  const btn = e.target.closest('.em-folder');
+  if (!btn || btn.dataset.folder === activeFolder) return;
+  activeFolder = btn.dataset.folder;
+  document.querySelectorAll('.em-folder').forEach(f => f.classList.toggle('active', f === btn));
+  document.getElementById('emSearch').value = '';
+  searchQuery = '';
+  applyChrome();
+  if (accessToken) loadMessages();
+});
+
+// Category chips — Primary / Promotions / Social / Updates
+document.getElementById('emCats').addEventListener('click', e => {
+  const btn = e.target.closest('.em-cat');
+  if (!btn || btn.dataset.cat === activeCategory) return;
+  activeCategory = btn.dataset.cat;
+  document.querySelectorAll('.em-cat').forEach(c => c.classList.toggle('active', c === btn));
+  document.getElementById('emSearch').value = '';
+  searchQuery = '';
+  if (accessToken) loadMessages();
 });
 
 // Search with debounce
@@ -1089,14 +1192,12 @@ document.getElementById('emSearch').addEventListener('input', e => {
   clearTimeout(_searchTimer);
   const q = e.target.value.trim();
   if (!q) {
-    searchQuery = '';
-    if (allEmails.length) renderList();
+    if (searchQuery) { searchQuery = ''; if (accessToken) loadMessages(); }
     return;
   }
   _searchTimer = setTimeout(() => {
     if (!accessToken) return;
-    searchQuery = q;
-    runSearch('in:inbox ' + q);
+    scopedSearch(q);
   }, 600);
 });
 
@@ -1104,12 +1205,11 @@ document.getElementById('emSearch').addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     clearTimeout(_searchTimer);
     const q = e.target.value.trim();
-    if (q && accessToken) {
-      searchQuery = q;
-      runSearch('in:inbox ' + q);
-    }
+    if (q && accessToken) scopedSearch(q);
   }
 });
+
+applyChrome();
 </script>
 <!-- GIS script removed — auth is now handled server-side via /api/google-callback -->
 </body>
