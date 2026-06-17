@@ -967,7 +967,7 @@ Available tools:
 
 Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
-- To log progress on a long-term goal (e.g. a new weight), use update_goal with "current".
+- Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
     return p;
   }
