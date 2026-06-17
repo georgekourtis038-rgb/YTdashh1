@@ -418,7 +418,7 @@ html, body {
 .em-compose {
   position: fixed;
   right: 18px;
-  bottom: 86px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
   width: 56px;
   height: 56px;
   border-radius: 18px;
@@ -426,7 +426,7 @@ html, body {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 44;
+  z-index: 46;
   border: none;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
