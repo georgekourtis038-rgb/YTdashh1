@@ -173,7 +173,9 @@ body{
 .stack-item-meta{
   font-size:12.5px;color:var(--text-tertiary);
   margin-top:2px;outline:none;cursor:text;
+  display:none;
 }
+.stack-item.expanded .stack-item-meta{display:block}
 .stack-item-meta[contenteditable="true"]{
   outline:1px solid rgba(255,255,255,.2);
   outline-offset:4px;border-radius:4px;
@@ -208,11 +210,20 @@ body{
   display:flex;align-items:center;gap:6px;
   opacity:0;pointer-events:none;transition:opacity .15s;
 }
-.stack-item:hover .stack-item-actions,
+.stack-item.expanded .stack-item-actions,
 .stack-item:focus-within .stack-item-actions,
 .stack-item:has(.stack-low-btn.is-low) .stack-item-actions{
   opacity:1;pointer-events:auto;
 }
+
+/* Expand/collapse chevron affordance */
+.stack-chevron{
+  width:18px;height:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text-quaternary);
+  transition:transform .2s,color .2s;
+}
+.stack-item.expanded .stack-chevron{transform:rotate(90deg);color:var(--text-tertiary)}
 
 .stack-low-btn{
   background:transparent;
@@ -1362,6 +1373,8 @@ body{
     setItems(items);
   }
 
+  let expandedId = null; // which supplement row is showing its details
+
   function render() {
     const items = getItems();
     const taken = getTaken();
@@ -1390,7 +1403,8 @@ body{
         const isMissed = !isTaken && isPastCutoff;
 
         const row = document.createElement('div');
-        row.className = 'stack-item' + (isTaken ? ' taken' : '') + (isMissed ? ' missed' : '');
+        row.className = 'stack-item' + (isTaken ? ' taken' : '') + (isMissed ? ' missed' : '') + (item.id === expandedId ? ' expanded' : '');
+        row.dataset.id = item.id;
 
         let tagHtml = '';
         if (item.tag === 'stack') tagHtml = '<span class="stack-item-tag tag-stack">stack</span>';
@@ -1410,6 +1424,7 @@ body{
               <button class="stack-low-btn ${isLow ? 'is-low' : ''}" data-action="low" data-id="${item.id}">↓ Low</button>
               <button class="stack-item-del" data-action="del" data-id="${item.id}" aria-label="Delete">×</button>
             </div>
+            <span class="stack-chevron" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
           </div>`;
 
         groupsEl.appendChild(row);
@@ -1532,11 +1547,25 @@ body{
     deleteItem(btn.dataset.id);
   });
   document.getElementById('stackGroups').addEventListener('click', (e) => {
-    const editEl = e.target.closest('[data-edit]');
-    if (!editEl) return;
+    // Checkmark / low / delete are handled by the [data-action] listener above
     if (e.target.closest('[data-action]')) return;
-    if (editEl.getAttribute('contenteditable') === 'true') return;
-    startEdit(editEl);
+    // Don't interfere while a field is being edited
+    if (e.target.closest('[contenteditable="true"]')) return;
+    const row = e.target.closest('.stack-item');
+    if (!row) return;
+    const id = row.dataset.id;
+
+    if (id === expandedId) {
+      // Already open: tap the name/notes to edit them, tap elsewhere to collapse
+      const editEl = e.target.closest('[data-edit]');
+      if (editEl) { startEdit(editEl); return; }
+      expandedId = null;
+      render();
+    } else {
+      // Open this row's details (accordion — closes any other open row)
+      expandedId = id;
+      render();
+    }
   });
 
   function startEdit(el) {
