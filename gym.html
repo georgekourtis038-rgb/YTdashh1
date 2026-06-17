@@ -1088,11 +1088,12 @@ img, video, canvas, svg { max-width: 100%; }
 
 /* ── NEW WORKOUT LOGGER ───────────────────────────────────────── */
 .wl-card {
-  background: var(--bg-card);
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.022));
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 22px;
   padding: 20px;
   margin-bottom: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.06);
 }
 
 /* Exercise row */
@@ -1106,7 +1107,7 @@ img, video, canvas, svg { max-width: 100%; }
   font-family: inherit; font-size: 16px; outline: none;
   -webkit-appearance: none;
 }
-.wl-ex-input:focus { border-color: rgba(255,255,255,0.40); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+.wl-ex-input:focus { border-color: rgba(45,232,162,0.45); box-shadow: 0 0 0 3px rgba(45,232,162,0.10); }
 .wl-dropdown {
   display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0;
   background: #1a1a1e; border: 1px solid var(--border-strong);
@@ -1133,7 +1134,7 @@ img, video, canvas, svg { max-width: 100%; }
   cursor: pointer; transition: background 0.15s, color 0.15s, border-color 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.wl-bw-btn.active { background: rgba(110,231,183,0.16); color: var(--good); border-color: rgba(110,231,183,0.4); }
+.wl-bw-btn.active { background: rgba(45,232,162,0.14); color: var(--good); border-color: rgba(45,232,162,0.4); }
 
 /* Weight + Reps inputs */
 .wl-inputs-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
@@ -1159,23 +1160,23 @@ img, video, canvas, svg { max-width: 100%; }
 }
 .wl-num-input::-webkit-outer-spin-button,
 .wl-num-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.wl-num-input:focus { border-color: rgba(255,255,255,0.40); box-shadow: 0 0 0 3px rgba(255,255,255,0.06); }
+.wl-num-input:focus { border-color: rgba(45,232,162,0.45); box-shadow: 0 0 0 3px rgba(45,232,162,0.10); }
 .wl-unit-label { font-size: 11px; font-weight: 700; letter-spacing: 0.10em; text-transform: uppercase; color: var(--text-3); }
 
 /* Log Set button */
 .wl-log-btn {
   width: 100%; height: 56px;
-  border: 1px solid rgba(255,255,255,0.85);
-  background: linear-gradient(180deg, #ffffff 0%, #e8e5dd 100%);
-  color: #0a0a0b; border-radius: 12px;
+  border: 1px solid rgba(45,232,162,0.5);
+  background: linear-gradient(180deg, #2de8a2 0%, #1ec78a 100%);
+  color: #04140d; border-radius: 14px;
   font-family: inherit; font-size: 16px; font-weight: 700;
   cursor: pointer; margin-bottom: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55), 0 4px 14px rgba(0,0,0,0.40);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 8px 24px -8px rgba(45,232,162,0.5);
   -webkit-tap-highlight-color: transparent;
-  transition: transform 0.12s, background 0.2s, border-color 0.2s;
+  transition: transform 0.12s, background 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 .wl-log-btn:active { transform: scale(0.97); }
-.wl-log-btn.flash { background: linear-gradient(180deg, #6ee7b7 0%, #4ade80 100%); border-color: #6ee7b7; color: #000; }
+.wl-log-btn.flash { background: linear-gradient(180deg, #5cf3bd 0%, #2de8a2 100%); border-color: #5cf3bd; box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 8px 28px -6px rgba(45,232,162,0.7); }
 
 /* Session summary card (Volume / Sets / Time) */
 .wl-summary {
@@ -1260,15 +1261,15 @@ img, video, canvas, svg { max-width: 100%; }
 /* Done button */
 .wl-done-btn {
   width: 100%; height: 52px; margin-bottom: 16px;
-  background: rgba(110,231,183,0.14); color: var(--good);
-  border: 1px solid rgba(110,231,183,0.28); border-radius: 12px;
+  background: rgba(45,232,162,0.12); color: var(--good);
+  border: 1px solid rgba(45,232,162,0.4); border-radius: 13px;
   font-family: inherit; font-size: 15px; font-weight: 700;
   cursor: pointer; transition: background 0.15s, transform 0.1s;
   -webkit-tap-highlight-color: transparent;
 }
-.wl-done-btn:hover { background: rgba(110,231,183,0.22); }
+.wl-done-btn:hover { background: rgba(45,232,162,0.2); }
 .wl-done-btn:active { transform: scale(0.98); }
-.wl-done-btn.is-done { background: rgba(110,231,183,0.28); border-color: rgba(110,231,183,0.45); }
+.wl-done-btn.is-done { background: rgba(45,232,162,0.24); border-color: rgba(45,232,162,0.5); }
 
 /* ── Set row inline edit ── */
 .wl-set-row--editing { background: rgba(255,255,255,0.07); gap: 6px; flex-wrap: wrap; padding: 8px 10px; border-radius: 11px; }
