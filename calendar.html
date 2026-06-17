@@ -24,6 +24,7 @@
   --text-secondary: rgba(255,255,255,0.6);
   --text-tertiary: rgba(255,255,255,0.3);
   --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'Space Mono', ui-monospace, SF Mono, Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -41,31 +42,42 @@ html, body {
   padding: 16px 16px 120px;
 }
 
-/* Month nav */
-.month-nav {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+/* Axis section eyebrow */
+.cal-eyebrow {
+  display: flex; align-items: center; gap: 14px;
+  margin: 2px 0 18px;
+}
+.cal-eyebrow-tag {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: rgba(45,232,162,0.85); flex-shrink: 0;
+}
+.cal-eyebrow-sub { font-size: 13px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cal-eyebrow-rule { flex: 1; min-width: 24px; height: 1px; background: linear-gradient(90deg, rgba(255,255,255,0.10), transparent); }
+
+/* Month header */
+.cal-head {
+  display: flex; align-items: flex-end; justify-content: space-between;
   margin-bottom: 18px;
 }
-.month-nav-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.3px;
+.cal-head-year {
+  font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(45,232,162,0.7); margin-bottom: 3px;
 }
+.cal-head-month {
+  font-size: 29px; font-weight: 600; letter-spacing: -0.02em;
+  color: var(--text-primary); line-height: 1;
+}
+.cal-head-nav { display: flex; gap: 8px; }
 .month-nav-btn {
   width: 36px; height: 36px;
-  border-radius: 50%;
-  border: 1px solid var(--card-border);
-  background: var(--card-bg);
-  color: var(--text-primary);
-  font-size: 20px;
-  line-height: 1;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.09);
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.7);
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s;
+  transition: background 0.12s, transform 0.12s;
   will-change: transform;
   backface-visibility: hidden;
 }
@@ -88,10 +100,11 @@ html, body {
 }
 .cal-dow {
   text-align: center;
+  font-family: var(--font-mono);
   font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: var(--text-tertiary);
+  font-weight: 500;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.35);
   text-transform: uppercase;
 }
 .cal-days-grid {
@@ -129,9 +142,10 @@ html, body {
 }
 .cal-day.other-month .cal-day-num { color: var(--text-tertiary); }
 .cal-day.today .cal-day-num {
-  background: var(--mint);
-  color: #0a0f0e;
+  background: linear-gradient(150deg, #2de8a2, #13b683);
+  color: #04140d;
   font-weight: 700;
+  box-shadow: 0 0 14px rgba(45,232,162,0.55);
 }
 .cal-day.selected:not(.today) .cal-day-num {
   background: rgba(255,255,255,0.13);
@@ -197,49 +211,64 @@ html, body {
 }
 .auth-btn:active { background: rgba(45,232,162,0.22); }
 
-/* Day events panel */
+/* Day events panel (Axis agenda) */
 .day-panel {
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 16px;
-  padding: 16px;
   margin-bottom: 14px;
-  min-height: 80px;
+  min-height: 60px;
 }
 .day-panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+  padding: 0 2px;
 }
 .day-panel-label {
+  font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: rgba(255,255,255,0.42);
 }
 .day-panel-date {
-  font-size: 13px;
-  color: var(--text-tertiary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
 }
 .day-panel-empty {
   text-align: center;
-  padding: 18px 0;
+  padding: 22px 0;
   color: var(--text-tertiary);
   font-size: 13px;
+  border: 1px dashed var(--card-border);
+  border-radius: 16px;
 }
+.event-list { display: flex; flex-direction: column; gap: 10px; }
 .event-row {
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 0;
-  border-top: 1px solid rgba(255,255,255,0.04);
+  align-items: stretch;
+  gap: 14px;
+  border-radius: 18px;
+  padding: 14px 16px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s;
 }
-.event-row:first-child { border-top: none; }
-.event-row:active { opacity: 0.7; }
+.event-row:active { background: rgba(255,255,255,0.07); }
+.event-row--now {
+  background: linear-gradient(180deg, rgba(45,232,162,0.10), rgba(255,255,255,0.02));
+  border-color: rgba(45,232,162,0.25);
+}
+.event-time-col {
+  display: flex; flex-direction: column; align-items: flex-start;
+  min-width: 46px; padding-top: 1px; flex-shrink: 0;
+}
+.event-time-h { font-family: var(--font-mono); font-size: 12px; font-weight: 500; color: #fff; }
+.event-time-ap { font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,0.35); }
+.event-row--now .event-time-h { color: var(--mint); }
+.event-row--now .event-time-ap { color: rgba(45,232,162,0.6); }
 .event-color-bar {
   width: 3px;
   align-self: stretch;
@@ -249,17 +278,21 @@ html, body {
 }
 .event-info { flex: 1; min-width: 0; }
 .event-title {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.92);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.event-time {
-  font-size: 12px;
-  color: var(--text-tertiary);
+.event-row--now .event-title { color: #fff; }
+.event-sub {
+  font-size: 12.5px;
+  color: rgba(255,255,255,0.45);
   margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* FAB */
@@ -412,14 +445,15 @@ html, body {
 .cal-btn-save {
   flex: 2;
   padding: 13px;
-  background: var(--mint);
-  border: none;
+  background: linear-gradient(180deg, #2de8a2 0%, #1ec78a 100%);
+  border: 1px solid rgba(45,232,162,0.5);
   border-radius: 12px;
-  color: #0a0f0e;
+  color: #04140d;
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   font-family: var(--font);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 6px 18px -8px rgba(45,232,162,0.5);
   -webkit-tap-highlight-color: transparent;
   transition: opacity 0.15s;
 }
@@ -520,10 +554,25 @@ html, body {
 <body>
 <div class="cal-page" id="calPage">
 
-  <div class="month-nav">
-    <button class="month-nav-btn" id="prevBtn" aria-label="Previous month">&#8249;</button>
-    <h1 class="month-nav-title" id="monthTitle"></h1>
-    <button class="month-nav-btn" id="nextBtn" aria-label="Next month">&#8250;</button>
+  <div class="cal-eyebrow">
+    <span class="cal-eyebrow-tag">Calendar</span>
+    <span class="cal-eyebrow-sub">Your month at a glance</span>
+    <span class="cal-eyebrow-rule"></span>
+  </div>
+
+  <div class="cal-head">
+    <div>
+      <div class="cal-head-year" id="monthYear"></div>
+      <h1 class="cal-head-month" id="monthTitle"></h1>
+    </div>
+    <div class="cal-head-nav">
+      <button class="month-nav-btn" id="prevBtn" aria-label="Previous month">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="month-nav-btn" id="nextBtn" aria-label="Next month">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
   </div>
 
   <div class="cal-card" id="calCard">
@@ -552,7 +601,7 @@ html, body {
 
   <div class="day-panel" id="dayPanel">
     <div class="day-panel-header">
-      <span class="day-panel-label">Events</span>
+      <span class="day-panel-label" id="dayPanelLabel">Events</span>
       <span class="day-panel-date" id="dayPanelDate"></span>
     </div>
     <div id="dayPanelContent">
@@ -661,6 +710,21 @@ function fmtFriendly(dateStr) {
   const [y,m,d] = dateStr.split('-').map(Number);
   return new Date(y,m-1,d).toLocaleDateString([], { weekday:'long', month:'long', day:'numeric' });
 }
+function fmtShortLabel(dateStr) {
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return new Date(y,m-1,d)
+    .toLocaleDateString([], { weekday:'short', month:'short', day:'numeric' })
+    .toUpperCase();
+}
+// Split a datetime into { t:'9:00', ap:'AM' } — forces 12h regardless of locale
+function splitTime(dtStr) {
+  const d = new Date(dtStr);
+  let h = d.getHours();
+  const min = d.getMinutes();
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12; if (h === 0) h = 12;
+  return { t: h + ':' + String(min).padStart(2,'0'), ap };
+}
 function evColor(ev) { return GC_COLORS[ev.colorId] || GC_COLORS['default']; }
 function evDateStr(ev) { return (ev.start.dateTime || ev.start.date || '').slice(0,10); }
 function esc(s) {
@@ -764,7 +828,8 @@ async function createCalEvent(body) {
 // Calendar grid render
 // -------------------------------------------------------
 function renderGrid() {
-  document.getElementById('monthTitle').textContent = MONTHS[viewMonth] + ' ' + viewYear;
+  document.getElementById('monthTitle').textContent = MONTHS[viewMonth];
+  document.getElementById('monthYear').textContent = viewYear;
   const grid = document.getElementById('calGrid');
   grid.innerHTML = '';
 
@@ -824,31 +889,50 @@ function selectDay(ds) {
 }
 
 function renderDayPanel(ds) {
-  document.getElementById('dayPanelDate').textContent = fmtFriendly(ds);
+  document.getElementById('dayPanelLabel').textContent = fmtShortLabel(ds);
+  const dateEl  = document.getElementById('dayPanelDate');
   const content = document.getElementById('dayPanelContent');
   if (!accessToken) {
+    dateEl.textContent = '';
     content.innerHTML = '<div class="day-panel-empty">Connect Google Calendar above to see events</div>';
     return;
   }
   const dayEvs = events[ds] || [];
+  dateEl.textContent = dayEvs.length
+    ? dayEvs.length + (dayEvs.length === 1 ? ' event' : ' events') : '';
   if (dayEvs.length === 0) {
     content.innerHTML = '<div class="day-panel-empty">No events</div>';
     return;
   }
-  content.innerHTML = dayEvs.map((ev, i) => {
-    const color   = evColor(ev);
-    const allday  = !!ev.start.date;
-    const timeStr = allday
-      ? 'All day'
-      : fmtTime(ev.start.dateTime) + ' – ' + fmtTime(ev.end.dateTime);
-    return `<div class="event-row" data-idx="${i}">
+  const now = new Date();
+  content.innerHTML = '<div class="event-list">' + dayEvs.map((ev, i) => {
+    const color  = evColor(ev);
+    const allday = !!ev.start.date;
+    let colH, colAp, sub, nowCls = '';
+    if (allday) {
+      colH = 'All'; colAp = 'day';
+      sub = ev.location ? esc(ev.location) : 'All day';
+    } else {
+      const sp = splitTime(ev.start.dateTime);
+      colH = sp.t; colAp = sp.ap;
+      sub = ev.location ? esc(ev.location) : 'until ' + esc(fmtTime(ev.end.dateTime));
+      if (ds === todayStr) {
+        const s = new Date(ev.start.dateTime), e = new Date(ev.end.dateTime);
+        if (now >= s && now <= e) nowCls = ' event-row--now';
+      }
+    }
+    return `<div class="event-row${nowCls}" data-idx="${i}">
+      <div class="event-time-col">
+        <span class="event-time-h">${esc(colH)}</span>
+        <span class="event-time-ap">${esc(colAp)}</span>
+      </div>
       <div class="event-color-bar" style="background:${color}"></div>
       <div class="event-info">
         <div class="event-title">${esc(ev.summary || '(No title)')}</div>
-        <div class="event-time">${esc(timeStr)}</div>
+        <div class="event-sub">${sub}</div>
       </div>
     </div>`;
-  }).join('');
+  }).join('') + '</div>';
   content.querySelectorAll('.event-row').forEach(row => {
     row.addEventListener('click', () => openEventSheet(parseInt(row.dataset.idx)));
   });
@@ -983,6 +1067,7 @@ function changeMonth(delta) {
   if (viewMonth <  0) { viewMonth = 11; viewYear--; }
   events = {};
   renderGrid();
+  document.getElementById('dayPanelLabel').textContent = 'Events';
   document.getElementById('dayPanelDate').textContent = '';
   document.getElementById('dayPanelContent').innerHTML =
     '<div class="day-panel-empty">Select a day to see events</div>';
@@ -1034,7 +1119,6 @@ document.getElementById('createModalBg').addEventListener('click', e => {
 (function init() {
   renderGrid();
   renderDayPanel(todayStr);
-  document.getElementById('dayPanelDate').textContent = fmtFriendly(todayStr);
   if (!GOOGLE_CLIENT_ID) showSetupCard();
 })();
 </script>
