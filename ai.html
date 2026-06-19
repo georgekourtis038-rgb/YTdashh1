@@ -432,21 +432,51 @@ body {
 .sidebar-row.active .sidebar-row-preview { color: #fff; }
 
 .sidebar-row-actions {
-  display: flex; align-items: center; gap: 2px;
-  padding-right: 6px; flex-shrink: 0;
+  display: flex; align-items: center;
+  padding-right: 5px; flex-shrink: 0;
 }
-.sidebar-row-action-btn {
-  width: 30px; height: 30px; border-radius: 9px;
+.sidebar-row-menu-btn {
+  width: 32px; height: 32px; border-radius: 9px;
   display: flex; align-items: center; justify-content: center;
   background: transparent; border: none;
-  color: rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.42);
   cursor: pointer; flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
   transition: background 0.15s, color 0.15s;
 }
-.sidebar-row-action-btn:active { background: rgba(255,255,255,0.08); }
-.sidebar-row-action-btn.rename:hover { color: #fff; }
-.sidebar-row-action-btn.delete:hover { color: #ff7a7a; }
+.sidebar-row-menu-btn:active { background: rgba(255,255,255,0.1); }
+.sidebar-row.active .sidebar-row-menu-btn { color: rgba(255,255,255,0.72); }
+
+/* ── Row options popover (rename / delete) ── */
+.row-menu {
+  position: fixed; z-index: 230;
+  min-width: 156px;
+  padding: 5px;
+  background: linear-gradient(180deg, #18211d, #111714);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 13px;
+  box-shadow: 0 18px 44px -12px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  display: none;
+}
+.row-menu.open { display: block; animation: menuIn 0.14s ease both; }
+@keyframes menuIn {
+  from { opacity: 0; transform: translateY(-5px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+.row-menu-item {
+  width: 100%; display: flex; align-items: center; gap: 10px;
+  padding: 11px 12px; border-radius: 9px;
+  background: transparent; border: none;
+  color: rgba(255,255,255,0.9);
+  font-family: var(--font); font-size: 14px; font-weight: 500;
+  text-align: left; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s;
+}
+.row-menu-item:active { background: rgba(255,255,255,0.08); }
+.row-menu-item.delete { color: #ff7a7a; }
+.row-menu-item svg { flex-shrink: 0; opacity: 0.9; }
 
 .sidebar-new-btn {
   margin: 10px 12px calc(12px + env(safe-area-inset-bottom));
@@ -579,6 +609,24 @@ body {
 }
 .briefing-retry-btn:active { background: rgba(45,232,162,0.18); }
 
+/* ── Branch-off button on briefing messages ── */
+.briefing-branch-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 13px;
+  padding: 7px 12px;
+  border-radius: 11px;
+  background: rgba(45,232,162,0.08);
+  border: 1px solid rgba(45,232,162,0.25);
+  color: var(--mint);
+  font-family: var(--font);
+  font-size: 12.5px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s, border-color 0.15s;
+}
+.briefing-branch-btn:active { transform: scale(0.96); background: rgba(45,232,162,0.16); }
+.briefing-branch-btn svg { flex-shrink: 0; }
+
 /* ── Sidebar briefing row ── */
 .sidebar-briefing-row .sidebar-row-date { color: var(--mint) !important; opacity: 1 !important; }
 .sidebar-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
@@ -619,6 +667,18 @@ body {
   <div class="sidebar-list" id="sidebarList"></div>
   <button class="sidebar-new-btn" id="sidebarNewBtn">+ New conversation</button>
 </aside>
+
+<!-- Conversation options popover -->
+<div class="row-menu" id="rowMenu" role="menu" aria-label="Conversation options">
+  <button class="row-menu-item" data-act="rename" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    Rename
+  </button>
+  <button class="row-menu-item delete" data-act="delete" role="menuitem">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+    Delete
+  </button>
+</div>
 
 <!-- Memory panel overlay -->
 <div class="memory-overlay" id="memoryOverlay"></div>
@@ -664,11 +724,6 @@ body {
         <circle cx="7.5" cy="6" r="4.5" stroke="currentColor" stroke-width="1.6"/>
         <path d="M5.5 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="currentColor" opacity=".4"/>
         <path d="M4 11c.7-1.2 2-2 3.5-2s2.8.8 3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </button>
-    <button class="ai-icon-btn" id="newChatBtn" aria-label="New conversation" title="New conversation">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-        <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
     </button>
   </div>
@@ -1309,6 +1364,34 @@ Notes:
     return full;
   }
 
+  // Minimal one-shot completion (no streaming UI) — used to name conversations.
+  async function callClaude(system, messages) {
+    const res = await fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: system, messages: messages })
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const reader  = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '', full = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n'); buf = lines.pop();
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const raw = line.slice(6).trim(); if (!raw) continue;
+        try {
+          const evt = JSON.parse(raw);
+          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') full += evt.delta.text;
+        } catch (_) {}
+      }
+    }
+    return full;
+  }
+
   // ── Session management ───────────────────────────────────────────
   const SESSIONS_KEY = 'axis_chat_sessions';
   const ACTIVE_KEY   = 'axis_active_chat_id';
@@ -1354,6 +1437,31 @@ Notes:
     if (!session.isBriefing) session.preview = getPreview(session.messages);
     saveSessions(sessions);
     _supaUpsert('chat_sessions', sessions);
+  }
+
+  // Auto-name a fresh conversation from its first user message (AI-generated).
+  // Runs once, in the background; never overrides a manual rename or a title
+  // that already exists (e.g. branched briefings).
+  async function autoNameSession(sessionId, firstUserText) {
+    if (!sessionId || sessionId === BRIEFING_SESSION_ID) return;
+    const pre = getSessions().find(function(s){ return s.id === sessionId; });
+    if (!pre || pre.autoTitled || pre.title) return;
+    try {
+      const system = 'You write an extremely short title for a chat, based on the user\'s first message. '
+        + 'Rules: 2 to 4 words, Title Case, max 28 characters, no quotes, no trailing punctuation, no emoji. '
+        + 'Reply with ONLY the title.';
+      const raw = await callClaude(system, [{ role: 'user', content: String(firstUserText || '').slice(0, 800) }]);
+      let title = stripMd(raw).replace(/^["'\s]+|["'\s.]+$/g, '').replace(/\s+/g, ' ').trim().slice(0, 32);
+      if (!title) return;
+      const sessions = getSessions();
+      const s = sessions.find(function(x){ return x.id === sessionId; });
+      if (!s || s.id === BRIEFING_SESSION_ID || s.autoTitled || s.title) return;
+      s.title = title;
+      s.autoTitled = true;
+      saveSessions(sessions);
+      _supaUpsert('chat_sessions', sessions);
+      renderSidebar();
+    } catch (_) { /* leave the first-message preview as the label */ }
   }
 
   function ensureBriefingSessionExists() {
@@ -1441,8 +1549,51 @@ Notes:
       textNode.textContent = content;
     }
     bubble.appendChild(textNode);
+    if (opts.isBriefing && typeof opts.onBranch === 'function') {
+      addBranchButton(bubble, opts.onBranch);
+    }
     wrap.appendChild(bubble);
     return { wrap, bubble, textNode };
+  }
+
+  // "Discuss in new chat" — appended to briefing messages in the briefing thread.
+  function addBranchButton(bubble, onClick) {
+    const btn = document.createElement('button');
+    btn.className = 'briefing-branch-btn';
+    btn.type = 'button';
+    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 3v8a4 4 0 0 0 4 4h8M14 11l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Discuss in new chat';
+    btn.addEventListener('click', function(e){ e.stopPropagation(); onClick(); });
+    bubble.appendChild(btn);
+    return btn;
+  }
+
+  // Spin off a fresh conversation seeded with a briefing, so the permanent
+  // briefing thread stays clean. The briefing is stored as a hidden user msg
+  // (for API context — Anthropic requires a leading user turn) plus the
+  // visible assistant briefing bubble.
+  function branchOffBriefing(text) {
+    saveCurrentSession();
+    const id = genSessionId();
+    activeSessionId = id;
+    try { localStorage.setItem(ACTIVE_KEY, id); } catch (_) {}
+    const ts = Date.now();
+    const hiddenUser   = { role: 'user', content: 'For reference, here is the daily briefing I want to discuss:\n\n' + text, hidden: true, ts: ts };
+    const assistantMsg = { role: 'assistant', content: text, briefing: true, ts: ts + 1 };
+    chatHistory = [hiddenUser, assistantMsg];
+    const firstLine = stripMd((text || '').split('\n')[0] || '').slice(0, 36);
+    upsertSession({
+      id: id,
+      createdAt: new Date().toISOString(),
+      messages: chatHistory.slice(),
+      title: firstLine ? ('Briefing — ' + firstLine) : 'Briefing follow-up',
+      preview: stripMd(text).slice(0, 60)
+    });
+    _supaUpsert('chat_sessions', getSessions());
+    renderThread(chatHistory);
+    closeSidebar();
+    renderSidebar();
+    const input = document.getElementById('chatInput');
+    if (input) { input.focus(); }
   }
 
   function appendMsg(role, content, opts) {
@@ -1483,6 +1634,7 @@ Notes:
     thread.innerHTML = '';
     if (!messages || !messages.length) return;
     const frag = document.createDocumentFragment();
+    const allowBranch = (activeSessionId === BRIEFING_SESSION_ID);
     let lastDate = '';
     messages.forEach(function(m) {
       if (m.hidden) return;
@@ -1494,7 +1646,10 @@ Notes:
         frag.appendChild(sep);
         lastDate = dateKey;
       }
-      const { wrap } = buildMsgEl(m.role, m.content, { isStatic: true, isBriefing: m.briefing });
+      const onBranch = (m.briefing && allowBranch)
+        ? (function(txt){ return function(){ branchOffBriefing(txt); }; })(m.content)
+        : null;
+      const { wrap } = buildMsgEl(m.role, m.content, { isStatic: true, isBriefing: m.briefing, onBranch: onBranch });
       frag.appendChild(wrap);
       // Re-render any tool-action confirmation cards that were stored with this message
       if (m.role !== 'user' && Array.isArray(m.actions)) {
@@ -1691,6 +1846,10 @@ Notes:
     input.value   = '';
     input.disabled = true; sendBtn.disabled = true;
 
+    // First visible user turn in this chat → eligible for AI auto-naming
+    const isFirstUserTurn = !chatHistory.some(function(m){ return m.role === 'user' && !m.hidden; });
+    const namingSessionId = activeSessionId;
+
     const userMsg = { role: 'user', content: text, ts: Date.now() };
     chatHistory.push(userMsg);
     appendMsg('user', text);
@@ -1725,6 +1884,10 @@ Notes:
         }
         if (results.length) aiMsg.actions = results;
         saveCurrentSession();
+        // Name the conversation from its first message (background, non-blocking)
+        if (isFirstUserTurn && namingSessionId !== BRIEFING_SESSION_ID) {
+          autoNameSession(namingSessionId, text);
+        }
       }
     } catch (err) {
       aiBubble.classList.remove('streaming');
@@ -1808,6 +1971,8 @@ Notes:
         bBubble.classList.remove('streaming');
         attachBriefing();
         renderRich(bText, briefingFull);
+        // Non-silent briefings only render inside the briefing thread → branchable
+        addBranchButton(bBubble, function(){ branchOffBriefing(briefingFull); });
       }
 
       // Persist hidden user msg + assistant briefing to the session
@@ -1952,7 +2117,7 @@ Notes:
     const name = window.prompt('Rename conversation', current);
     if (name === null) return;
     const t = name.trim();
-    if (t) s.title = t; else delete s.title;
+    if (t) { s.title = t; s.autoTitled = true; } else { delete s.title; }
     saveSessions(sessions);
     _supaUpsert('chat_sessions', sessions);
     renderSidebar();
@@ -1978,8 +2143,29 @@ Notes:
   }
 
   // ── Sidebar ──────────────────────────────────────────────────────
-  const ICON_RENAME = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
-  const ICON_DELETE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  const ICON_KEBAB = '<svg width="4" height="16" viewBox="0 0 4 16" fill="currentColor"><circle cx="2" cy="2" r="1.9"></circle><circle cx="2" cy="8" r="1.9"></circle><circle cx="2" cy="14" r="1.9"></circle></svg>';
+
+  // ── Row options popover ──────────────────────────────────────────
+  let _rowMenuId = null;
+  function openRowMenu(btn, sessionId) {
+    const menu = document.getElementById('rowMenu');
+    _rowMenuId = sessionId;
+    menu.classList.add('open');           // display first so we can measure
+    const r  = btn.getBoundingClientRect();
+    const mw = menu.offsetWidth;
+    const mh = menu.offsetHeight;
+    let left = r.right - mw;
+    if (left < 8) left = 8;
+    let top = r.bottom + 6;
+    if (top + mh > window.innerHeight - 8) top = r.top - mh - 6; // flip up near bottom
+    menu.style.left = left + 'px';
+    menu.style.top  = top + 'px';
+  }
+  function closeRowMenu() {
+    const menu = document.getElementById('rowMenu');
+    if (menu) menu.classList.remove('open');
+    _rowMenuId = null;
+  }
 
   function renderSidebar() {
     const list = document.getElementById('sidebarList');
@@ -2030,18 +2216,16 @@ Notes:
 
       const acts = document.createElement('div');
       acts.className = 'sidebar-row-actions';
-      const renameBtn = document.createElement('button');
-      renameBtn.className = 'sidebar-row-action-btn rename';
-      renameBtn.setAttribute('aria-label', 'Rename conversation');
-      renameBtn.innerHTML = ICON_RENAME;
-      renameBtn.addEventListener('click', function(e){ e.stopPropagation(); renameSession(s.id); });
-      const delBtn = document.createElement('button');
-      delBtn.className = 'sidebar-row-action-btn delete';
-      delBtn.setAttribute('aria-label', 'Delete conversation');
-      delBtn.innerHTML = ICON_DELETE;
-      delBtn.addEventListener('click', function(e){ e.stopPropagation(); deleteSession(s.id); });
-      acts.appendChild(renameBtn);
-      acts.appendChild(delBtn);
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'sidebar-row-menu-btn';
+      menuBtn.setAttribute('aria-label', 'Conversation options');
+      menuBtn.innerHTML = ICON_KEBAB;
+      menuBtn.addEventListener('click', function(e){
+        e.stopPropagation();
+        if (_rowMenuId === s.id) { closeRowMenu(); return; }
+        openRowMenu(menuBtn, s.id);
+      });
+      acts.appendChild(menuBtn);
       row.appendChild(acts);
 
       list.appendChild(row);
@@ -2054,6 +2238,7 @@ Notes:
     document.getElementById('sidebarOverlay').classList.add('open');
   }
   function closeSidebar() {
+    closeRowMenu();
     document.getElementById('chatSidebar').classList.remove('open');
     document.getElementById('sidebarOverlay').classList.remove('open');
   }
@@ -2130,8 +2315,25 @@ Notes:
     });
     document.getElementById('sidebarToggle').addEventListener('click', openSidebar);
     document.getElementById('sidebarClose').addEventListener('click',  closeSidebar);
+
+    // Row options popover: item actions, outside-click + scroll dismissal
+    document.getElementById('rowMenu').addEventListener('click', function(e){
+      const item = e.target.closest('.row-menu-item');
+      if (!item) return;
+      const id = _rowMenuId;
+      closeRowMenu();
+      if (!id) return;
+      if (item.dataset.act === 'rename')      renameSession(id);
+      else if (item.dataset.act === 'delete') deleteSession(id);
+    });
+    document.addEventListener('click', function(e){
+      if (!_rowMenuId) return;
+      if (e.target.closest('#rowMenu') || e.target.closest('.sidebar-row-menu-btn')) return;
+      closeRowMenu();
+    });
+    document.getElementById('sidebarList').addEventListener('scroll', closeRowMenu, { passive: true });
+    window.addEventListener('resize', closeRowMenu);
     document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
-    document.getElementById('newChatBtn').addEventListener('click', newChat);
     document.getElementById('sidebarNewBtn').addEventListener('click', newChat);
     document.getElementById('memoryBtn').addEventListener('click', openMemoryPanel);
     document.getElementById('memoryPanelClose').addEventListener('click', closeMemoryPanel);
