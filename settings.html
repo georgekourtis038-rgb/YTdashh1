@@ -924,6 +924,16 @@ html, body {
             <span class="notif-toggle-track"></span>
           </label>
         </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Finances</div>
+            <div class="setting-row-sub">Read net worth, accounts &amp; subscriptions</div>
+          </div>
+          <label class="notif-toggle" aria-label="Tool finances">
+            <input type="checkbox" id="aiToolFinances">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
       </div>
     </div>
 
@@ -1430,7 +1440,8 @@ html, body {
         targets:  t.targets  !== false,
         calendar: t.calendar !== false,
         email:    t.email    !== false,
-        web:      t.web      !== false
+        web:      t.web      !== false,
+        finances: t.finances !== false
       }
     };
   }
@@ -1465,6 +1476,7 @@ html, body {
     document.getElementById('aiToolCalendar').checked = p.tools.calendar;
     document.getElementById('aiToolEmail').checked    = p.tools.email;
     document.getElementById('aiToolWeb').checked      = p.tools.web;
+    document.getElementById('aiToolFinances').checked = p.tools.finances;
     updateAIMuted(p);
   }
 
@@ -1498,7 +1510,8 @@ html, body {
         targets:  document.getElementById('aiToolTargets').checked,
         calendar: document.getElementById('aiToolCalendar').checked,
         email:    document.getElementById('aiToolEmail').checked,
-        web:      document.getElementById('aiToolWeb').checked
+        web:      document.getElementById('aiToolWeb').checked,
+        finances: document.getElementById('aiToolFinances').checked
       }
     };
     lsSet(AI_PREFS_KEY, p);
@@ -1520,7 +1533,7 @@ html, body {
   ['aiEmoji','aiAutoName','aiMemory','aiBriefEnabled','aiBriefUseWake',
    'aiBriefGoals','aiBriefCalendar','aiBriefEmails','aiBriefHealth',
    'aiCtxHealth','aiCtxFitness','aiCtxCalendar','aiCtxEmail',
-   'aiToolGoals','aiToolTargets','aiToolCalendar','aiToolEmail','aiToolWeb'
+   'aiToolGoals','aiToolTargets','aiToolCalendar','aiToolEmail','aiToolWeb','aiToolFinances'
   ].forEach(function(id) {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', saveAIPrefs);

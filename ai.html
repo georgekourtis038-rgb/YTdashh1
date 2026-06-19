@@ -1075,7 +1075,8 @@ body {
         targets:  t.targets  !== false,
         calendar: t.calendar !== false,
         email:    t.email    !== false,
-        web:      t.web      !== false
+        web:      t.web      !== false,
+        finances: t.finances !== false
       }
     };
   }
@@ -1246,12 +1247,23 @@ Available tools:
   search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
     params: { query: string }   // Gmail search syntax, e.g. "from:amazon shipped", "subject:tracking newer_than:30d", "invoice"
   search_web           — search the live web for current information
-    params: { query: string }   // a natural-language search query, e.g. "Canada World Cup 2026 results", "weather Toronto today"
+    params: { query: string }   // a natural-language search query, e.g. "Canada World Cup 2026 results"
+  read_email           — read the full body of a specific email
+    params: { id: string }      // an id from search_gmail results or the UNREAD EMAILS list
+  get_calendar         — list calendar events for a date or range (schedule / free-time questions)
+    params: { start?: "YYYY-MM-DD", end?: "YYYY-MM-DD" }   // defaults to today
+  get_weather          — current conditions + short forecast for a place
+    params: { location: string }
+  fetch_url            — read the main text of a specific web page / link
+    params: { url: string }
+  get_finances         — read net worth, accounts, subscriptions, and recent money activity
+    params: {}
 
 Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
-- search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, weather, prices, recent events, opening hours, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
+- search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
+- read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
 
@@ -1259,9 +1271,10 @@ Notes:
     const disabled = [];
     if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
     if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
-    if (!prefs.tools.calendar) disabled.push('add_calendar_event');
-    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail');
-    if (!prefs.tools.web)      disabled.push('search_web');
+    if (!prefs.tools.calendar) disabled.push('add_calendar_event, get_calendar');
+    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email');
+    if (!prefs.tools.web)      disabled.push('search_web, fetch_url');
+    if (!prefs.tools.finances) disabled.push('get_finances');
     if (disabled.length) {
       p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
     }
@@ -1994,6 +2007,161 @@ Notes:
     }
   }
 
+  // Decode a Gmail base64url body part into a UTF-8 string.
+  function _b64urlDecode(data) {
+    if (!data) return '';
+    try {
+      const bin   = atob(data.replace(/-/g, '+').replace(/_/g, '/'));
+      const bytes = Uint8Array.from(bin, function(c){ return c.charCodeAt(0); });
+      return new TextDecoder('utf-8').decode(bytes);
+    } catch (_) { return ''; }
+  }
+  // Walk a Gmail payload tree for the first part of a given MIME type.
+  function _findPart(payload, mime) {
+    if (!payload) return null;
+    if (payload.mimeType === mime && payload.body && payload.body.data) return payload.body.data;
+    if (Array.isArray(payload.parts)) {
+      for (const p of payload.parts) { const r = _findPart(p, mime); if (r) return r; }
+    }
+    return null;
+  }
+
+  // Read tool: full body of one email (id from search_gmail or the unread list).
+  async function readEmail(id) {
+    id = (id || '').trim();
+    if (!id) return 'Read email skipped: no message id.';
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Gmail not connected — the user needs to sign in via the email page first.';
+    try {
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + encodeURIComponent(id) + '?format=full',
+        { headers: { 'Authorization': 'Bearer ' + tok } });
+      if (!res.ok) return 'Could not read email (HTTP ' + res.status + ').';
+      const msg  = await res.json();
+      const hdrs = (msg.payload && msg.payload.headers) || [];
+      const gh   = function(n){ return (hdrs.find(function(h){ return h.name === n; }) || {}).value || ''; };
+      let body = _b64urlDecode(_findPart(msg.payload, 'text/plain'));
+      if (!body) {
+        body = _b64urlDecode(_findPart(msg.payload, 'text/html'))
+          .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+          .replace(/<[^>]+>/g, ' ')
+          .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
+          .replace(/\s+/g, ' ').trim();
+      }
+      body = (body || '').slice(0, 4000);
+      return 'EMAIL [id:' + id + ']'
+        + '\nFrom: ' + gh('From')
+        + '\nDate: ' + gh('Date')
+        + '\nSubject: ' + (gh('Subject') || '(none)')
+        + '\n\n' + (body || '(no readable text body)');
+    } catch (e) { return 'Email read error: ' + e.message; }
+  }
+
+  // Read tool: calendar events for a date or range (for schedule / free-time Qs).
+  async function getCalendar(params) {
+    params = params || {};
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Calendar not connected — the user needs to sign in via the email page first.';
+    try {
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      function parseDate(s) {
+        if (s && /^\d{4}-\d{2}-\d{2}$/.test(s)) { const d = new Date(s + 'T00:00:00'); if (!isNaN(d)) return d; }
+        return null;
+      }
+      const startD = parseDate(params.start) || new Date();
+      startD.setHours(0, 0, 0, 0);
+      let endD = parseDate(params.end) || new Date(startD);
+      endD.setHours(23, 59, 59, 999);
+      if (endD < startD) endD = new Date(startD.getTime() + 86399999);
+      const fmtD = function(d){ return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
+
+      const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
+        + '?singleEvents=true&orderBy=startTime'
+        + '&timeMin=' + encodeURIComponent(startD.toISOString())
+        + '&timeMax=' + encodeURIComponent(endD.toISOString())
+        + '&maxResults=50&timeZone=' + encodeURIComponent(tz);
+      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
+      if (!res.ok) return 'Calendar error ' + res.status;
+      const items = ((await res.json()).items) || [];
+      if (!items.length) return 'No calendar events between ' + fmtD(startD) + ' and ' + fmtD(endD) + '.';
+      let block = 'Calendar events (' + fmtD(startD) + ' – ' + fmtD(endD) + '):';
+      items.forEach(function(ev) {
+        let when;
+        if (ev.start && ev.start.dateTime) {
+          const d = new Date(ev.start.dateTime);
+          when = d.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+          if (ev.end && ev.end.dateTime) when += '–' + new Date(ev.end.dateTime).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
+        } else {
+          when = ((ev.start && ev.start.date) || '') + ' (all day)';
+        }
+        block += '\n• ' + when + ' — ' + (ev.summary || '(no title)') + (ev.location ? ' @ ' + ev.location : '');
+      });
+      return block;
+    } catch (e) { return 'Calendar error: ' + e.message; }
+  }
+
+  // Read tool: current weather + short forecast (serverless, Open-Meteo).
+  async function getWeather(location) {
+    try {
+      const res = await fetch('/api/weather?q=' + encodeURIComponent((location || '').trim()));
+      if (!res.ok) return 'Weather lookup failed (HTTP ' + res.status + ').';
+      const d = await res.json();
+      if (d.error)   return 'Weather: ' + d.error;
+      return d.summary || 'No weather data available.';
+    } catch (e) { return 'Weather error: ' + e.message; }
+  }
+
+  // Read tool: fetch the readable text of a specific web page (serverless).
+  async function fetchUrl(url) {
+    url = (url || '').trim();
+    if (!url) return 'Fetch skipped: no URL provided.';
+    try {
+      const res = await fetch('/api/fetch-url?url=' + encodeURIComponent(url));
+      if (!res.ok) return 'Could not fetch the page (HTTP ' + res.status + ').';
+      const d = await res.json();
+      if (d.error) return 'Fetch error: ' + d.error;
+      return 'PAGE: ' + (d.title || url) + '\n' + (d.url || url) + '\n\n' + (d.content || '(no readable content)');
+    } catch (e) { return 'Fetch error: ' + e.message; }
+  }
+
+  // Read tool: the user's finances (net worth, accounts, subscriptions,
+  // recent activity) straight from the same localStorage finance.html uses.
+  function getFinances() {
+    try {
+      const cur = localStorage.getItem('nw_currency') || 'CHF';
+      const rd  = function(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } };
+      const num = function(n){ return (Number(n) || 0).toLocaleString(); };
+      let block = 'FINANCES (base currency ' + cur + '):';
+      let net = 0;
+      [['bank','Bank accounts'],['stocks','Stocks'],['crypto','Crypto'],['other','Other assets']].forEach(function(pair) {
+        const items = rd('nw:' + pair[0]) || [];
+        const tot   = items.reduce(function(s, it){ return s + (Number(it.amount) || 0); }, 0);
+        net += tot;
+        block += '\n' + pair[1] + ': ' + num(tot) + ' ' + cur;
+        items.forEach(function(it){ block += '\n   - ' + it.name + ': ' + num(it.amount) + ' ' + cur; });
+      });
+      block += '\nNET WORTH (assets): ' + num(net) + ' ' + cur;
+
+      const subs = rd('subs') || [];
+      if (subs.length) {
+        let monthly = 0;
+        subs.forEach(function(it){ const a = Number(it.amount) || 0; monthly += it.period === 'yearly' ? a/12 : it.period === 'weekly' ? a*4.345 : a; });
+        block += '\nSUBSCRIPTIONS: ' + subs.length + ' active, ~' + Math.round(monthly).toLocaleString() + ' ' + cur + '/mo ('
+          + Math.round(monthly*12).toLocaleString() + ' ' + cur + '/yr)';
+        subs.forEach(function(it){ block += '\n   - ' + it.name + ': ' + num(it.amount) + ' ' + cur + '/' + (it.period || 'monthly') + (it.renewal ? ' (renews ' + it.renewal + ')' : ''); });
+      }
+
+      const act = rd('nw:activity') || [];
+      if (act.length) {
+        block += '\nRECENT ACTIVITY:';
+        act.slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0, 10).forEach(function(e) {
+          const d = new Date(e.ts).toLocaleDateString('en-US', { month:'short', day:'numeric' });
+          block += '\n   ' + d + ' ' + (e.delta >= 0 ? '+' : '') + Math.round(e.delta).toLocaleString() + ' ' + cur + ' — ' + (e.name || e.cat);
+        });
+      }
+      return block;
+    } catch (e) { return 'Finance read error: ' + e.message; }
+  }
+
   // ── Supabase sync after tool actions ────────────────────────────
   // Mirrors the exact scope + row key that health.html and index.html use,
   // so the cloud value is up-to-date before any page reload can overwrite it.
@@ -2136,6 +2304,19 @@ Notes:
     return { clean, actions };
   }
 
+  // READ tools return data to the model for a follow-up turn (vs. write tools,
+  // which fire-and-forget with a confirmation card). `pref` gates each one on a
+  // Settings → Axis AI toggle (null = always available).
+  const READ_TOOLS = {
+    search_gmail: { pref: 'email',    run: function(p){ return searchGmail(p.query); } },
+    read_email:   { pref: 'email',    run: function(p){ return readEmail(p.id); } },
+    search_web:   { pref: 'web',      run: function(p){ return searchWeb(p.query); } },
+    fetch_url:    { pref: 'web',      run: function(p){ return fetchUrl(p.url); } },
+    get_calendar: { pref: 'calendar', run: function(p){ return getCalendar(p); } },
+    get_weather:  { pref: null,       run: function(p){ return getWeather(p.location); } },
+    get_finances: { pref: 'finances', run: function(p){ return getFinances(p); } }
+  };
+
   // ── Send message ─────────────────────────────────────────────────
   async function sendMessage(text) {
     text = text.trim();
@@ -2181,14 +2362,10 @@ Notes:
         const readBlocks = [];
         const _toolPrefs = getAIPrefs().tools;
         for (const action of actions) {
-          if (action.tool === 'search_gmail') {
-            if (!_toolPrefs.email) continue; // disabled in Settings → Axis AI
-            readBlocks.push(await searchGmail(action.params && action.params.query));
-            continue;
-          }
-          if (action.tool === 'search_web') {
-            if (!_toolPrefs.web) continue; // disabled in Settings → Axis AI
-            readBlocks.push(await searchWeb(action.params && action.params.query));
+          const rt = READ_TOOLS[action.tool];
+          if (rt) {
+            if (rt.pref && !_toolPrefs[rt.pref]) continue; // disabled in Settings → Axis AI
+            readBlocks.push(await rt.run(action.params || {}));
             continue;
           }
           const r = await executeAction(action.tool, action.params);
@@ -2227,9 +2404,9 @@ Notes:
             const parsed2 = parseActions(follow);
             renderRich(built2.textNode, parsed2.clean);
             chatHistory.push({ role: 'assistant', content: follow, ts: Date.now() });
-            // Run any non-search write actions the follow-up emitted.
+            // Run any write actions the follow-up emitted (skip read tools — no recursion).
             for (const a2 of parsed2.actions) {
-              if (a2.tool === 'search_gmail' || a2.tool === 'search_web') continue; // no recursive search
+              if (READ_TOOLS[a2.tool]) continue;
               const r2 = await executeAction(a2.tool, a2.params);
               appendActionCard(r2);
             }
