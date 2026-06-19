@@ -1074,7 +1074,8 @@ body {
         goals:    t.goals    !== false,
         targets:  t.targets  !== false,
         calendar: t.calendar !== false,
-        email:    t.email    !== false
+        email:    t.email    !== false,
+        web:      t.web      !== false
       }
     };
   }
@@ -1244,10 +1245,13 @@ Available tools:
     params: { id: string }
   search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
     params: { query: string }   // Gmail search syntax, e.g. "from:amazon shipped", "subject:tracking newer_than:30d", "invoice"
+  search_web           — search the live web for current information
+    params: { query: string }   // a natural-language search query, e.g. "Canada World Cup 2026 results", "weather Toronto today"
 
 Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
+- search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, weather, prices, recent events, opening hours, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
 
@@ -1257,6 +1261,7 @@ Notes:
     if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
     if (!prefs.tools.calendar) disabled.push('add_calendar_event');
     if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail');
+    if (!prefs.tools.web)      disabled.push('search_web');
     if (disabled.length) {
       p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
     }
@@ -1964,6 +1969,31 @@ Notes:
     }
   }
 
+  // Live web search (read tool). Returns a text block (synthesized answer +
+  // sources) that is fed back to the model so it can answer with current info.
+  async function searchWeb(query) {
+    query = (query || '').trim();
+    if (!query) return 'Web search skipped: no query provided.';
+    try {
+      const res = await fetch('/api/web-search?q=' + encodeURIComponent(query));
+      if (res.status === 500) return 'Web search is not configured on the server (no TAVILY_API_KEY).';
+      if (!res.ok) return 'Web search failed (HTTP ' + res.status + ').';
+      const data    = await res.json();
+      const results = Array.isArray(data.results) ? data.results : [];
+      if (!data.answer && !results.length) return 'No useful web results for "' + query + '".';
+      let block = 'Web results for "' + query + '":';
+      if (data.answer) block += '\nSummary: ' + data.answer;
+      results.forEach(function(r, i) {
+        block += '\n' + (i + 1) + '. ' + (r.title || r.url)
+          + (r.url ? '\n   ' + r.url : '')
+          + (r.content ? '\n   ' + r.content : '');
+      });
+      return block;
+    } catch (e) {
+      return 'Web search error: ' + e.message;
+    }
+  }
+
   // ── Supabase sync after tool actions ────────────────────────────
   // Mirrors the exact scope + row key that health.html and index.html use,
   // so the cloud value is up-to-date before any page reload can overwrite it.
@@ -2144,16 +2174,21 @@ Notes:
         chatHistory.push(aiMsg);
         // Background memory extraction — don't await, non-blocking
         extractMemories(text, clean || full, activeSessionId);
-        // Execute tool actions. search_gmail is a READ tool: its results are
-        // fed back to the model for a follow-up turn rather than shown as a card.
+        // Execute tool actions. search_gmail / search_web are READ tools: their
+        // results are fed back to the model for a follow-up turn rather than
+        // shown as a confirmation card.
         const results = [];
-        let gmailBlocks = [];
-        const _emailOn = getAIPrefs().tools.email;
+        const readBlocks = [];
+        const _toolPrefs = getAIPrefs().tools;
         for (const action of actions) {
           if (action.tool === 'search_gmail') {
-            if (!_emailOn) continue; // tool disabled in Settings → Axis AI
-            const block = await searchGmail(action.params && action.params.query);
-            gmailBlocks.push(block);
+            if (!_toolPrefs.email) continue; // disabled in Settings → Axis AI
+            readBlocks.push(await searchGmail(action.params && action.params.query));
+            continue;
+          }
+          if (action.tool === 'search_web') {
+            if (!_toolPrefs.web) continue; // disabled in Settings → Axis AI
+            readBlocks.push(await searchWeb(action.params && action.params.query));
             continue;
           }
           const r = await executeAction(action.tool, action.params);
@@ -2162,8 +2197,8 @@ Notes:
         }
         if (results.length) aiMsg.actions = results;
 
-        // Round-trip: feed Gmail search results back so the AI can summarize them.
-        if (gmailBlocks.length) {
+        // Round-trip: feed search results back so the AI can answer from them.
+        if (readBlocks.length) {
           // If the AI emitted only the search action with no prose, drop the
           // empty first bubble — the follow-up turn carries the real answer.
           // Mark it hidden so it stays in API context but doesn't re-render as
@@ -2171,8 +2206,8 @@ Notes:
           if (!clean.trim()) { aiWrap.remove(); aiMsg.hidden = true; }
           const toolMsg = {
             role: 'user',
-            content: 'GMAIL SEARCH RESULTS (reference only — read these and answer the user in plain prose; do not repeat raw lines or invent message IDs):\n\n'
-              + gmailBlocks.join('\n\n'),
+            content: 'SEARCH RESULTS (reference only — read these and answer the user in plain prose; do not repeat raw lines or invent links or message IDs):\n\n'
+              + readBlocks.join('\n\n'),
             hidden: true,
             ts: Date.now()
           };
@@ -2194,7 +2229,7 @@ Notes:
             chatHistory.push({ role: 'assistant', content: follow, ts: Date.now() });
             // Run any non-search write actions the follow-up emitted.
             for (const a2 of parsed2.actions) {
-              if (a2.tool === 'search_gmail') continue; // no recursive search
+              if (a2.tool === 'search_gmail' || a2.tool === 'search_web') continue; // no recursive search
               const r2 = await executeAction(a2.tool, a2.params);
               appendActionCard(r2);
             }
@@ -2202,7 +2237,7 @@ Notes:
             built2.bubble.classList.remove('streaming');
             typing2.remove();
             if (attached2) built2.wrap.remove();
-            console.error('[chat] gmail follow-up error:', err2 && err2.message);
+            console.error('[chat] search follow-up error:', err2 && err2.message);
           }
         }
 
