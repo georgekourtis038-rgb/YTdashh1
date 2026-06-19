@@ -1274,7 +1274,7 @@ Notes:
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
 - read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
-- add_reminder schedules a notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and the current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. Reminders already scheduled are listed under SCHEDULED REMINDERS; reference those for "what are my reminders" and cancel with delete_reminder. These are write actions: state what you're scheduling, then include the action tag.
+- add_reminder schedules a reminder. When Google Calendar is connected it creates a calendar event with a notification at that time, so the user's phone alerts them natively (works even when this app is closed); otherwise it falls back to an in-app notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. To answer "what reminders do I have", use get_calendar (calendar reminders show up as events); the SCHEDULED REMINDERS list only holds in-app fallback reminders. delete_reminder cancels in-app fallback reminders; tell the user a calendar-based reminder is removed in Google Calendar. These are write actions: state what you're scheduling, then include the action tag.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
 
@@ -2178,15 +2178,15 @@ Notes:
   // Stored in localStorage 'axis_reminders'; push-init.js / service-worker.js
   // fire the notification when due (checked roughly every minute the app is open).
   const REMINDERS_KEY = 'axis_reminders';
-  function addReminder(params) {
-    params = params || {};
-    const text = String(params.text || '').trim();
-    if (!text) return 'A reminder needs some text.';
-
-    let at;
+  function _fmtReminderWhen(at) {
+    return new Date(at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+  }
+  // Resolve add_reminder params to an absolute timestamp, or null if invalid.
+  function _resolveReminderAt(params) {
     if (typeof params.in_minutes === 'number' && params.in_minutes > 0) {
-      at = Date.now() + Math.round(params.in_minutes) * 60000;
-    } else if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) {
+      return Date.now() + Math.round(params.in_minutes) * 60000;
+    }
+    if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) {
       const parts = params.time.split(':');
       const hh = parseInt(parts[0], 10), mm = parseInt(parts[1], 10);
       let d;
@@ -2195,18 +2195,49 @@ Notes:
       d.setHours(hh, mm, 0, 0);
       // No explicit date and the time already passed today → roll to tomorrow.
       if (!params.date && d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
-      at = d.getTime();
-    } else {
-      return 'A reminder needs a time ("HH:MM") or in_minutes.';
+      return d.getTime();
+    }
+    return null;
+  }
+
+  async function addReminder(params) {
+    params = params || {};
+    const text = String(params.text || '').trim();
+    if (!text) return 'A reminder needs some text.';
+    const at = _resolveReminderAt(params);
+    if (at == null) return 'A reminder needs a time ("HH:MM") or in_minutes.';
+    const when = _fmtReminderWhen(at);
+
+    // Prefer the user's Google Calendar — their phone then fires the alert
+    // natively, even when this app is closed. A short timed event with a
+    // popup reminder at the event time does the job.
+    const tok = await GoogleAuth.getToken();
+    if (tok) {
+      try {
+        const tz    = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        const start = new Date(at);
+        const end   = new Date(at + 60000); // 1-min block
+        const body  = {
+          summary:   text,
+          start:     { dateTime: start.toISOString(), timeZone: tz },
+          end:       { dateTime: end.toISOString(),   timeZone: tz },
+          reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
+        };
+        const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',
+          { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
+        if (res.ok) return 'Reminder added to your calendar for ' + when + ': "' + text + '" — your phone will notify you.';
+        // else fall through to the local fallback
+      } catch (_) {}
     }
 
+    // Fallback: local PWA reminder (fires only while the app is open).
     const arr = lsGet(REMINDERS_KEY) || [];
     arr.push({ id: 'rem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), text: text, at: at, fired: false });
     lsSet(REMINDERS_KEY, arr);
-
-    const when = new Date(at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
     const ungranted = (typeof Notification === 'undefined' || Notification.permission !== 'granted');
-    return 'Reminder set for ' + when + ': "' + text + '"' + (ungranted ? ' — turn on notifications so it can alert you.' : '');
+    return 'Reminder set for ' + when + ' (in-app): "' + text + '".'
+      + (ungranted ? ' Turn on notifications so it can alert you.' : '')
+      + ' Connect Google Calendar for reliable phone alerts.';
   }
   function deleteReminder(params) {
     const q = String((params && params.text) || '').trim().toLowerCase();
