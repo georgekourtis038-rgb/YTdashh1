@@ -23,7 +23,8 @@
   const REDIRECT_URI = 'https://y-tdashh1-puce.vercel.app/api/google-callback';
   const SCOPES      = 'https://www.googleapis.com/auth/calendar '
                     + 'https://www.googleapis.com/auth/gmail.readonly '
-                    + 'https://www.googleapis.com/auth/gmail.modify';
+                    + 'https://www.googleapis.com/auth/gmail.modify '
+                    + 'https://www.googleapis.com/auth/gmail.send';
 
   let _callbacks    = {};
   // In-memory cache so we don't hit the server on every single API call within a page load

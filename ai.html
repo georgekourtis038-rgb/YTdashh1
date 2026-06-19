@@ -1268,6 +1268,10 @@ Available tools:
     params: { id: string, date?: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number, title?: string }
   mark_email_read      — mark an email as read in Gmail
     params: { id: string }
+  send_email           — send an email from the user's Gmail (asks for confirmation first)
+    params: { to: string, subject?: string, body: string, cc?: string, bcc?: string }
+  create_draft         — save an email as a Gmail draft (does NOT send)
+    params: { to?: string, subject?: string, body: string, cc?: string, bcc?: string }
   search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
     params: { query: string }   // Gmail search syntax, e.g. "from:amazon shipped", "subject:tracking newer_than:30d", "invoice"
   search_web           — search the live web for current information
@@ -1292,6 +1296,7 @@ Notes:
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
 - read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
+- send_email writes and sends a real email, so the user must tap a Confirm button before it goes out — just emit the action; show them the recipient, subject, and the full body you propose in your prose first. Write the complete message yourself (greeting + body + sign-off); do not use placeholders like [Name]. If the user only wants to prepare something, or you are unsure, use create_draft instead (it saves to Gmail without sending and needs no confirmation). Reply to an address from the user's email/contacts; never invent one.
 - delete_calendar_event and move_calendar_event need an event id from get_calendar — call get_calendar first to find the right event, never guess an id. Both require the user to tap a Confirm button before they run, so just emit the action; describe in prose which event you're changing. To "move" an event, pass only the fields that change (e.g. just a new time); other fields are preserved.
 - add_reminder schedules a reminder. When Google Calendar is connected it creates a calendar event with a notification at that time, so the user's phone alerts them natively (works even when this app is closed); otherwise it falls back to an in-app notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. To answer "what reminders do I have", use get_calendar (calendar reminders show up as events); the SCHEDULED REMINDERS list only holds in-app fallback reminders. delete_reminder cancels in-app fallback reminders; tell the user a calendar-based reminder is removed in Google Calendar. These are write actions: state what you're scheduling, then include the action tag.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
@@ -1302,7 +1307,7 @@ Notes:
     if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
     if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
     if (!prefs.tools.calendar) disabled.push('add_calendar_event, get_calendar, delete_calendar_event, move_calendar_event');
-    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email');
+    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email, send_email, create_draft');
     if (!prefs.tools.web)      disabled.push('search_web, fetch_url');
     if (!prefs.tools.finances) disabled.push('get_finances');
     if (!prefs.tools.reminders) disabled.push('add_reminder, delete_reminder');
@@ -1918,7 +1923,8 @@ Notes:
   // onDone(resultString) is called after the action runs so the caller can
   // persist the outcome with the message.
   function appendConfirmCard(action, onDone) {
-    const label = CONFIRM_TOOLS[action.tool] || 'Confirm this action?';
+    const _lbl  = CONFIRM_TOOLS[action.tool];
+    const label = (typeof _lbl === 'function') ? _lbl(action.params || {}) : (_lbl || 'Confirm this action?');
     const card  = document.createElement('div');
     card.className = 'action-card action-confirm';
     card.innerHTML = '<span class="action-card-text"></span>'
@@ -2075,6 +2081,66 @@ Notes:
       } catch(_) {}
       return 'Email marked as read.';
     } catch(e) { return 'Gmail error: ' + e.message; }
+  }
+
+  // ── Email compose (send / draft) ─────────────────────────────────
+  // Standard base64 (for RFC 2047 header words).
+  function _b64Std(str) {
+    const bytes = new TextEncoder().encode(str);
+    let bin = '';
+    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
+    return btoa(bin);
+  }
+  // base64url (for the Gmail `raw` field).
+  function _b64url(str) {
+    return _b64Std(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  // RFC 2047-encode a header value only if it contains non-ASCII.
+  function _encHeader(s) {
+    s = String(s || '');
+    return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + _b64Std(s) + '?=';
+  }
+  function _buildMime(params) {
+    const lines = [];
+    lines.push('To: ' + (params.to || ''));
+    if (params.cc)  lines.push('Cc: '  + params.cc);
+    if (params.bcc) lines.push('Bcc: ' + params.bcc);
+    lines.push('Subject: ' + _encHeader(params.subject || '(no subject)'));
+    lines.push('MIME-Version: 1.0');
+    lines.push('Content-Type: text/plain; charset="UTF-8"');
+    lines.push('');
+    lines.push(String(params.body || ''));
+    return lines.join('\r\n');
+  }
+
+  async function sendEmail(params) {
+    params = params || {};
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Gmail not connected — sign in via the email page first.';
+    if (!(params.to || '').trim()) return 'Need a recipient (to).';
+    if (!(params.body || '').trim()) return 'Need a message body.';
+    try {
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
+        { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' },
+          body: JSON.stringify({ raw: _b64url(_buildMime(params)) }) });
+      if (res.status === 403) return 'Gmail refused the send (403) — the send permission may not be granted yet. Sign out and back in (email page) to re-consent.';
+      if (!res.ok) return 'Gmail send error ' + res.status;
+      return 'Email sent to ' + params.to + '.';
+    } catch (e) { return 'Gmail send error: ' + e.message; }
+  }
+
+  async function createDraft(params) {
+    params = params || {};
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Gmail not connected — sign in via the email page first.';
+    if (!(params.body || '').trim()) return 'Need a message body to draft.';
+    try {
+      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts',
+        { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' },
+          body: JSON.stringify({ message: { raw: _b64url(_buildMime(params)) } }) });
+      if (!res.ok) return 'Gmail draft error ' + res.status;
+      return 'Draft saved to Gmail' + (params.to ? ' (to ' + params.to + ')' : '') + '.';
+    } catch (e) { return 'Gmail draft error: ' + e.message; }
   }
 
   // Full-mailbox Gmail search (read tool). Returns a text block of results
@@ -2394,7 +2460,7 @@ Notes:
     const _tp = getAIPrefs().tools;
     const _cat = (tool === 'set_calorie_target' || tool === 'set_water_target') ? 'targets'
       : (tool === 'add_calendar_event' || tool === 'delete_calendar_event' || tool === 'move_calendar_event') ? 'calendar'
-      : (tool === 'mark_email_read') ? 'email'
+      : (tool === 'mark_email_read' || tool === 'send_email' || tool === 'create_draft') ? 'email'
       : (tool === 'add_reminder' || tool === 'delete_reminder') ? 'reminders'
       : 'goals';
     if (!_tp[_cat]) return 'That action is turned off in Settings → Axis AI.';
@@ -2486,6 +2552,10 @@ Notes:
       return await moveCalendarEvent(params);
     } else if (tool === 'mark_email_read') {
       return await markEmailRead(params.id);
+    } else if (tool === 'send_email') {
+      return await sendEmail(params);
+    } else if (tool === 'create_draft') {
+      return await createDraft(params);
     } else if (tool === 'add_reminder') {
       return addReminder(params);
     } else if (tool === 'delete_reminder') {
@@ -2525,7 +2595,8 @@ Notes:
   // outbound). Value is the prompt shown on the confirm card.
   const CONFIRM_TOOLS = {
     delete_calendar_event: 'Delete this calendar event?',
-    move_calendar_event:   'Reschedule this calendar event?'
+    move_calendar_event:   'Reschedule this calendar event?',
+    send_email: function(p){ return 'Send email to ' + ((p && p.to) || '?') + ((p && p.subject) ? ' — "' + p.subject + '"' : '') + '?'; }
   };
 
   // ── Send message ─────────────────────────────────────────────────
