@@ -4,9 +4,9 @@
 //     <script src="topbar.js" defer></script>
 // It self-injects HTML + CSS, reads progress from localStorage,
 // and renders the water +1 button in the top bar plus the
-// Main/Health/Fitness bottom tabs. Skips chrome on finance.html
-// and inside iframes (so the water tracker can embed cleanly).
-// Bottom tabs are suppressed on ai.html (topbar logo is the nav).
+// Main/Health/Fitness bottom tabs. Skips chrome on finance.html,
+// ai.html, and inside iframes (so the water tracker can embed cleanly).
+// ai.html supplies its own in-page header (with a Home button for nav).
 // =============================================================
 (function() {
   if (window.__lsOrigSet) return;
@@ -295,7 +295,9 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   function isEmbedded() {
     try { return window.self !== window.top; } catch (e) { return true; }
   }
-  function shouldShowChrome() { return !isFinancePage() && !isEmbedded(); }
+  // ai.html has its own in-page top bar (orb, conversations, memory, new chat,
+  // home) — the global chrome is suppressed there, like finance.html.
+  function shouldShowChrome() { return !isFinancePage() && !isAIPage() && !isEmbedded(); }
   function currentPageKey() {
     const p = (window.location.pathname || '').toLowerCase().replace(/\.html$/, '');
     if (p.endsWith('health')) return 'health';

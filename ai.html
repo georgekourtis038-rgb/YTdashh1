@@ -44,22 +44,22 @@ body {
 .ai-shell {
   max-width: 680px;
   margin: 0 auto;
-  padding: max(110px, calc(env(safe-area-inset-top) + 80px)) 20px 24px;
+  padding: 0 20px 24px;
 }
 
 /* ── Header row ── */
 .ai-toprow {
   position: sticky;
-  top: calc(max(52px, env(safe-area-inset-top)) + 44px);
+  top: 0;
   z-index: 25;
   display: flex;
   align-items: center;
-  gap: 11px;
-  margin: 0 -20px 16px;
-  padding: 8px 20px 14px;
-  background: linear-gradient(180deg, var(--bg) 60%, rgba(10,15,14,0));
-  -webkit-backdrop-filter: blur(12px);
-  backdrop-filter: blur(12px);
+  gap: 8px;
+  margin: 0 -20px 14px;
+  padding: calc(env(safe-area-inset-top) + 12px) 20px 14px;
+  background: linear-gradient(180deg, var(--bg) 74%, rgba(10,15,14,0));
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
 }
 .ai-head-text { flex: 1; min-width: 0; }
 .ai-eyebrow {
@@ -70,12 +70,14 @@ body {
   text-transform: uppercase;
   font-weight: 400;
   margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .ai-greeting {
-  font-size: 24px;
+  font-size: 23px;
   font-weight: 600;
   color: #fff;
   letter-spacing: -0.01em;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 
 /* ── Header avatar orb (Aurora) ── */
@@ -635,6 +637,11 @@ body {
 <!-- Main shell -->
 <div class="ai-shell">
   <div class="ai-toprow">
+    <button class="ai-icon-btn" id="aiHomeBtn" aria-label="Back to dashboard" title="Dashboard">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 11.4 12 4l9 7.4M5.5 9.8V20h13V9.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
     <button class="ai-icon-btn" id="sidebarToggle" aria-label="Conversations">
       <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
         <rect y="0" width="16" height="2" rx="1" fill="currentColor"/>
@@ -2115,6 +2122,11 @@ Notes:
     sendBtn.addEventListener('click', function(){ sendMessage(input.value); });
     input.addEventListener('keydown', function(e){
       if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input.value); }
+    });
+    document.getElementById('aiHomeBtn').addEventListener('click', function() {
+      let url = 'index.html';
+      try { url = sessionStorage.getItem('axisReturnUrl') || 'index.html'; } catch (_) {}
+      window.location.href = url;
     });
     document.getElementById('sidebarToggle').addEventListener('click', openSidebar);
     document.getElementById('sidebarClose').addEventListener('click',  closeSidebar);
