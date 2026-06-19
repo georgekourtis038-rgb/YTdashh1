@@ -293,9 +293,9 @@ body{
     <div style="position:absolute;top:-40px;right:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(45,232,162,.18),transparent 70%);filter:blur(6px)"></div>
     <div style="display:flex;align-items:center;gap:22px;position:relative">
       <div style="position:relative;width:128px;height:128px;flex:0 0 auto">
-        <svg width="128" height="128" viewBox="0 0 128 128" style="transform:rotate(-90deg)">
+        <svg width="128" height="128" viewBox="0 0 128 128" style="transform:rotate(-90deg);overflow:visible">
           <circle cx="64" cy="64" r="56" fill="none" stroke="rgba(255,255,255,.07)" stroke-width="9"></circle>
-          <circle id="dayRingFill" cx="64" cy="64" r="56" fill="none" stroke="#2de8a2" stroke-width="9" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="filter:drop-shadow(0 0 5px rgba(45,232,162,.95)) drop-shadow(0 0 16px rgba(45,232,162,.55));transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1),stroke .7s,filter .7s"></circle>
+          <circle id="dayRingFill" cx="64" cy="64" r="56" fill="none" stroke="#2de8a2" stroke-width="9" stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352" style="filter:drop-shadow(0 0 6px rgba(45,232,162,1)) drop-shadow(0 0 20px rgba(45,232,162,.6));transition:stroke-dashoffset .7s cubic-bezier(.22,1,.36,1),stroke .7s,filter .7s"></circle>
         </svg>
         <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">
           <span id="dayRingPercent" style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:34px;color:#fff;line-height:1;letter-spacing:-.03em">—</span>
@@ -500,7 +500,7 @@ body{
   function rgbStr(c) { return 'rgb('+Math.round(c[0])+','+Math.round(c[1])+','+Math.round(c[2])+')'; }
   function ringGlow(c) {
     const r=Math.round(c[0]), g=Math.round(c[1]), b=Math.round(c[2]);
-    return 'drop-shadow(0 0 5px rgba('+r+','+g+','+b+',.95)) drop-shadow(0 0 16px rgba('+r+','+g+','+b+',.55))';
+    return 'drop-shadow(0 0 6px rgba('+r+','+g+','+b+',1)) drop-shadow(0 0 20px rgba('+r+','+g+','+b+',.6))';
   }
 
   const C = 2 * Math.PI * 56; // circumference for r=56
@@ -850,9 +850,24 @@ body{
     document.getElementById('axDate').textContent =
       days[now.getDay()] + ' · ' + months[now.getMonth()] + ' ' + now.getDate();
 
-    // Day ring (immediate + recurring)
+    // Greeting — always correct for the real time of day, with or without a name
+    let _firstName = '';
+    function timeOfDay(h) {
+      if (h < 5)  return 'night';
+      if (h < 12) return 'morning';
+      if (h < 17) return 'afternoon';
+      if (h < 22) return 'evening';
+      return 'night';
+    }
+    function renderGreeting() {
+      const g = 'Good ' + timeOfDay(new Date().getHours());
+      document.getElementById('axGreeting').textContent = _firstName ? (g + ', ' + _firstName) : g;
+    }
+    renderGreeting();
+
+    // Day ring + greeting (immediate + recurring)
     updateDayRing();
-    setInterval(updateDayRing, 60000);
+    setInterval(function(){ updateDayRing(); renderGreeting(); }, 60000);
 
     if (!window.supabase) {
       renderTodos([]); renderGoals([]); return;
@@ -867,10 +882,9 @@ body{
         const meta = user.user_metadata || {};
         const full = meta.full_name || meta.name || '';
         const firstName = full.split(' ')[0] || user.email.split('@')[0] || 'George';
-        const h   = now.getHours();
-        const tod = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
-        document.getElementById('axGreeting').textContent = 'Good ' + tod + ', ' + firstName;
-        document.getElementById('axAvatar').textContent   = firstName[0].toUpperCase();
+        _firstName = firstName;
+        renderGreeting();
+        document.getElementById('axAvatar').textContent = firstName[0].toUpperCase();
       }
     } catch(_) {}
 
