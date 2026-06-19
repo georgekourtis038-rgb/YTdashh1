@@ -388,19 +388,19 @@ body {
 .sidebar-close:hover { color: #fff; }
 
 .sidebar-list {
-  flex: 1; min-height: 0; overflow-y: auto;
+  flex: 1 1 auto; min-height: 0; height: 0; overflow-y: auto;
   padding: 10px 12px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
-  display: flex; flex-direction: column; gap: 6px;
+  display: block;            /* block flow → rows keep full height, list scrolls */
 }
 .sidebar-empty {
   padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
 }
 .sidebar-row {
   position: relative;
-  flex: 0 0 auto;            /* keep full height; let the list scroll, not squish rows */
   display: flex; align-items: stretch; gap: 4px;
+  margin-bottom: 6px;
   border-radius: 14px;
   background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
   border: 1px solid rgba(255,255,255,0.07);
@@ -408,6 +408,7 @@ body {
   transition: border-color 0.15s, background 0.15s;
   overflow: hidden;
 }
+.sidebar-row:last-child { margin-bottom: 0; }
 .sidebar-row:active { background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)); }
 .sidebar-row.active {
   background: linear-gradient(180deg, rgba(45,232,162,0.12), rgba(45,232,162,0.035));
