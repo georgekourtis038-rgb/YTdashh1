@@ -686,10 +686,10 @@ html, body {
             <div class="setting-row-sub">How Axis talks to you</div>
           </div>
           <div class="seg-toggle" id="aiTone">
+            <button class="seg-btn" data-tone="jarvis">Jarvis</button>
             <button class="seg-btn" data-tone="butler">Butler</button>
             <button class="seg-btn" data-tone="coach">Coach</button>
             <button class="seg-btn" data-tone="friend">Friend</button>
-            <button class="seg-btn" data-tone="concise">Concise</button>
           </div>
         </div>
         <div class="setting-row col">
@@ -1395,7 +1395,7 @@ html, body {
     const raw = lsGet(AI_PREFS_KEY) || {};
     const b = raw.briefing || {}, c = raw.context || {}, t = raw.tools || {};
     return {
-      tone:           raw.tone || 'butler',
+      tone:           raw.tone || 'jarvis',
       nickname:       typeof raw.nickname === 'string' ? raw.nickname : '',
       responseLength: raw.responseLength || 'balanced',
       emoji:          raw.emoji === true,
@@ -1461,7 +1461,7 @@ html, body {
     const activeLen  = document.querySelector('#aiLength .seg-btn.active');
     const useWake    = document.getElementById('aiBriefUseWake').checked;
     const p = {
-      tone:           activeTone ? activeTone.dataset.tone : 'butler',
+      tone:           activeTone ? activeTone.dataset.tone : 'jarvis',
       nickname:       document.getElementById('aiNickname').value.trim().slice(0, 40),
       responseLength: activeLen ? activeLen.dataset.len : 'balanced',
       emoji:          document.getElementById('aiEmoji').checked,

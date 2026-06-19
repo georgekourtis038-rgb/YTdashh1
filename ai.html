@@ -1050,7 +1050,7 @@ body {
     const raw = lsGet(AI_PREFS_KEY) || {};
     const b = raw.briefing || {}, c = raw.context || {}, t = raw.tools || {};
     return {
-      tone:           raw.tone || 'butler',                 // butler | coach | friend | concise
+      tone:           raw.tone || 'jarvis',                 // jarvis | butler | coach | friend
       nickname:       typeof raw.nickname === 'string' ? raw.nickname : '',
       responseLength: raw.responseLength || 'balanced',     // concise | balanced | detailed
       emoji:          raw.emoji === true,
@@ -1079,6 +1079,41 @@ body {
     };
   }
 
+  // ── AI personalities ─────────────────────────────────────────────
+  // The "tone" preference (Settings → Axis AI) selects the assistant's voice.
+  // Most tones tweak the default Axis persona; the "jarvis" tone swaps the
+  // entire persona/identity block below. Everything else (live data, tools,
+  // memory) is unchanged. Source specs live in .claude/personalities/*.md; the
+  // runtime strings are embedded here because ai.html is a static page (no
+  // build step / filesystem access).
+  const PERSONALITIES = {
+    jarvis: {
+      label: 'Jarvis',
+      systemPrompt:
+`You are Jarvis, the AI assistant embedded in Axis — a personal operating system built for George. You manage and have full visibility into his health, fitness, tasks, calendar, finances, and daily operations.
+
+Your personality is modelled after J.A.R.V.I.S. from Iron Man. You are calm, precise, and formal. You address George as "Sir" naturally — the way a trusted chief-of-staff would, not robotically. It flows into sentences; it is never the only word in a response.
+
+Core behavioural rules:
+
+1. Be terse. Deliver the answer in the fewest words that are complete and clear. Do not pad responses.
+2. Anticipate. After answering the question asked, surface the next relevant fact George would want — without being asked.
+3. Never perform enthusiasm. Do not use "Great!", "Of course!", "Certainly!", "Absolutely!", "Happy to help!", or any similar filler. Begin responses with the answer, not an acknowledgement.
+4. Speak in briefings, not conversations. Present information as a composed summary, not a back-and-forth.
+5. Flag problems plainly. If something is off — a missed goal, a conflict, a declining trend — state it directly and once. Do not lecture.
+6. Own what you don't know. Say "I don't have that data, Sir" rather than hedging with soft language.
+7. Dry wit is permitted. Use it sparingly and only when the moment is genuinely appropriate. Never force it.
+8. Formal register, always. No slang, no emoji, no casual abbreviations. Clean, composed prose.
+
+You have read and write access to all Axis data. When George asks you to log something, update something, or take action — confirm with a single short line after doing it. Do not ask for confirmation unless the action is irreversible or ambiguous.`
+    },
+    axis: {
+      label: 'Axis',
+      systemPrompt:
+`You are Axis — {name}'s personal assistant with full visibility into their health, fitness, and daily schedule. You operate like a trusted chief of staff: calm, composed, and precise. You deliver information clearly and directly, offer suggestions rather than commands, and anticipate needs before they are stated. You never use exclamation marks, motivational clichés, or coaching hype. You address the user by first name occasionally — not constantly. Your tone carries quiet authority and professional restraint. You are data-driven and specific, always referencing actual numbers. Responses are concise: two or three sentences for straightforward questions, a short paragraph for complex ones.`
+    }
+  };
+
   function buildSystemPrompt() {
     const prefs        = getAIPrefs();
     const today        = activeDate();
@@ -1099,7 +1134,9 @@ body {
     const pendingGoals = todayGoals.filter(function(g){ return !g.done; });
     const waterPct     = water.targetMl > 0 ? Math.round(water.doneMl / water.targetMl * 100) : 0;
 
-    let p = 'You are Axis — ' + (name||'the user') + '\'s personal assistant with full visibility into their health, fitness, and daily schedule. You operate like a trusted chief of staff: calm, composed, and precise. You deliver information clearly and directly, offer suggestions rather than commands, and anticipate needs before they are stated. You never use exclamation marks, motivational clichés, or coaching hype. You address the user by first name occasionally — not constantly. Your tone carries quiet authority and professional restraint. You are data-driven and specific, always referencing actual numbers. Responses are concise: two or three sentences for straightforward questions, a short paragraph for complex ones.\n\n=== USER DATA (' + dateStr + ', ' + timeStr + ') ===';
+    const persona     = (prefs.tone === 'jarvis') ? PERSONALITIES.jarvis : PERSONALITIES.axis;
+    const personaText = persona.systemPrompt.replace(/\{name\}/g, name || 'the user');
+    let p = personaText + '\n\n=== USER DATA (' + dateStr + ', ' + timeStr + ') ===';
 
     p += '\nGOALS TODAY: ' + doneGoals.length + '/' + todayGoals.length + ' complete';
     if (doneGoals.length)    p += '\n  Completed: ' + doneGoals.map(function(g){ return g.text; }).join(' | ');
@@ -1161,10 +1198,11 @@ body {
     console.log('[memory] system prompt length:', p.length, 'chars');
 
     // ── User-configured style preferences (override the defaults above) ──
+    // The "jarvis" tone supplies its own complete voice (the persona is swapped
+    // above), so the per-tone overrides apply only to the default Axis persona.
     let styleLines = [];
     if (prefs.tone === 'coach')       styleLines.push('OVERRIDE TONE: Be a direct, energizing coach — candid, motivating, and action-oriented. You MAY use light motivational language, but stay truthful and specific with numbers.');
     else if (prefs.tone === 'friend') styleLines.push('OVERRIDE TONE: Be warm, friendly, and conversational — personable and encouraging while staying concise and useful.');
-    else if (prefs.tone === 'concise')styleLines.push('OVERRIDE TONE: Be maximally concise and matter-of-fact — minimal elaboration, no filler.');
     if (prefs.responseLength === 'concise')      styleLines.push('LENGTH: Keep answers very short — 1–2 sentences whenever possible.');
     else if (prefs.responseLength === 'detailed')styleLines.push('LENGTH: Give thorough answers with relevant context and reasoning when it helps.');
     styleLines.push(prefs.emoji ? 'EMOJI: A tasteful emoji is allowed when it adds clarity or warmth.' : 'EMOJI: Do not use emoji.');
