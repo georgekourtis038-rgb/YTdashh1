@@ -49,10 +49,17 @@ body {
 
 /* ── Header row ── */
 .ai-toprow {
+  position: sticky;
+  top: calc(max(52px, env(safe-area-inset-top)) + 44px);
+  z-index: 25;
   display: flex;
   align-items: center;
   gap: 11px;
-  margin-bottom: 24px;
+  margin: 0 -20px 16px;
+  padding: 8px 20px 14px;
+  background: linear-gradient(180deg, var(--bg) 60%, rgba(10,15,14,0));
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
 }
 .ai-head-text { flex: 1; min-width: 0; }
 .ai-eyebrow {
@@ -163,6 +170,37 @@ body {
   color: rgba(255,255,255,0.88);
   border-bottom-left-radius: 4px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+}
+
+/* ── Rich text (markdown) inside bubbles ── */
+.msg-text { display: block; }
+.msg-text .md-line { min-height: 1px; }
+.msg-text .md-line + .md-line { margin-top: 1px; }
+.msg-text .md-gap { height: 9px; }
+.msg-bubble strong { font-weight: 700; color: #fff; }
+.msg-user .msg-bubble strong { color: #04140d; }
+.msg-bubble em { font-style: italic; }
+.msg-bubble code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: rgba(255,255,255,0.08);
+  padding: 1px 5px; border-radius: 5px;
+}
+.msg-user .msg-bubble code { background: rgba(0,0,0,0.12); }
+.msg-text .md-ul {
+  margin: 5px 0 4px; padding-left: 18px;
+  list-style: none;
+}
+.msg-text .md-ul li { position: relative; margin: 4px 0; }
+.msg-text .md-ul li::before {
+  content: ''; position: absolute; left: -13px; top: 0.62em;
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--mint);
+}
+.msg-user .msg-text .md-ul li::before { background: rgba(4,20,13,0.5); }
+.msg-text .md-h {
+  font-weight: 700; color: #fff; font-size: 1.02em;
+  margin-bottom: 3px; letter-spacing: -0.01em;
 }
 
 /* ── Briefing message ── */
@@ -288,6 +326,7 @@ body {
   will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
   align-self: flex-start; max-width: 85%;
 }
+.action-card.msg-static { animation: none; }
 .action-card-check { color: var(--mint); font-size: 13px; flex-shrink: 0; margin-top: 2px; }
 .action-card-text  { font-size: 13px; color: rgba(45,232,162,0.88); line-height: 1.45; }
 
@@ -313,8 +352,8 @@ body {
 .chat-sidebar {
   position: fixed; top: 0; left: 0; bottom: 0;
   width: min(300px, 85vw);
-  background: #0d1210;
-  border-right: 1px solid rgba(255,255,255,0.08);
+  background: radial-gradient(120% 50% at 50% -10%, #102018 0%, #0c1110 50%, #0a0e0d 100%);
+  border-right: 1px solid rgba(255,255,255,0.07);
   z-index: 201;
   display: flex; flex-direction: column;
   transform: translateX(-100%) translateZ(0);
@@ -331,9 +370,10 @@ body {
   flex-shrink: 0;
 }
 .sidebar-title {
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 3px; text-transform: uppercase;
-  color: var(--label);
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 400;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(45,232,162,0.85);
 }
 .sidebar-close {
   width: 28px; height: 28px; border-radius: 8px;
@@ -346,47 +386,79 @@ body {
 .sidebar-close:hover { color: #fff; }
 
 .sidebar-list {
-  flex: 1; overflow-y: auto; padding: 8px 0;
+  flex: 1; overflow-y: auto; padding: 10px 12px;
   overscroll-behavior: contain;
+  display: flex; flex-direction: column; gap: 6px;
 }
 .sidebar-empty {
   padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
 }
 .sidebar-row {
-  width: 100%; padding: 12px 16px;
+  position: relative;
+  display: flex; align-items: stretch; gap: 4px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  transition: border-color 0.15s, background 0.15s;
+  overflow: hidden;
+}
+.sidebar-row:active { background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)); }
+.sidebar-row.active {
+  background: linear-gradient(180deg, rgba(45,232,162,0.12), rgba(45,232,162,0.035));
+  border-color: rgba(45,232,162,0.3);
+}
+.sidebar-row-main {
+  flex: 1; min-width: 0;
+  display: flex; flex-direction: column; gap: 3px;
+  padding: 11px 12px;
   background: transparent; border: none;
   text-align: left; cursor: pointer;
+  font-family: var(--font);
   -webkit-tap-highlight-color: transparent;
-  border-radius: 0;
-  transition: background 0.12s;
-  display: flex; flex-direction: column; gap: 3px;
 }
-.sidebar-row:hover  { background: rgba(255,255,255,0.04); }
-.sidebar-row:active { background: rgba(255,255,255,0.07); }
-.sidebar-row.active { background: rgba(45,232,162,0.06); border-left: 2px solid var(--mint); }
 .sidebar-row-date {
-  font-size: 10px; font-weight: 600; letter-spacing: 1px;
-  text-transform: uppercase; color: var(--label);
+  font-family: var(--font-mono);
+  font-size: 10px; font-weight: 400; letter-spacing: 0.1em;
+  text-transform: uppercase; color: rgba(255,255,255,0.42);
 }
 .sidebar-row-preview {
-  font-size: 13px; color: rgba(255,255,255,0.65);
+  font-size: 13px; color: rgba(255,255,255,0.7);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.sidebar-row.active .sidebar-row-date    { color: var(--mint); opacity: 0.8; }
-.sidebar-row.active .sidebar-row-preview { color: rgba(255,255,255,0.85); }
+.sidebar-row.active .sidebar-row-date    { color: var(--mint); }
+.sidebar-row.active .sidebar-row-preview { color: #fff; }
+
+.sidebar-row-actions {
+  display: flex; align-items: center; gap: 2px;
+  padding-right: 6px; flex-shrink: 0;
+}
+.sidebar-row-action-btn {
+  width: 30px; height: 30px; border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  background: transparent; border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer; flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s;
+}
+.sidebar-row-action-btn:active { background: rgba(255,255,255,0.08); }
+.sidebar-row-action-btn.rename:hover { color: #fff; }
+.sidebar-row-action-btn.delete:hover { color: #ff7a7a; }
 
 .sidebar-new-btn {
-  margin: 10px 12px;
-  padding: 11px; border-radius: 10px;
-  background: rgba(45,232,162,0.08);
-  border: 1px solid rgba(45,232,162,0.2);
-  color: var(--mint); font-size: 13px; font-weight: 600;
+  margin: 10px 12px calc(12px + env(safe-area-inset-bottom));
+  padding: 13px; border-radius: 14px;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  border: none;
+  color: #04140d; font-size: 14px; font-weight: 700;
   font-family: var(--font); cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s;
+  transition: transform 0.1s, box-shadow 0.15s;
+  box-shadow: 0 0 22px -8px rgba(45,232,162,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
   flex-shrink: 0;
 }
-.sidebar-new-btn:active { background: rgba(45,232,162,0.15); }
+.sidebar-new-btn:active { transform: scale(0.97); }
 
 /* ── Memory panel ── */
 .memory-overlay {
@@ -401,8 +473,8 @@ body {
 .memory-panel {
   position: fixed; top: 0; right: 0; bottom: 0;
   width: min(320px, 90vw);
-  background: #0d1210;
-  border-left: 1px solid rgba(255,255,255,0.08);
+  background: radial-gradient(120% 50% at 50% -10%, #102018 0%, #0c1110 50%, #0a0e0d 100%);
+  border-left: 1px solid rgba(255,255,255,0.07);
   z-index: 201;
   display: flex; flex-direction: column;
   transform: translateX(100%) translateZ(0);
@@ -418,9 +490,10 @@ body {
   flex-shrink: 0;
 }
 .memory-panel-title {
-  font-size: 12px; font-weight: 700;
-  letter-spacing: 3px; text-transform: uppercase;
-  color: var(--label);
+  font-family: var(--font-mono);
+  font-size: 12px; font-weight: 400;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: rgba(45,232,162,0.85);
 }
 .memory-panel-close {
   width: 28px; height: 28px; border-radius: 8px;
@@ -442,13 +515,14 @@ body {
 }
 .memory-chip {
   display: flex; align-items: flex-start; gap: 8px;
-  padding: 10px 12px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  border-radius: 12px;
+  padding: 12px 13px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
+  border: 1px solid rgba(255,255,255,0.07);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+  border-radius: 14px;
   font-size: 13px;
-  color: rgba(255,255,255,0.75);
-  line-height: 1.4;
+  color: rgba(255,255,255,0.78);
+  line-height: 1.45;
 }
 .memory-chip-text { flex: 1; }
 .memory-chip-del {
@@ -462,9 +536,10 @@ body {
 .memory-chip-del:hover { color: rgba(255,80,80,0.8); }
 
 .memory-count-label {
-  padding: 0 12px 8px;
-  font-size: 11px; color: var(--subtle);
-  letter-spacing: 1px; text-transform: uppercase;
+  padding: 12px 14px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px; color: rgba(255,255,255,0.4);
+  letter-spacing: 0.1em; text-transform: uppercase;
   flex-shrink: 0;
 }
 
@@ -1233,6 +1308,9 @@ Notes:
 
   let chatHistory      = []; // [{ role, content, hidden?, briefing? }] — sent to API (hidden included for context)
   let activeSessionId  = null;
+  let _briefingRunning  = false;
+  let _briefingTimer    = null;
+  let _briefingInterval = null;
 
   function getSessions()       { return lsGet(SESSIONS_KEY) || []; }
   function saveSessions(arr)   { try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(arr)); } catch(_) {} }
@@ -1242,7 +1320,8 @@ Notes:
     for (let i = 0; i < messages.length; i++) {
       const m = messages[i];
       if (m.content && m.content.trim() && !m.hidden) {
-        const txt = m.content.trim();
+        const txt = stripMd(m.content);
+        if (!txt) continue;
         return txt.slice(0, 72) + (txt.length > 72 ? '…' : '');
       }
     }
@@ -1289,11 +1368,56 @@ Notes:
 
   function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+  // Strip action tags + markdown markers for plain previews
+  function stripMd(s) {
+    return String(s || '')
+      .replace(/<action>[\s\S]*?<\/action>/g, '')
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/[*_`#>]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  // Inline markdown on already-escaped text: **bold**, *italic*, `code`
+  function mdInline(s) {
+    return s
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+
+  // Render a bubble's text with light markdown (bold, italic, code, bullets,
+  // bold-line headers, paragraph spacing). Input is raw model text.
+  function renderRich(el, text) {
+    const esc   = escHtml(text || '');
+    const lines = esc.split('\n');
+    let html = '', inList = false;
+    for (let i = 0; i < lines.length; i++) {
+      const line   = lines[i];
+      const bullet = line.match(/^\s*(?:[-•]|\d+\.)\s+(.*)$/);
+      if (bullet) {
+        if (!inList) { html += '<ul class="md-ul">'; inList = true; }
+        html += '<li>' + mdInline(bullet[1]) + '</li>';
+        continue;
+      }
+      if (inList) { html += '</ul>'; inList = false; }
+      if (line.trim() === '') { html += '<div class="md-gap"></div>'; continue; }
+      // A line that is entirely bold reads as a small header
+      const headerMatch = line.match(/^\s*\*\*([^*]+)\*\*\s*:?\s*$/);
+      if (headerMatch) { html += '<div class="md-h">' + mdInline(headerMatch[1]) + '</div>'; continue; }
+      html += '<div class="md-line">' + mdInline(line) + '</div>';
+    }
+    if (inList) html += '</ul>';
+    el.innerHTML = html;
+  }
+
   function buildMsgEl(role, content, opts) {
     opts = opts || {};
+    // Normalize: stored messages use 'assistant'; live flow uses 'ai'.
+    const norm   = (role === 'user') ? 'user' : 'ai';
     const wrap   = document.createElement('div');
     const bubble = document.createElement('div');
-    wrap.className   = 'msg msg-' + role + (opts.isStatic ? ' msg-static' : '');
+    wrap.className   = 'msg msg-' + norm + (opts.isStatic ? ' msg-static' : '');
     bubble.className = 'msg-bubble';
     if (opts.isBriefing) {
       const header = document.createElement('div');
@@ -1302,7 +1426,13 @@ Notes:
       bubble.appendChild(header);
     }
     const textNode = document.createElement('span');
-    textNode.textContent = content;
+    textNode.className = 'msg-text';
+    if (norm === 'ai') {
+      // Strip any tool-call tags and render light markdown.
+      renderRich(textNode, parseActions(content || '').clean);
+    } else {
+      textNode.textContent = content;
+    }
     bubble.appendChild(textNode);
     wrap.appendChild(bubble);
     return { wrap, bubble, textNode };
@@ -1359,6 +1489,16 @@ Notes:
       }
       const { wrap } = buildMsgEl(m.role, m.content, { isStatic: true, isBriefing: m.briefing });
       frag.appendChild(wrap);
+      // Re-render any tool-action confirmation cards that were stored with this message
+      if (m.role !== 'user' && Array.isArray(m.actions)) {
+        m.actions.forEach(function(r) {
+          const card = document.createElement('div');
+          card.className = 'action-card msg-static';
+          card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
+          card.querySelector('.action-card-text').textContent = r;
+          frag.appendChild(card);
+        });
+      }
     });
     thread.appendChild(frag);
     scrollToBottom();
@@ -1564,14 +1704,20 @@ Notes:
       if (!attached) { typingEl.remove(); appendMsg('ai', 'No response received.'); }
       else {
         const { clean, actions } = parseActions(full);
-        if (clean !== full) aiText.textContent = clean;
-        chatHistory.push({ role: 'assistant', content: full, ts: Date.now() });
-        saveCurrentSession();
+        renderRich(aiText, clean);
+        const aiMsg = { role: 'assistant', content: full, ts: Date.now() };
+        chatHistory.push(aiMsg);
         // Background memory extraction — don't await, non-blocking
         extractMemories(text, clean || full, activeSessionId);
+        // Execute tool actions, render + persist their confirmation cards
+        const results = [];
         for (const action of actions) {
-          appendActionCard(await executeAction(action.tool, action.params));
+          const r = await executeAction(action.tool, action.params);
+          results.push(r);
+          appendActionCard(r);
         }
+        if (results.length) aiMsg.actions = results;
+        saveCurrentSession();
       }
     } catch (err) {
       aiBubble.classList.remove('streaming');
@@ -1587,39 +1733,47 @@ Notes:
   }
 
   // ── Daily Briefing (persistent, one chat forever) ────────────────
-  async function runTodaysBriefing() {
+  // opts.silent → generate + persist without touching the DOM (used when the
+  // wake-time trigger fires while the user is in another conversation).
+  async function runTodaysBriefing(opts) {
+    const silent   = !!(opts && opts.silent);
     const todayKey = todayStr();
     const sessions = getSessions();
     const session  = sessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
     if (session && Array.isArray(session.briefingDates) && session.briefingDates.includes(todayKey)) return;
+    if (_briefingRunning) return;
+    _briefingRunning = true;
 
     const thread    = document.getElementById('chatThread');
     const now       = new Date();
     const dateLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
 
-    // Date separator for today
-    const sep = document.createElement('div');
-    sep.className   = 'chat-date-sep';
-    sep.textContent = dateLabel;
-    thread.appendChild(sep);
+    let sep = null, loadRow = null, bWrap = null, bBubble = null, bText = null, attached = false;
 
-    // Loading indicator
-    const loadRow = document.createElement('div');
-    loadRow.className = 'briefing-loading-row';
-    loadRow.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span>Preparing your briefing…</span>';
-    thread.appendChild(loadRow);
-    scrollToBottom();
+    if (!silent) {
+      sep = document.createElement('div');
+      sep.className   = 'chat-date-sep';
+      sep.textContent = dateLabel;
+      thread.appendChild(sep);
 
-    const { wrap: bWrap, bubble: bBubble, textNode: bText } = buildMsgEl('ai', '', { isBriefing: true });
-    bBubble.classList.add('streaming');
+      loadRow = document.createElement('div');
+      loadRow.className = 'briefing-loading-row';
+      loadRow.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span>Preparing your briefing…</span>';
+      thread.appendChild(loadRow);
+      scrollToBottom();
+
+      const built = buildMsgEl('ai', '', { isBriefing: true });
+      bWrap = built.wrap; bBubble = built.bubble; bText = built.textNode;
+      bBubble.classList.add('streaming');
+    }
+
     let briefingFull = '';
-    let attached = false;
 
     function attachBriefing() {
-      if (attached) return;
+      if (silent || attached) return;
       attached = true;
-      if (loadRow.parentNode) loadRow.remove();
-      if (!bWrap.parentNode) thread.appendChild(bWrap);
+      if (loadRow && loadRow.parentNode) loadRow.remove();
+      if (bWrap && !bWrap.parentNode) thread.appendChild(bWrap);
     }
 
     const briefingRequest = 'Daily briefing — ' + dateLabel + '. Format strictly as follows:\n'
@@ -1637,13 +1791,17 @@ Notes:
 
     try {
       briefingFull = await streamClaude(apiMessages, function(accumulated) {
+        if (silent) return;
         attachBriefing();
         bText.textContent = accumulated;
         scrollToBottom();
       });
-      bBubble.classList.remove('streaming');
       if (!briefingFull) throw new Error('empty response from API');
-      attachBriefing();
+      if (!silent) {
+        bBubble.classList.remove('streaming');
+        attachBriefing();
+        renderRich(bText, briefingFull);
+      }
 
       // Persist hidden user msg + assistant briefing to the session
       const hiddenUserMsg = { role: 'user', content: briefingRequest, hidden: true, ts: Date.now() };
@@ -1657,17 +1815,19 @@ Notes:
         if (!Array.isArray(s2.messages)) s2.messages = [];
         s2.messages.push(hiddenUserMsg);
         s2.messages.push(assistantMsg);
-        s2.preview = dateLabel + ' — ' + briefingFull.replace(/\n/g,' ').slice(0, 50) + '…';
+        s2.preview = dateLabel + ' — ' + stripMd(briefingFull).slice(0, 50) + '…';
         saveSessions(sessions2);
         _supaUpsert('chat_sessions', sessions2);
       }
 
-      // Rebuild chatHistory from saved session so it includes the new pair
-      const s3 = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-      if (s3) {
-        chatHistory = (s3.messages || []).map(function(m){
-          return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
-        });
+      // Rebuild chatHistory from saved session if it's the one on screen
+      if (activeSessionId === BRIEFING_SESSION_ID) {
+        const s3 = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
+        if (s3) {
+          chatHistory = (s3.messages || []).map(function(m){
+            return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+          });
+        }
       }
 
       // Legacy cache for push-init
@@ -1676,29 +1836,73 @@ Notes:
       _supaUpsert('briefing', obj);
 
     } catch (err) {
-      bBubble.classList.remove('streaming');
-      attachBriefing();
       const errMsg = (err && err.message) ? err.message : String(err);
       console.error('[briefing] error:', errMsg);
-      if (briefingFull) {
-        bText.textContent = briefingFull + '\n\n[Briefing cut short — ' + errMsg + ']';
-      } else {
-        bText.textContent = 'Could not load briefing: ' + errMsg;
+      if (!silent) {
+        bBubble.classList.remove('streaming');
+        attachBriefing();
+        if (briefingFull) {
+          renderRich(bText, briefingFull + '\n\n[Briefing cut short — ' + errMsg + ']');
+        } else {
+          bText.textContent = 'Could not load briefing: ' + errMsg;
+        }
+        const retryBtn = document.createElement('button');
+        retryBtn.className   = 'briefing-retry-btn';
+        retryBtn.textContent = '⟳ Retry';
+        retryBtn.addEventListener('click', function() {
+          retryBtn.remove();
+          if (bWrap) bWrap.remove();
+          if (sep && sep.parentNode) sep.remove();
+          runTodaysBriefing();
+        });
+        bBubble.appendChild(retryBtn);
       }
-      // Retry button
-      const retryBtn = document.createElement('button');
-      retryBtn.className   = 'briefing-retry-btn';
-      retryBtn.textContent = '⟳ Retry';
-      retryBtn.addEventListener('click', function() {
-        retryBtn.remove();
-        bWrap.remove();
-        if (sep.parentNode) sep.remove();
-        runTodaysBriefing();
-      });
-      bBubble.appendChild(retryBtn);
+    } finally {
+      _briefingRunning = false;
     }
 
     renderSidebar();
+  }
+
+  // ── Wake-time scheduling ─────────────────────────────────────────
+  // The briefing should fire at the user's wake time, not merely on app open.
+  // (A PWA can't run while fully closed — this fires whenever the app is open
+  //  at/after wake time, and stays armed while it's open.)
+  function getWakeMinutes() {
+    const raw = lsRaw('dash_wake_time') || '08:00';
+    const m = /^(\d{1,2}):(\d{2})$/.exec(raw);
+    if (!m) return 8 * 60;
+    return (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60);
+  }
+  function briefingDoneToday() {
+    const s = getSessions().find(function(x){ return x.id === BRIEFING_SESSION_ID; });
+    return !!(s && Array.isArray(s.briefingDates) && s.briefingDates.includes(todayStr()));
+  }
+  function maybeRunBriefingNow() {
+    if (briefingDoneToday()) return;
+    const now    = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    if (nowMin < getWakeMinutes()) return; // before wake — keep waiting
+    const silent = activeSessionId !== BRIEFING_SESSION_ID;
+    runTodaysBriefing({ silent: silent });
+  }
+  function scheduleBriefing() {
+    clearTimeout(_briefingTimer);
+    const now    = new Date();
+    const nowMin = now.getHours() * 60 + now.getMinutes();
+    const wake   = getWakeMinutes();
+    if (!briefingDoneToday() && nowMin < wake) {
+      const msUntil = ((wake - nowMin) * 60 - now.getSeconds()) * 1000;
+      _briefingTimer = setTimeout(maybeRunBriefingNow, Math.max(1000, msUntil));
+    }
+    // Safety net: re-check every 5 min (covers crossing wake time with the tab
+    // left open, clock drift, and day rollover).
+    if (!_briefingInterval) {
+      _briefingInterval = setInterval(function() {
+        maybeRunBriefingNow();
+        if (!briefingDoneToday()) scheduleBriefing();
+      }, 5 * 60 * 1000);
+    }
   }
 
   // ── New chat (regular — no briefing) ─────────────────────────────
@@ -1732,7 +1936,44 @@ Notes:
     }
   }
 
+  // ── Rename / delete sessions ─────────────────────────────────────
+  function renameSession(id) {
+    const sessions = getSessions();
+    const s = sessions.find(function(x){ return x.id === id; });
+    if (!s) return;
+    const current = s.title || stripMd(s.preview) || '';
+    const name = window.prompt('Rename conversation', current);
+    if (name === null) return;
+    const t = name.trim();
+    if (t) s.title = t; else delete s.title;
+    saveSessions(sessions);
+    _supaUpsert('chat_sessions', sessions);
+    renderSidebar();
+  }
+
+  function deleteSession(id) {
+    if (id === BRIEFING_SESSION_ID) return; // briefing is permanent
+    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
+    const remaining = getSessions().filter(function(x){ return x.id !== id; });
+    saveSessions(remaining);
+    _supaUpsert('chat_sessions', remaining);
+    if (activeSessionId === id) {
+      activeSessionId = BRIEFING_SESSION_ID;
+      localStorage.setItem(ACTIVE_KEY, BRIEFING_SESSION_ID);
+      const bs = getSessions().find(function(x){ return x.id === BRIEFING_SESSION_ID; });
+      const msgs = (bs && bs.messages) ? bs.messages : [];
+      chatHistory = msgs.map(function(m){
+        return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+      });
+      renderThread(msgs);
+    }
+    renderSidebar();
+  }
+
   // ── Sidebar ──────────────────────────────────────────────────────
+  const ICON_RENAME = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+  const ICON_DELETE = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>';
+
   function renderSidebar() {
     const list = document.getElementById('sidebarList');
     list.innerHTML = '';
@@ -1741,15 +1982,15 @@ Notes:
     // Briefing session pinned at top
     const briefingSession = allSessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
     if (briefingSession) {
-      const row = document.createElement('button');
+      const row = document.createElement('div');
       row.className = 'sidebar-row sidebar-briefing-row' + (activeSessionId === BRIEFING_SESSION_ID ? ' active' : '');
-      row.innerHTML = '<span class="sidebar-row-date">⚡ Daily Briefing</span>'
-        + '<span class="sidebar-row-preview">' + escHtml(briefingSession.preview || 'Daily Briefing') + '</span>';
-      row.addEventListener('click', function(){ loadSession(BRIEFING_SESSION_ID); });
+      const main = document.createElement('button');
+      main.className = 'sidebar-row-main';
+      main.innerHTML = '<span class="sidebar-row-date">⚡ Daily Briefing</span>'
+        + '<span class="sidebar-row-preview">' + escHtml(stripMd(briefingSession.preview) || 'Daily Briefing') + '</span>';
+      main.addEventListener('click', function(){ loadSession(BRIEFING_SESSION_ID); });
+      row.appendChild(main);
       list.appendChild(row);
-      const divider = document.createElement('div');
-      divider.className = 'sidebar-divider';
-      list.appendChild(divider);
     }
 
     // Regular sessions sorted newest first
@@ -1764,16 +2005,38 @@ Notes:
     }
 
     regular.forEach(function(s) {
-      const row = document.createElement('button');
+      const row = document.createElement('div');
       row.className = 'sidebar-row' + (s.id === activeSessionId ? ' active' : '');
+
+      const main = document.createElement('button');
+      main.className = 'sidebar-row-main';
       const d = new Date(s.createdAt);
       const dateLabel = d.toLocaleDateString('en-US', {
         month: 'short', day: 'numeric',
         year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
       });
-      row.innerHTML = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>'
-        + '<span class="sidebar-row-preview">' + escHtml(s.preview || 'New conversation') + '</span>';
-      row.addEventListener('click', function(){ loadSession(s.id); });
+      const display = s.title ? s.title : (stripMd(s.preview) || 'New conversation');
+      main.innerHTML = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>'
+        + '<span class="sidebar-row-preview">' + escHtml(display) + '</span>';
+      main.addEventListener('click', function(){ loadSession(s.id); });
+      row.appendChild(main);
+
+      const acts = document.createElement('div');
+      acts.className = 'sidebar-row-actions';
+      const renameBtn = document.createElement('button');
+      renameBtn.className = 'sidebar-row-action-btn rename';
+      renameBtn.setAttribute('aria-label', 'Rename conversation');
+      renameBtn.innerHTML = ICON_RENAME;
+      renameBtn.addEventListener('click', function(e){ e.stopPropagation(); renameSession(s.id); });
+      const delBtn = document.createElement('button');
+      delBtn.className = 'sidebar-row-action-btn delete';
+      delBtn.setAttribute('aria-label', 'Delete conversation');
+      delBtn.innerHTML = ICON_DELETE;
+      delBtn.addEventListener('click', function(e){ e.stopPropagation(); deleteSession(s.id); });
+      acts.appendChild(renameBtn);
+      acts.appendChild(delBtn);
+      row.appendChild(acts);
+
       list.appendChild(row);
     });
   }
@@ -1836,10 +2099,14 @@ Notes:
       renderThread(session.messages);
     }
 
-    // Run today's briefing if we're in the briefing session
-    if (activeSessionId === BRIEFING_SESSION_ID) {
-      await runTodaysBriefing();
+    // Daily briefing: only run at/after the user's wake time — not merely on
+    // open. If the app is opened before wake, it's scheduled to fire then.
+    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
+    if (!briefingDoneToday() && nowMin >= getWakeMinutes()) {
+      const silent = activeSessionId !== BRIEFING_SESSION_ID;
+      await runTodaysBriefing({ silent: silent });
     }
+    scheduleBriefing();
     renderSidebar();
 
     // Wire UI
