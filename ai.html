@@ -331,6 +331,20 @@ body {
 .action-card.msg-static { animation: none; }
 .action-card-check { color: var(--mint); font-size: 13px; flex-shrink: 0; margin-top: 2px; }
 .action-card-text  { font-size: 13px; color: rgba(45,232,162,0.88); line-height: 1.45; }
+.action-card.action-confirm {
+  flex-direction: column; gap: 12px;
+  background: linear-gradient(180deg, rgba(242,192,99,0.08), rgba(255,255,255,0.022));
+  border-color: rgba(242,192,99,0.22);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(242,192,99,0.35);
+}
+.action-confirm .action-card-text { color: rgba(245,222,179,0.92); }
+.confirm-btns { display: flex; gap: 8px; align-self: stretch; }
+.confirm-btns button {
+  flex: 1; padding: 9px 12px; border-radius: 11px; font-size: 13px; font-weight: 600;
+  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+.confirm-yes { border: none; background: linear-gradient(180deg,#fff,#e8e5dd); color: #0a0a0b; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
+.confirm-no  { border: 1px solid rgba(255,255,255,0.12); background: transparent; color: rgba(255,255,255,0.55); }
 
 /* ── Page entry animations ── */
 .ai-toprow { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
@@ -1248,6 +1262,10 @@ Available tools:
     params: { text: string, when?: "today"|"tomorrow" }
   add_calendar_event   — add an event to Google Calendar
     params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
+  delete_calendar_event — delete a Google Calendar event (id from get_calendar)
+    params: { id: string }
+  move_calendar_event  — reschedule/retitle a Google Calendar event (id from get_calendar)
+    params: { id: string, date?: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number, title?: string }
   mark_email_read      — mark an email as read in Gmail
     params: { id: string }
   search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
@@ -1274,6 +1292,7 @@ Notes:
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
 - read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
+- delete_calendar_event and move_calendar_event need an event id from get_calendar — call get_calendar first to find the right event, never guess an id. Both require the user to tap a Confirm button before they run, so just emit the action; describe in prose which event you're changing. To "move" an event, pass only the fields that change (e.g. just a new time); other fields are preserved.
 - add_reminder schedules a reminder. When Google Calendar is connected it creates a calendar event with a notification at that time, so the user's phone alerts them natively (works even when this app is closed); otherwise it falls back to an in-app notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. To answer "what reminders do I have", use get_calendar (calendar reminders show up as events); the SCHEDULED REMINDERS list only holds in-app fallback reminders. delete_reminder cancels in-app fallback reminders; tell the user a calendar-based reminder is removed in Google Calendar. These are write actions: state what you're scheduling, then include the action tag.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
@@ -1282,7 +1301,7 @@ Notes:
     const disabled = [];
     if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
     if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
-    if (!prefs.tools.calendar) disabled.push('add_calendar_event, get_calendar');
+    if (!prefs.tools.calendar) disabled.push('add_calendar_event, get_calendar, delete_calendar_event, move_calendar_event');
     if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email');
     if (!prefs.tools.web)      disabled.push('search_web, fetch_url');
     if (!prefs.tools.finances) disabled.push('get_finances');
@@ -1895,6 +1914,38 @@ Notes:
     scrollToBottom();
   }
 
+  // Render an interactive confirm/cancel card for a destructive action.
+  // onDone(resultString) is called after the action runs so the caller can
+  // persist the outcome with the message.
+  function appendConfirmCard(action, onDone) {
+    const label = CONFIRM_TOOLS[action.tool] || 'Confirm this action?';
+    const card  = document.createElement('div');
+    card.className = 'action-card action-confirm';
+    card.innerHTML = '<span class="action-card-text"></span>'
+      + '<div class="confirm-btns"><button class="confirm-yes" type="button">Confirm</button>'
+      + '<button class="confirm-no" type="button">Cancel</button></div>';
+    card.querySelector('.action-card-text').textContent = label;
+    document.getElementById('chatThread').appendChild(card);
+    scrollToBottom();
+
+    const btns = card.querySelector('.confirm-btns');
+    card.querySelector('.confirm-yes').addEventListener('click', async function() {
+      btns.remove();
+      const r = await executeAction(action.tool, action.params);
+      card.classList.remove('action-confirm');
+      card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
+      card.querySelector('.action-card-text').textContent = r;
+      scrollToBottom();
+      if (typeof onDone === 'function') onDone(r);
+    });
+    card.querySelector('.confirm-no').addEventListener('click', function() {
+      btns.remove();
+      card.classList.remove('action-confirm');
+      card.querySelector('.action-card-text').textContent = 'Cancelled.';
+      if (typeof onDone === 'function') onDone('Cancelled.');
+    });
+  }
+
   function renderThread(messages) {
     const thread = document.getElementById('chatThread');
     thread.innerHTML = '';
@@ -1950,6 +2001,63 @@ Notes:
       if (!res.ok) return 'Calendar error ' + res.status;
       return '"' + params.title + '" added to calendar on ' + params.date;
     } catch(e) { return 'Calendar error: ' + e.message; }
+  }
+
+  const _CAL_BASE = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
+
+  async function deleteCalendarEvent(params) {
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Calendar not connected — sign in via the email page first.';
+    if (!params || !params.id) return 'Need the event id (from get_calendar) to delete it.';
+    try {
+      const res = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
+        { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok } });
+      // 204 = deleted, 410 = already gone
+      if (res.status === 204 || res.status === 410) return 'Calendar event deleted.';
+      return 'Calendar error ' + res.status;
+    } catch (e) { return 'Calendar error: ' + e.message; }
+  }
+
+  async function moveCalendarEvent(params) {
+    const tok = await GoogleAuth.getToken();
+    if (!tok) return 'Calendar not connected — sign in via the email page first.';
+    if (!params || !params.id) return 'Need the event id (from get_calendar) to move it.';
+    if (!params.date && !params.time && params.duration_minutes == null && !params.title) {
+      return 'Nothing to change — give a new date, time, duration, or title.';
+    }
+    try {
+      const tz  = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      // Fetch the current event so we can preserve unspecified fields.
+      const getRes = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
+        { headers: { 'Authorization': 'Bearer ' + tok } });
+      if (!getRes.ok) return 'Could not find that event (HTTP ' + getRes.status + ').';
+      const ev = await getRes.json();
+
+      const cur = (ev.start && ev.start.dateTime) ? new Date(ev.start.dateTime)
+        : (ev.start && ev.start.date) ? new Date(ev.start.date + 'T09:00:00') : new Date();
+      let y = cur.getFullYear(), mo = cur.getMonth(), da = cur.getDate(), hh = cur.getHours(), mm = cur.getMinutes();
+      if (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)) { const p = params.date.split('-'); y = +p[0]; mo = +p[1] - 1; da = +p[2]; }
+      if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) { const t = params.time.split(':'); hh = +t[0]; mm = +t[1]; }
+      const newStart = new Date(y, mo, da, hh, mm, 0, 0);
+
+      let durMin = params.duration_minutes;
+      if (durMin == null && ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
+        durMin = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
+      }
+      if (durMin == null || durMin <= 0) durMin = 60;
+
+      const patch = {
+        start: { dateTime: newStart.toISOString(), timeZone: tz },
+        end:   { dateTime: new Date(newStart.getTime() + durMin * 60000).toISOString(), timeZone: tz },
+      };
+      if (params.title) patch.summary = params.title;
+
+      const res = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
+        { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
+      if (!res.ok) return 'Calendar error ' + res.status;
+      const when = newStart.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+      return 'Moved "' + (params.title || ev.summary || 'event') + '" to ' + when + '.';
+    } catch (e) { return 'Calendar error: ' + e.message; }
   }
 
   async function markEmailRead(msgId) {
@@ -2105,7 +2213,7 @@ Notes:
         } else {
           when = ((ev.start && ev.start.date) || '') + ' (all day)';
         }
-        block += '\n• ' + when + ' — ' + (ev.summary || '(no title)') + (ev.location ? ' @ ' + ev.location : '');
+        block += '\n• [id:' + ev.id + '] ' + when + ' — ' + (ev.summary || '(no title)') + (ev.location ? ' @ ' + ev.location : '');
       });
       return block;
     } catch (e) { return 'Calendar error: ' + e.message; }
@@ -2285,7 +2393,7 @@ Notes:
     // Respect the user's tool permissions (Settings → Axis AI)
     const _tp = getAIPrefs().tools;
     const _cat = (tool === 'set_calorie_target' || tool === 'set_water_target') ? 'targets'
-      : (tool === 'add_calendar_event') ? 'calendar'
+      : (tool === 'add_calendar_event' || tool === 'delete_calendar_event' || tool === 'move_calendar_event') ? 'calendar'
       : (tool === 'mark_email_read') ? 'email'
       : (tool === 'add_reminder' || tool === 'delete_reminder') ? 'reminders'
       : 'goals';
@@ -2372,6 +2480,10 @@ Notes:
       result = 'Deleted "' + removed + '"';
     } else if (tool === 'add_calendar_event') {
       return await addCalendarEvent(params);
+    } else if (tool === 'delete_calendar_event') {
+      return await deleteCalendarEvent(params);
+    } else if (tool === 'move_calendar_event') {
+      return await moveCalendarEvent(params);
     } else if (tool === 'mark_email_read') {
       return await markEmailRead(params.id);
     } else if (tool === 'add_reminder') {
@@ -2407,6 +2519,13 @@ Notes:
     get_calendar: { pref: 'calendar', run: function(p){ return getCalendar(p); } },
     get_weather:  { pref: null,       run: function(p){ return getWeather(p.location); } },
     get_finances: { pref: 'finances', run: function(p){ return getFinances(p); } }
+  };
+
+  // Tools that require an explicit user tap before running (destructive /
+  // outbound). Value is the prompt shown on the confirm card.
+  const CONFIRM_TOOLS = {
+    delete_calendar_event: 'Delete this calendar event?',
+    move_calendar_event:   'Reschedule this calendar event?'
   };
 
   // ── Send message ─────────────────────────────────────────────────
@@ -2453,6 +2572,7 @@ Notes:
         const results = [];
         const readBlocks = [];
         const _toolPrefs = getAIPrefs().tools;
+        aiMsg.actions = results;
         for (const action of actions) {
           const rt = READ_TOOLS[action.tool];
           if (rt) {
@@ -2460,11 +2580,15 @@ Notes:
             readBlocks.push(await rt.run(action.params || {}));
             continue;
           }
+          if (CONFIRM_TOOLS[action.tool]) {
+            // Don't execute yet — render a confirm card; persist the outcome on tap.
+            appendConfirmCard(action, function(r){ results.push(r); saveCurrentSession(); });
+            continue;
+          }
           const r = await executeAction(action.tool, action.params);
           results.push(r);
           appendActionCard(r);
         }
-        if (results.length) aiMsg.actions = results;
 
         // Round-trip: feed search results back so the AI can answer from them.
         if (readBlocks.length) {
@@ -2499,6 +2623,7 @@ Notes:
             // Run any write actions the follow-up emitted (skip read tools — no recursion).
             for (const a2 of parsed2.actions) {
               if (READ_TOOLS[a2.tool]) continue;
+              if (CONFIRM_TOOLS[a2.tool]) { appendConfirmCard(a2, function(){ saveCurrentSession(); }); continue; }
               const r2 = await executeAction(a2.tool, a2.params);
               appendActionCard(r2);
             }
