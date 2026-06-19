@@ -313,6 +313,34 @@ html, body {
   box-shadow: 0 0 16px -8px rgba(45,232,162,0.6);
 }
 
+/* ── Segmented control (Axis AI) ── */
+.setting-row.col {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 11px;
+}
+.setting-row.col .setting-row-left { width: 100%; }
+.seg-toggle { display: flex; gap: 5px; }
+.seg-btn {
+  flex: 1;
+  padding: 9px 6px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  color: var(--text-tertiary);
+  font-family: var(--font);
+  font-size: 13px; font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+.seg-btn.active {
+  background: rgba(45,232,162,0.14);
+  color: #2de8a2;
+  border-color: rgba(45,232,162,0.4);
+  box-shadow: 0 0 16px -8px rgba(45,232,162,0.6);
+}
+
 /* ── Action buttons ── */
 .action-btn {
   width: 100%;
@@ -645,6 +673,253 @@ html, body {
     <div class="settings-footer">Axis · Aurora</div>
   </div>
 
+  <!-- AXIS AI PANEL -->
+  <div class="section-panel" id="panel-ai">
+
+    <!-- Personality -->
+    <div class="setting-section">
+      <div class="setting-section-label">Personality</div>
+      <div class="setting-card">
+        <div class="setting-row col">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Assistant tone</div>
+            <div class="setting-row-sub">How Axis talks to you</div>
+          </div>
+          <div class="seg-toggle" id="aiTone">
+            <button class="seg-btn" data-tone="butler">Butler</button>
+            <button class="seg-btn" data-tone="coach">Coach</button>
+            <button class="seg-btn" data-tone="friend">Friend</button>
+            <button class="seg-btn" data-tone="concise">Concise</button>
+          </div>
+        </div>
+        <div class="setting-row col">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Response length</div>
+            <div class="setting-row-sub">How much detail to give</div>
+          </div>
+          <div class="seg-toggle" id="aiLength">
+            <button class="seg-btn" data-len="concise">Concise</button>
+            <button class="seg-btn" data-len="balanced">Balanced</button>
+            <button class="seg-btn" data-len="detailed">Detailed</button>
+          </div>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Call me</div>
+            <div class="setting-row-sub">Name Axis uses for you</div>
+          </div>
+          <input class="setting-input setting-input-name" id="aiNickname" type="text" placeholder="optional" autocomplete="off" maxlength="40">
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Use emoji</div>
+            <div class="setting-row-sub">Allow the occasional emoji</div>
+          </div>
+          <label class="notif-toggle" aria-label="Use emoji">
+            <input type="checkbox" id="aiEmoji">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Conversations -->
+    <div class="setting-section">
+      <div class="setting-section-label">Conversations</div>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Auto-name chats</div>
+            <div class="setting-row-sub">Title new chats from your first message</div>
+          </div>
+          <label class="notif-toggle" aria-label="Auto-name chats">
+            <input type="checkbox" id="aiAutoName">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Long-term memory</div>
+            <div class="setting-row-sub">Remember key facts across conversations</div>
+          </div>
+          <label class="notif-toggle" aria-label="Long-term memory">
+            <input type="checkbox" id="aiMemory">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily briefing -->
+    <div class="setting-section">
+      <div class="setting-section-label">Daily Briefing</div>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Daily briefing</div>
+            <div class="setting-row-sub">A morning summary from Axis</div>
+          </div>
+          <label class="notif-toggle" aria-label="Daily briefing">
+            <input type="checkbox" id="aiBriefEnabled">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="notif-sub-rows" id="aiBriefSub">
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Use my wake time</div>
+              <div class="setting-row-sub">Run the briefing when you wake</div>
+            </div>
+            <label class="notif-toggle" aria-label="Use wake time">
+              <input type="checkbox" id="aiBriefUseWake">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row" id="aiBriefTimeRow">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Briefing time</div>
+              <div class="setting-row-sub">When to deliver it</div>
+            </div>
+            <input class="setting-input setting-input-time" id="aiBriefTime" type="time">
+          </div>
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Long-term goals</div>
+            </div>
+            <label class="notif-toggle" aria-label="Briefing goals">
+              <input type="checkbox" id="aiBriefGoals">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Calendar</div>
+            </div>
+            <label class="notif-toggle" aria-label="Briefing calendar">
+              <input type="checkbox" id="aiBriefCalendar">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Emails</div>
+            </div>
+            <label class="notif-toggle" aria-label="Briefing emails">
+              <input type="checkbox" id="aiBriefEmails">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+          <div class="setting-row">
+            <div class="setting-row-left">
+              <div class="setting-row-label">Health</div>
+              <div class="setting-row-sub">Hydration &amp; nutrition pace</div>
+            </div>
+            <label class="notif-toggle" aria-label="Briefing health">
+              <input type="checkbox" id="aiBriefHealth">
+              <span class="notif-toggle-track"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- What Axis can see -->
+    <div class="setting-section">
+      <div class="setting-section-label">What Axis Can See</div>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Health &amp; nutrition</div>
+            <div class="setting-row-sub">Water, calories, macros</div>
+          </div>
+          <label class="notif-toggle" aria-label="See health">
+            <input type="checkbox" id="aiCtxHealth">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Fitness &amp; gym</div>
+            <div class="setting-row-sub">Weight, splits, workout history</div>
+          </div>
+          <label class="notif-toggle" aria-label="See fitness">
+            <input type="checkbox" id="aiCtxFitness">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Calendar</div>
+            <div class="setting-row-sub">Today &amp; tomorrow's events</div>
+          </div>
+          <label class="notif-toggle" aria-label="See calendar">
+            <input type="checkbox" id="aiCtxCalendar">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Email</div>
+            <div class="setting-row-sub">Unread inbox previews</div>
+          </div>
+          <label class="notif-toggle" aria-label="See email">
+            <input type="checkbox" id="aiCtxEmail">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- What Axis can change -->
+    <div class="setting-section">
+      <div class="setting-section-label">What Axis Can Change</div>
+      <div class="setting-card">
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Goals &amp; tasks</div>
+            <div class="setting-row-sub">Create, edit, complete</div>
+          </div>
+          <label class="notif-toggle" aria-label="Tool goals">
+            <input type="checkbox" id="aiToolGoals">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Daily targets</div>
+            <div class="setting-row-sub">Calorie &amp; water goals</div>
+          </div>
+          <label class="notif-toggle" aria-label="Tool targets">
+            <input type="checkbox" id="aiToolTargets">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Calendar events</div>
+            <div class="setting-row-sub">Add events to Google Calendar</div>
+          </div>
+          <label class="notif-toggle" aria-label="Tool calendar">
+            <input type="checkbox" id="aiToolCalendar">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Email actions</div>
+            <div class="setting-row-sub">Mark messages as read</div>
+          </div>
+          <label class="notif-toggle" aria-label="Tool email">
+            <input type="checkbox" id="aiToolEmail">
+            <span class="notif-toggle-track"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-footer">Axis · Aurora</div>
+  </div>
+
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -662,6 +937,10 @@ html, body {
     <button class="nav-item" data-panel="notifications" data-title="Notifications">
       <span class="nav-item-icon">🔔</span>
       Notifications
+    </button>
+    <button class="nav-item" data-panel="ai" data-title="Axis AI">
+      <span class="nav-item-icon">✦</span>
+      Axis AI
     </button>
   </nav>
 </aside>
@@ -725,6 +1004,7 @@ html, body {
 
     if (title) document.getElementById('pageTitle').textContent = title;
     if (panelId === 'notifications') loadNotifPanel();
+    if (panelId === 'ai') loadAIPanel();
 
     closeSidebar();
   });
@@ -846,7 +1126,7 @@ html, body {
   const ST_URL     = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const ST_ANONKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const ST_ROW_KEY = 'settings';
-  const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex'];
+  const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex', 'axis_ai_prefs'];
 
   let stSupa = null, stPushTimer = null, stLastJson = null, stSuppressSync = false;
   const _stOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
@@ -1107,6 +1387,139 @@ html, body {
   }
 
   loadNotifPanel();
+
+  // ── Axis AI preferences ──────────────────────────────────────────
+  const AI_PREFS_KEY = 'axis_ai_prefs';
+
+  function getAIPrefs() {
+    const raw = lsGet(AI_PREFS_KEY) || {};
+    const b = raw.briefing || {}, c = raw.context || {}, t = raw.tools || {};
+    return {
+      tone:           raw.tone || 'butler',
+      nickname:       typeof raw.nickname === 'string' ? raw.nickname : '',
+      responseLength: raw.responseLength || 'balanced',
+      emoji:          raw.emoji === true,
+      autoName:       raw.autoName !== false,
+      memory:         raw.memory !== false,
+      briefing: {
+        enabled:  b.enabled  !== false,
+        time:     typeof b.time === 'string' ? b.time : '',
+        goals:    b.goals    !== false,
+        calendar: b.calendar !== false,
+        emails:   b.emails   !== false,
+        health:   b.health   !== false
+      },
+      context: {
+        calendar: c.calendar !== false,
+        email:    c.email    !== false,
+        health:   c.health   !== false,
+        fitness:  c.fitness  !== false
+      },
+      tools: {
+        goals:    t.goals    !== false,
+        targets:  t.targets  !== false,
+        calendar: t.calendar !== false,
+        email:    t.email    !== false
+      }
+    };
+  }
+
+  function updateAIMuted(p) {
+    document.getElementById('aiBriefSub').classList.toggle('is-muted', !p.briefing.enabled);
+    const useWake = document.getElementById('aiBriefUseWake').checked;
+    document.getElementById('aiBriefTimeRow').style.display = useWake ? 'none' : 'flex';
+  }
+
+  function loadAIPanel() {
+    const p = getAIPrefs();
+    document.querySelectorAll('#aiTone .seg-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.tone === p.tone); });
+    document.querySelectorAll('#aiLength .seg-btn').forEach(function(b){ b.classList.toggle('active', b.dataset.len === p.responseLength); });
+    document.getElementById('aiNickname').value      = p.nickname;
+    document.getElementById('aiEmoji').checked        = p.emoji;
+    document.getElementById('aiAutoName').checked     = p.autoName;
+    document.getElementById('aiMemory').checked       = p.memory;
+    document.getElementById('aiBriefEnabled').checked = p.briefing.enabled;
+    document.getElementById('aiBriefUseWake').checked = !p.briefing.time;
+    document.getElementById('aiBriefTime').value      = p.briefing.time || (lsRaw('dash_wake_time') || '08:00');
+    document.getElementById('aiBriefGoals').checked    = p.briefing.goals;
+    document.getElementById('aiBriefCalendar').checked = p.briefing.calendar;
+    document.getElementById('aiBriefEmails').checked   = p.briefing.emails;
+    document.getElementById('aiBriefHealth').checked   = p.briefing.health;
+    document.getElementById('aiCtxHealth').checked   = p.context.health;
+    document.getElementById('aiCtxFitness').checked  = p.context.fitness;
+    document.getElementById('aiCtxCalendar').checked = p.context.calendar;
+    document.getElementById('aiCtxEmail').checked    = p.context.email;
+    document.getElementById('aiToolGoals').checked    = p.tools.goals;
+    document.getElementById('aiToolTargets').checked  = p.tools.targets;
+    document.getElementById('aiToolCalendar').checked = p.tools.calendar;
+    document.getElementById('aiToolEmail').checked    = p.tools.email;
+    updateAIMuted(p);
+  }
+
+  function saveAIPrefs() {
+    const activeTone = document.querySelector('#aiTone .seg-btn.active');
+    const activeLen  = document.querySelector('#aiLength .seg-btn.active');
+    const useWake    = document.getElementById('aiBriefUseWake').checked;
+    const p = {
+      tone:           activeTone ? activeTone.dataset.tone : 'butler',
+      nickname:       document.getElementById('aiNickname').value.trim().slice(0, 40),
+      responseLength: activeLen ? activeLen.dataset.len : 'balanced',
+      emoji:          document.getElementById('aiEmoji').checked,
+      autoName:       document.getElementById('aiAutoName').checked,
+      memory:         document.getElementById('aiMemory').checked,
+      briefing: {
+        enabled:  document.getElementById('aiBriefEnabled').checked,
+        time:     useWake ? '' : (document.getElementById('aiBriefTime').value || ''),
+        goals:    document.getElementById('aiBriefGoals').checked,
+        calendar: document.getElementById('aiBriefCalendar').checked,
+        emails:   document.getElementById('aiBriefEmails').checked,
+        health:   document.getElementById('aiBriefHealth').checked
+      },
+      context: {
+        calendar: document.getElementById('aiCtxCalendar').checked,
+        email:    document.getElementById('aiCtxEmail').checked,
+        health:   document.getElementById('aiCtxHealth').checked,
+        fitness:  document.getElementById('aiCtxFitness').checked
+      },
+      tools: {
+        goals:    document.getElementById('aiToolGoals').checked,
+        targets:  document.getElementById('aiToolTargets').checked,
+        calendar: document.getElementById('aiToolCalendar').checked,
+        email:    document.getElementById('aiToolEmail').checked
+      }
+    };
+    lsSet(AI_PREFS_KEY, p);
+    updateAIMuted(p);
+  }
+
+  // Segmented controls (tone, length)
+  ['aiTone', 'aiLength'].forEach(function(gid) {
+    document.getElementById(gid).addEventListener('click', function(e) {
+      const btn = e.target.closest('.seg-btn');
+      if (!btn) return;
+      this.querySelectorAll('.seg-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      saveAIPrefs();
+    });
+  });
+
+  // Toggles + checkboxes
+  ['aiEmoji','aiAutoName','aiMemory','aiBriefEnabled','aiBriefUseWake',
+   'aiBriefGoals','aiBriefCalendar','aiBriefEmails','aiBriefHealth',
+   'aiCtxHealth','aiCtxFitness','aiCtxCalendar','aiCtxEmail',
+   'aiToolGoals','aiToolTargets','aiToolCalendar','aiToolEmail'
+  ].forEach(function(id) {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener('change', saveAIPrefs);
+  });
+
+  // Text + time inputs
+  document.getElementById('aiNickname').addEventListener('change', saveAIPrefs);
+  ['change', 'input'].forEach(function(ev) {
+    document.getElementById('aiBriefTime').addEventListener(ev, saveAIPrefs);
+  });
+
+  loadAIPanel();
 })();
 </script>
 

@@ -1039,7 +1039,44 @@ body {
   }
 
   // ── System prompt ────────────────────────────────────────────────
+  // ── Axis AI preferences (configured in settings.html) ───────────
+  // Defaults preserve the original behaviour when nothing is saved.
+  const AI_PREFS_KEY = 'axis_ai_prefs';
+  function getAIPrefs() {
+    const raw = lsGet(AI_PREFS_KEY) || {};
+    const b = raw.briefing || {}, c = raw.context || {}, t = raw.tools || {};
+    return {
+      tone:           raw.tone || 'butler',                 // butler | coach | friend | concise
+      nickname:       typeof raw.nickname === 'string' ? raw.nickname : '',
+      responseLength: raw.responseLength || 'balanced',     // concise | balanced | detailed
+      emoji:          raw.emoji === true,
+      autoName:       raw.autoName !== false,
+      memory:         raw.memory !== false,
+      briefing: {
+        enabled:  b.enabled  !== false,
+        time:     typeof b.time === 'string' ? b.time : '',
+        goals:    b.goals    !== false,
+        calendar: b.calendar !== false,
+        emails:   b.emails   !== false,
+        health:   b.health   !== false
+      },
+      context: {
+        calendar: c.calendar !== false,
+        email:    c.email    !== false,
+        health:   c.health   !== false,
+        fitness:  c.fitness  !== false
+      },
+      tools: {
+        goals:    t.goals    !== false,
+        targets:  t.targets  !== false,
+        calendar: t.calendar !== false,
+        email:    t.email    !== false
+      }
+    };
+  }
+
   function buildSystemPrompt() {
+    const prefs        = getAIPrefs();
     const today        = activeDate();
     const tomorrow     = tomorrowDate();
     const todayGoals   = getGoalData(today);
@@ -1065,13 +1102,13 @@ body {
     if (pendingGoals.length) p += '\n  Pending:   ' + pendingGoals.map(function(g){ return g.text; }).join(' | ');
     if (!todayGoals.length)  p += '\n  (no goals set today)';
     p += tomorrowGoals.length ? '\nTOMORROW:   ' + tomorrowGoals.map(function(g){ return g.text; }).join(' | ') : '\nTOMORROW:   nothing planned yet';
-    p += '\nWATER:      ' + water.doneMl + 'ml / ' + water.targetMl + 'ml (' + waterPct + '%)';
+    if (prefs.context.health) p += '\nWATER:      ' + water.doneMl + 'ml / ' + water.targetMl + 'ml (' + waterPct + '%)';
     p += '\nSTREAK:     ' + streak + ' day' + (streak!==1?'s':'');
-    if (gymSplit || gymSessions != null) {
+    if (prefs.context.fitness && (gymSplit || gymSessions != null)) {
       p += gymSplit ? '\nGYM SPLIT:  ' + gymSplit : '\nGYM SPLIT:  (not set for today)';
       if (gymSessions != null) p += ' · ' + gymSessions + 'x/week';
     }
-    if (wt.latestLbs != null) { p += '\nWEIGHT:     ' + wt.latestLbs + ' lbs'; if (wt.trendStr) p += ' (' + wt.trendStr + ')'; }
+    if (prefs.context.fitness && wt.latestLbs != null) { p += '\nWEIGHT:     ' + wt.latestLbs + ' lbs'; if (wt.trendStr) p += ' (' + wt.trendStr + ')'; }
     const age = lsRaw('dash_age'), sex = lsRaw('dash_sex'), height = lsRaw('dash_height');
     if (age||sex||height) {
       const parts = [];
@@ -1081,7 +1118,7 @@ body {
       p += '\nPROFILE:    ' + parts.join(', ');
     }
     const nutrition = getNutritionTargets();
-    if (nutrition) {
+    if (prefs.context.health && nutrition) {
       p += '\nNUTRITION:  BMR ' + nutrition.bmr + ' kcal · TDEE ' + nutrition.tdee + ' kcal (' + nutrition.activityLabel + ', ' + (getGymSessionsPerWeek()||0) + 'x/week)';
       p += '\n  Calories: ' + nutrition.recommendedCals + ' kcal/day' + (nutrition.deficitNote ? ' — '+nutrition.deficitNote : ' — maintenance');
       p += '\n  Protein:  ' + nutrition.proteinMin + '–' + nutrition.proteinMax + ' g/day';
@@ -1091,7 +1128,7 @@ body {
       p += '\nLONG-TERM GOALS:';
       ltGoals.forEach(function(g){ p += '\n  [id:'+g.id+'] '+g.title+': target '+g.targetValue+' '+g.unit+(g.deadline?', deadline '+g.deadline:''); });
     }
-    if (workouts.length) {
+    if (prefs.context.fitness && workouts.length) {
       p += '\nWORKOUT HISTORY (last 7 days):';
       workouts.forEach(function(w) {
         p += '\n  ' + w.date + ' — ' + w.exercises.length + ' exercise' + (w.exercises.length!==1?'s':'') + (w.totalVol>0?', '+w.totalVol.toLocaleString()+' '+w.units+' vol':'');
@@ -1100,14 +1137,14 @@ body {
         });
       });
     }
-    if (_calendarEvents.today.length || _calendarEvents.tomorrow.length) {
+    if (prefs.context.calendar && (_calendarEvents.today.length || _calendarEvents.tomorrow.length)) {
       p += '\nCALENDAR:';
       p += _calendarEvents.today.length ? '\n  Today:' : '\n  Today: nothing scheduled';
       _calendarEvents.today.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
       p += _calendarEvents.tomorrow.length ? '\n  Tomorrow:' : '\n  Tomorrow: nothing scheduled';
       _calendarEvents.tomorrow.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
     }
-    if (_cachedGmailEmails.length) {
+    if (prefs.context.email && _cachedGmailEmails.length) {
       p += '\nUNREAD EMAILS:';
       _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
     }
@@ -1118,6 +1155,17 @@ body {
       memories.slice().sort(function(a,b){ return b.timestamp - a.timestamp; }).forEach(function(m){ p += '\n  • ' + m.fact; });
     }
     console.log('[memory] system prompt length:', p.length, 'chars');
+
+    // ── User-configured style preferences (override the defaults above) ──
+    let styleLines = [];
+    if (prefs.tone === 'coach')       styleLines.push('OVERRIDE TONE: Be a direct, energizing coach — candid, motivating, and action-oriented. You MAY use light motivational language, but stay truthful and specific with numbers.');
+    else if (prefs.tone === 'friend') styleLines.push('OVERRIDE TONE: Be warm, friendly, and conversational — personable and encouraging while staying concise and useful.');
+    else if (prefs.tone === 'concise')styleLines.push('OVERRIDE TONE: Be maximally concise and matter-of-fact — minimal elaboration, no filler.');
+    if (prefs.responseLength === 'concise')      styleLines.push('LENGTH: Keep answers very short — 1–2 sentences whenever possible.');
+    else if (prefs.responseLength === 'detailed')styleLines.push('LENGTH: Give thorough answers with relevant context and reasoning when it helps.');
+    styleLines.push(prefs.emoji ? 'EMOJI: A tasteful emoji is allowed when it adds clarity or warmth.' : 'EMOJI: Do not use emoji.');
+    if (prefs.nickname) styleLines.push('NAME: Address the user as "' + prefs.nickname + '".');
+    p += '\n\n=== STYLE PREFERENCES (user-configured — these override earlier tone guidance) ===\n' + styleLines.join('\n') + '\n===';
 
     p += `\n===
 
@@ -1157,6 +1205,16 @@ Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
+
+    // Tools the user has switched off — never invoke these.
+    const disabled = [];
+    if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
+    if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
+    if (!prefs.tools.calendar) disabled.push('add_calendar_event');
+    if (!prefs.tools.email)    disabled.push('mark_email_read');
+    if (disabled.length) {
+      p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
+    }
     return p;
   }
 
@@ -1214,6 +1272,7 @@ Notes:
 
   // ── Memory extraction (background, after each AI turn) ──────────
   async function extractMemories(userText, aiText, sessionId) {
+    if (!getAIPrefs().memory) return; // memory disabled in Settings → Axis AI
     const prompt = 'Extract any important personal facts worth remembering long-term from this single conversation exchange. Return ONLY a JSON array of short strings (max 15 words each). Examples: "User prefers morning workouts", "User runs Kourtis Construction with his brother", "User is cutting weight for summer". Return [] if nothing is worth remembering.\n\nUser: ' + userText.slice(0, 400) + '\nAssistant: ' + aiText.slice(0, 600);
     console.log('[memory] extraction started — user:', userText.slice(0, 60), '…');
     try {
@@ -1444,6 +1503,7 @@ Notes:
   // that already exists (e.g. branched briefings).
   async function autoNameSession(sessionId, firstUserText) {
     if (!sessionId || sessionId === BRIEFING_SESSION_ID) return;
+    if (!getAIPrefs().autoName) return; // auto-naming disabled in Settings → Axis AI
     const pre = getSessions().find(function(s){ return s.id === sessionId; });
     if (!pre || pre.autoTitled || pre.title) return;
     try {
@@ -1736,6 +1796,14 @@ Notes:
   }
 
   async function executeAction(tool, params) {
+    // Respect the user's tool permissions (Settings → Axis AI)
+    const _tp = getAIPrefs().tools;
+    const _cat = (tool === 'set_calorie_target' || tool === 'set_water_target') ? 'targets'
+      : (tool === 'add_calendar_event') ? 'calendar'
+      : (tool === 'mark_email_read') ? 'email'
+      : 'goals';
+    if (!_tp[_cat]) return 'That action is turned off in Settings → Axis AI.';
+
     let result;
     if (tool === 'set_calorie_target') {
       lsSet('calorie_targets_v1', Object.assign(lsGet('calorie_targets_v1')||{}, params));
@@ -1946,12 +2014,15 @@ Notes:
       if (bWrap && !bWrap.parentNode) thread.appendChild(bWrap);
     }
 
-    const briefingRequest = 'Daily briefing — ' + dateLabel + '. Format strictly as follows:\n'
-      + '1. Start with the date as a bold header: "' + dateLabel + '"\n'
-      + '2. Long-term goals: brief current status and one concrete action for today to stay on track.\n'
-      + '3. Calendar: highlight any events today or tomorrow (skip if none).\n'
-      + '4. Emails: flag up to two unread emails worth acting on (skip if none).\n'
-      + 'Tone: concise, professional, butler. No exclamation marks, no motivational language. Under 120 words total.';
+    const bp = getAIPrefs().briefing;
+    let briefingRequest = 'Daily briefing — ' + dateLabel + '. Format strictly as follows:\n'
+      + '1. Start with the date as a bold header: "' + dateLabel + '"\n';
+    let _bn = 2;
+    if (bp.goals)    briefingRequest += _bn++ + '. Long-term goals: brief current status and one concrete action for today to stay on track.\n';
+    if (bp.calendar) briefingRequest += _bn++ + '. Calendar: highlight any events today or tomorrow (skip if none).\n';
+    if (bp.emails)   briefingRequest += _bn++ + '. Emails: flag up to two unread emails worth acting on (skip if none).\n';
+    if (bp.health)   briefingRequest += _bn++ + '. Health: one line on hydration/nutrition pace for the day (skip if no data).\n';
+    briefingRequest += 'Tone: concise, professional, butler. No exclamation marks, no motivational language. Under 120 words total.';
 
     // Build API messages: existing session history + today's request
     const existingMsgs = (session && session.messages ? session.messages : [])
@@ -2046,23 +2117,32 @@ Notes:
     if (!m) return 8 * 60;
     return (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60);
   }
+  // Briefing fires at the user's chosen briefing time, falling back to wake time.
+  function getBriefingMinutes() {
+    const t = getAIPrefs().briefing.time;
+    const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
+    if (m) return (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60);
+    return getWakeMinutes();
+  }
   function briefingDoneToday() {
     const s = getSessions().find(function(x){ return x.id === BRIEFING_SESSION_ID; });
     return !!(s && Array.isArray(s.briefingDates) && s.briefingDates.includes(todayStr()));
   }
   function maybeRunBriefingNow() {
+    if (!getAIPrefs().briefing.enabled) return; // briefing disabled in Settings → Axis AI
     if (briefingDoneToday()) return;
     const now    = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    if (nowMin < getWakeMinutes()) return; // before wake — keep waiting
+    if (nowMin < getBriefingMinutes()) return; // before briefing time — keep waiting
     const silent = activeSessionId !== BRIEFING_SESSION_ID;
     runTodaysBriefing({ silent: silent });
   }
   function scheduleBriefing() {
     clearTimeout(_briefingTimer);
+    if (!getAIPrefs().briefing.enabled) return; // disabled — nothing to schedule
     const now    = new Date();
     const nowMin = now.getHours() * 60 + now.getMinutes();
-    const wake   = getWakeMinutes();
+    const wake   = getBriefingMinutes();
     if (!briefingDoneToday() && nowMin < wake) {
       const msUntil = ((wake - nowMin) * 60 - now.getSeconds()) * 1000;
       _briefingTimer = setTimeout(maybeRunBriefingNow, Math.max(1000, msUntil));
@@ -2291,10 +2371,10 @@ Notes:
       renderThread(session.messages);
     }
 
-    // Daily briefing: only run at/after the user's wake time — not merely on
-    // open. If the app is opened before wake, it's scheduled to fire then.
+    // Daily briefing: only run at/after the user's briefing time — not merely
+    // on open. If the app is opened earlier, it's scheduled to fire then.
     const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-    if (!briefingDoneToday() && nowMin >= getWakeMinutes()) {
+    if (getAIPrefs().briefing.enabled && !briefingDoneToday() && nowMin >= getBriefingMinutes()) {
       const silent = activeSessionId !== BRIEFING_SESSION_ID;
       await runTodaysBriefing({ silent: silent });
     }
