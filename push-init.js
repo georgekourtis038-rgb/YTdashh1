@@ -134,6 +134,30 @@
     }).catch(function () {});
   }
 
+  // ── Custom reminders (scheduled by Axis AI) ─────────────────────
+  function getReminders()      { return lsGet('axis_reminders') || []; }
+  function saveReminders(arr)  { lsSet('axis_reminders', arr); }
+
+  function checkReminders() {
+    if (Notification.permission !== 'granted') return;
+    if (!getNotifPrefs().enabled) return;
+    var arr = getReminders();
+    if (!arr.length) return;
+    var now    = Date.now();
+    var cutoff = now - 2 * 86400000; // prune fired reminders older than 2 days
+    var changed = false;
+    arr.forEach(function (r) {
+      if (!r.fired && r.at && now >= r.at) {
+        r.fired  = true;
+        changed  = true;
+        notify('Reminder ⏰', r.text || 'Reminder', 'reminder-' + r.id, '/index.html');
+      }
+    });
+    var pruned = arr.filter(function (r) { return !(r.fired && r.at < cutoff); });
+    if (pruned.length !== arr.length) changed = true;
+    if (changed) saveReminders(pruned);
+  }
+
   // ── Notification check logic ────────────────────────────────────
   function check() {
     if (Notification.permission !== 'granted') return;
@@ -297,8 +321,13 @@
   // ── SW message handler (SW tells us which notifications it sent) ─
   function listenToSW() {
     navigator.serviceWorker.addEventListener('message', function (e) {
-      if (e.data && e.data.type === 'NOTIF_SENT') {
+      if (!e.data) return;
+      if (e.data.type === 'NOTIF_SENT') {
         markSent(e.data.key);
+      } else if (e.data.type === 'REMINDER_FIRED') {
+        var arr = getReminders(), hit = false;
+        arr.forEach(function (r) { if (r.id === e.data.id && !r.fired) { r.fired = true; hit = true; } });
+        if (hit) saveReminders(arr);
       }
     });
   }
@@ -316,6 +345,7 @@
         today:     todayKey(),
         sent:      lsGet('dash_notif_sent') || {},
         prefs:     getNotifPrefs(),
+        reminders: getReminders(),
       });
     }).catch(function () {});
   }
@@ -349,13 +379,17 @@
 
     // Immediate check, then every 5 minutes
     check();
+    checkReminders();
     setInterval(function () {
       check();
       postStateToSW();
     }, 5 * 60 * 1000);
 
-    // Keep SW state fresh every minute while page is open
-    setInterval(postStateToSW, 60 * 1000);
+    // Keep SW state fresh + fire any due reminders every minute while open
+    setInterval(function () {
+      postStateToSW();
+      checkReminders();
+    }, 60 * 1000);
   }
 
   if (document.readyState === 'loading') {

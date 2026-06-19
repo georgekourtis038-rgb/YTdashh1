@@ -1076,7 +1076,8 @@ body {
         calendar: t.calendar !== false,
         email:    t.email    !== false,
         web:      t.web      !== false,
-        finances: t.finances !== false
+        finances: t.finances !== false,
+        reminders: t.reminders !== false
       }
     };
   }
@@ -1191,6 +1192,11 @@ You have read and write access to all Axis data. When George asks you to log som
       p += '\nUNREAD EMAILS:';
       _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
     }
+    const pendingReminders = (lsGet('axis_reminders') || []).filter(function(r){ return !r.fired && r.at; }).sort(function(a,b){ return a.at - b.at; });
+    if (pendingReminders.length) {
+      p += '\nSCHEDULED REMINDERS:';
+      pendingReminders.forEach(function(r){ p += '\n  ' + new Date(r.at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' — ' + r.text; });
+    }
     const memories = getMemories();
     console.log('[memory] buildSystemPrompt: ' + memories.length + ' memories in store');
     if (memories.length) {
@@ -1258,12 +1264,17 @@ Available tools:
     params: { url: string }
   get_finances         — read net worth, accounts, subscriptions, and recent money activity
     params: {}
+  add_reminder         — schedule a one-off reminder notification
+    params: { text: string, time?: "HH:MM", date?: "YYYY-MM-DD", in_minutes?: number }
+  delete_reminder      — cancel a scheduled reminder (match by text)
+    params: { text: string }
 
 Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
 - read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
+- add_reminder schedules a notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and the current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. Reminders already scheduled are listed under SCHEDULED REMINDERS; reference those for "what are my reminders" and cancel with delete_reminder. These are write actions: state what you're scheduling, then include the action tag.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
 
@@ -1275,6 +1286,7 @@ Notes:
     if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email');
     if (!prefs.tools.web)      disabled.push('search_web, fetch_url');
     if (!prefs.tools.finances) disabled.push('get_finances');
+    if (!prefs.tools.reminders) disabled.push('add_reminder, delete_reminder');
     if (disabled.length) {
       p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
     }
@@ -2162,6 +2174,50 @@ Notes:
     } catch (e) { return 'Finance read error: ' + e.message; }
   }
 
+  // ── Reminders (write tools) ──────────────────────────────────────
+  // Stored in localStorage 'axis_reminders'; push-init.js / service-worker.js
+  // fire the notification when due (checked roughly every minute the app is open).
+  const REMINDERS_KEY = 'axis_reminders';
+  function addReminder(params) {
+    params = params || {};
+    const text = String(params.text || '').trim();
+    if (!text) return 'A reminder needs some text.';
+
+    let at;
+    if (typeof params.in_minutes === 'number' && params.in_minutes > 0) {
+      at = Date.now() + Math.round(params.in_minutes) * 60000;
+    } else if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) {
+      const parts = params.time.split(':');
+      const hh = parseInt(parts[0], 10), mm = parseInt(parts[1], 10);
+      let d;
+      if (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)) d = new Date(params.date + 'T00:00:00');
+      else { d = new Date(); d.setHours(0, 0, 0, 0); }
+      d.setHours(hh, mm, 0, 0);
+      // No explicit date and the time already passed today → roll to tomorrow.
+      if (!params.date && d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
+      at = d.getTime();
+    } else {
+      return 'A reminder needs a time ("HH:MM") or in_minutes.';
+    }
+
+    const arr = lsGet(REMINDERS_KEY) || [];
+    arr.push({ id: 'rem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), text: text, at: at, fired: false });
+    lsSet(REMINDERS_KEY, arr);
+
+    const when = new Date(at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
+    const ungranted = (typeof Notification === 'undefined' || Notification.permission !== 'granted');
+    return 'Reminder set for ' + when + ': "' + text + '"' + (ungranted ? ' — turn on notifications so it can alert you.' : '');
+  }
+  function deleteReminder(params) {
+    const q = String((params && params.text) || '').trim().toLowerCase();
+    if (!q) return 'Which reminder? Provide its text.';
+    const arr = lsGet(REMINDERS_KEY) || [];
+    const kept = arr.filter(function(r){ return r.fired || (r.text || '').toLowerCase().indexOf(q) === -1; });
+    if (kept.length === arr.length) return 'No matching pending reminder found.';
+    lsSet(REMINDERS_KEY, kept);
+    return 'Reminder cancelled.';
+  }
+
   // ── Supabase sync after tool actions ────────────────────────────
   // Mirrors the exact scope + row key that health.html and index.html use,
   // so the cloud value is up-to-date before any page reload can overwrite it.
@@ -2200,6 +2256,7 @@ Notes:
     const _cat = (tool === 'set_calorie_target' || tool === 'set_water_target') ? 'targets'
       : (tool === 'add_calendar_event') ? 'calendar'
       : (tool === 'mark_email_read') ? 'email'
+      : (tool === 'add_reminder' || tool === 'delete_reminder') ? 'reminders'
       : 'goals';
     if (!_tp[_cat]) return 'That action is turned off in Settings → Axis AI.';
 
@@ -2286,6 +2343,10 @@ Notes:
       return await addCalendarEvent(params);
     } else if (tool === 'mark_email_read') {
       return await markEmailRead(params.id);
+    } else if (tool === 'add_reminder') {
+      return addReminder(params);
+    } else if (tool === 'delete_reminder') {
+      return deleteReminder(params);
     } else {
       return 'Unknown tool: ' + tool;
     }

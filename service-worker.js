@@ -6,7 +6,7 @@
    ================================================================ */
 'use strict';
 
-const SW_VERSION = 'v1';
+const SW_VERSION = 'v2';
 
 // ── Install: skip waiting so the new SW takes over immediately ────
 self.addEventListener('install', function (e) {
@@ -176,8 +176,35 @@ function runCheck() {
     }
   }
 
+  // Custom reminders scheduled by Axis AI (fire when due)
+  var reminders = swState.reminders || [];
+  var nowMs = Date.now();
+  reminders.forEach(function (r) {
+    if (!r.fired && r.at && nowMs >= r.at) {
+      r.fired = true;
+      promises.push(
+        self.registration.showNotification('Reminder ⏰', {
+          body:  r.text || 'Reminder',
+          icon:  '/icon.svg',
+          badge: '/badge.svg',
+          tag:   'reminder-' + r.id,
+          data:  { url: '/index.html' },
+        })
+      );
+      broadcastReminderFired(r.id);
+    }
+  });
+
   swState.sent = sent;
   return Promise.all(promises);
+}
+
+function broadcastReminderFired(id) {
+  self.clients.matchAll().then(function (clients) {
+    clients.forEach(function (c) {
+      c.postMessage({ type: 'REMINDER_FIRED', id: id });
+    });
+  });
 }
 
 function broadcastSent(key, value) {
