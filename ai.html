@@ -1204,9 +1204,12 @@ Available tools:
     params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
   mark_email_read      — mark an email as read in Gmail
     params: { id: string }
+  search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
+    params: { query: string }   // Gmail search syntax, e.g. "from:amazon shipped", "subject:tracking newer_than:30d", "invoice"
 
 Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
+- search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
 ===`;
 
@@ -1215,7 +1218,7 @@ Notes:
     if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
     if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
     if (!prefs.tools.calendar) disabled.push('add_calendar_event');
-    if (!prefs.tools.email)    disabled.push('mark_email_read');
+    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail');
     if (disabled.length) {
       p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
     }
@@ -1898,6 +1901,31 @@ Notes:
     } catch(e) { return 'Gmail error: ' + e.message; }
   }
 
+  // Full-mailbox Gmail search (read tool). Returns a text block of results
+  // that is fed back to the model so it can read and summarize them.
+  async function searchGmail(query) {
+    query = (query || '').trim();
+    if (!query) return 'Gmail search skipped: no query provided.';
+    try {
+      const res = await fetch('/api/gmail-search?q=' + encodeURIComponent(query));
+      if (res.status === 401) return 'Gmail not connected — the user needs to sign in via the email page first.';
+      if (!res.ok) return 'Gmail search failed (HTTP ' + res.status + ').';
+      const data    = await res.json();
+      const results = Array.isArray(data.results) ? data.results : [];
+      if (!results.length) return 'No emails matched the search "' + query + '".';
+      let block = 'Top ' + results.length + ' result' + (results.length !== 1 ? 's' : '') + ' for "' + query + '":';
+      results.forEach(function(e, i) {
+        block += '\n' + (i + 1) + '. [id:' + e.id + '] From: ' + e.sender
+          + ' | Subject: ' + e.subject
+          + (e.date ? ' | Date: ' + e.date : '')
+          + (e.snippet ? '\n   Preview: ' + e.snippet : '');
+      });
+      return block;
+    } catch (e) {
+      return 'Gmail search error: ' + e.message;
+    }
+  }
+
   // ── Supabase sync after tool actions ────────────────────────────
   // Mirrors the exact scope + row key that health.html and index.html use,
   // so the cloud value is up-to-date before any page reload can overwrite it.
@@ -2078,14 +2106,68 @@ Notes:
         chatHistory.push(aiMsg);
         // Background memory extraction — don't await, non-blocking
         extractMemories(text, clean || full, activeSessionId);
-        // Execute tool actions, render + persist their confirmation cards
+        // Execute tool actions. search_gmail is a READ tool: its results are
+        // fed back to the model for a follow-up turn rather than shown as a card.
         const results = [];
+        let gmailBlocks = [];
+        const _emailOn = getAIPrefs().tools.email;
         for (const action of actions) {
+          if (action.tool === 'search_gmail') {
+            if (!_emailOn) continue; // tool disabled in Settings → Axis AI
+            const block = await searchGmail(action.params && action.params.query);
+            gmailBlocks.push(block);
+            continue;
+          }
           const r = await executeAction(action.tool, action.params);
           results.push(r);
           appendActionCard(r);
         }
         if (results.length) aiMsg.actions = results;
+
+        // Round-trip: feed Gmail search results back so the AI can summarize them.
+        if (gmailBlocks.length) {
+          // If the AI emitted only the search action with no prose, drop the
+          // empty first bubble — the follow-up turn carries the real answer.
+          // Mark it hidden so it stays in API context but doesn't re-render as
+          // an empty bubble after a reload.
+          if (!clean.trim()) { aiWrap.remove(); aiMsg.hidden = true; }
+          const toolMsg = {
+            role: 'user',
+            content: 'GMAIL SEARCH RESULTS (reference only — read these and answer the user in plain prose; do not repeat raw lines or invent message IDs):\n\n'
+              + gmailBlocks.join('\n\n'),
+            hidden: true,
+            ts: Date.now()
+          };
+          chatHistory.push(toolMsg);
+
+          const typing2 = appendTyping();
+          const built2  = buildMsgEl('ai', '');
+          built2.bubble.classList.add('streaming');
+          let attached2 = false;
+          try {
+            const follow = await streamClaude(chatHistory.slice(), function(acc) {
+              if (!attached2) { typing2.remove(); thread.appendChild(built2.wrap); attached2 = true; }
+              built2.textNode.textContent = acc; scrollToBottom();
+            });
+            built2.bubble.classList.remove('streaming');
+            if (!attached2) { typing2.remove(); }
+            const parsed2 = parseActions(follow);
+            renderRich(built2.textNode, parsed2.clean);
+            chatHistory.push({ role: 'assistant', content: follow, ts: Date.now() });
+            // Run any non-search write actions the follow-up emitted.
+            for (const a2 of parsed2.actions) {
+              if (a2.tool === 'search_gmail') continue; // no recursive search
+              const r2 = await executeAction(a2.tool, a2.params);
+              appendActionCard(r2);
+            }
+          } catch (err2) {
+            built2.bubble.classList.remove('streaming');
+            typing2.remove();
+            if (attached2) built2.wrap.remove();
+            console.error('[chat] gmail follow-up error:', err2 && err2.message);
+          }
+        }
+
         saveCurrentSession();
         // Name the conversation from its first message (background, non-blocking)
         if (isFirstUserTurn && namingSessionId !== BRIEFING_SESSION_ID) {
