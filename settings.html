@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0f0e">
+<meta name="theme-color" content="#070b0a">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="axis-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,16 +21,24 @@
   --text-tertiary: #76746E;
   --success: #2de8a2;
   --mint: #2de8a2;
+  --accent: #2de8a2;
+  --accent-deep: #1ec78a;
+  --blue: #6f9bff;
   --warning: #F2C063;
   --danger: #FF6B6B;
   --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --card-bg: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
+  --card-border: 1px solid rgba(255,255,255,0.08);
+  --card-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
 }
 
 * { box-sizing: border-box; }
 html, body {
   margin: 0; padding: 0;
-  background: #0a0f0e;
+  background:
+    radial-gradient(125% 60% at 50% -10%, rgba(45,232,162,0.07), transparent 58%),
+    #070b0a;
   color: var(--text-secondary);
   font-family: var(--font);
   -webkit-font-smoothing: antialiased;
@@ -42,7 +50,7 @@ html, body {
 .settings-page {
   max-width: 600px;
   margin: 0 auto;
-  padding: max(110px, calc(env(safe-area-inset-top) + 60px)) 20px 100px;
+  padding: max(110px, calc(env(safe-area-inset-top) + 60px)) 20px 110px;
 }
 
 .settings-header {
@@ -56,22 +64,22 @@ html, body {
   width: 44px; height: 44px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.04);
-  border-radius: 12px;
+  border-radius: 13px;
   color: var(--text-primary);
   font-size: 18px;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
   flex-shrink: 0;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.10s;
+  transition: background 0.15s, transform 0.10s, border-color 0.15s;
 }
-.hamburger-btn:active { transform: scale(0.93); }
+.hamburger-btn:active { transform: scale(0.93); background: rgba(255,255,255,0.08); }
 
 .settings-title {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
   letter-spacing: -0.02em;
-  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 120%);
+  background: linear-gradient(180deg, #FFFFFF 0%, #C7C4BC 130%);
   -webkit-background-clip: text; background-clip: text;
   -webkit-text-fill-color: transparent; color: transparent;
   margin: 0;
@@ -93,8 +101,8 @@ html, body {
 .sidebar {
   position: fixed;
   top: 0; bottom: 0; left: 0;
-  width: min(280px, 85vw);
-  background: #111114;
+  width: min(284px, 85vw);
+  background: radial-gradient(120% 50% at 50% -10%, #102018 0%, #0c1110 50%, #0a0e0d 100%);
   z-index: 201;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -114,17 +122,18 @@ html, body {
   border-bottom: 1px solid rgba(255,255,255,0.06);
 }
 .sidebar-heading {
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: rgba(45,232,162,0.85);
 }
 .sidebar-close-btn {
   width: 32px; height: 32px;
   border: 1px solid rgba(255,255,255,0.10);
   background: rgba(255,255,255,0.04);
-  border-radius: 9px;
+  border-radius: 10px;
   color: var(--text-secondary);
   font-size: 14px;
   display: flex; align-items: center; justify-content: center;
@@ -138,37 +147,39 @@ html, body {
 .nav-list {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
 }
 .nav-item {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 11px 13px;
-  border-radius: 11px;
-  border: none;
+  padding: 12px 14px;
+  border-radius: 13px;
+  border: 1px solid transparent;
   background: transparent;
   color: var(--text-secondary);
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 500;
   cursor: pointer;
   text-align: left;
   width: 100%;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
 }
-.nav-item:active { background: rgba(255,255,255,0.08); }
+.nav-item:active { background: rgba(255,255,255,0.06); }
 .nav-item.active {
-  background: rgba(255,255,255,0.08);
-  color: var(--text-primary);
+  background: linear-gradient(180deg, rgba(45,232,162,0.12), rgba(45,232,162,0.04));
+  border-color: rgba(45,232,162,0.22);
+  color: #fff;
 }
 .nav-item-icon {
   font-size: 17px;
   width: 22px;
   text-align: center;
   flex-shrink: 0;
-  opacity: 0.75;
+  opacity: 0.7;
 }
 .nav-item.active .nav-item-icon { opacity: 1; }
 
@@ -176,127 +187,174 @@ html, body {
 .section-panel { display: none; }
 .section-panel.active { display: block; }
 
+/* ── Profile hero card ── */
+.profile-card {
+  position: relative;
+  border-radius: 24px;
+  padding: 22px;
+  margin-bottom: 20px;
+  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
+  border: 1px solid rgba(45,232,162,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -16px rgba(45,232,162,0.35);
+  overflow: hidden;
+}
+.profile-glow {
+  position: absolute; top: -34px; right: -24px;
+  width: 150px; height: 150px; border-radius: 50%;
+  background: radial-gradient(circle, rgba(45,232,162,0.16), transparent 70%);
+  filter: blur(5px); pointer-events: none;
+}
+.profile-row { display: flex; align-items: center; gap: 16px; position: relative; }
+.profile-avatar {
+  width: 62px; height: 62px; border-radius: 50%; flex: 0 0 auto;
+  background: linear-gradient(150deg, #2de8a2, #13b683);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font); font-weight: 700; font-size: 26px; color: #04140d;
+  box-shadow: 0 0 22px -4px rgba(45,232,162,0.6);
+  text-transform: uppercase;
+}
+.profile-meta { flex: 1; min-width: 0; }
+.profile-name {
+  font-family: var(--font); font-weight: 600; font-size: 20px; color: #fff;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.profile-handle { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 3px; }
+.profile-edit {
+  width: 34px; height: 34px; border-radius: 11px; flex: 0 0 auto;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.1);
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, transform 0.1s;
+}
+.profile-edit:active { transform: scale(0.92); background: rgba(255,255,255,0.12); }
+
 /* ── Setting sections ── */
 .setting-section { margin-bottom: 22px; }
 .setting-section-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.10em;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
-  margin-bottom: 8px;
-  padding: 0 4px;
+  color: rgba(255,255,255,0.42);
+  margin: 6px 0 10px 4px;
 }
 .setting-card {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: 24px;
+  padding: 2px 18px;
+  box-shadow: var(--card-shadow);
 }
 .setting-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 12px 14px;
+  gap: 12px;
+  padding: 14px 0;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 .setting-row:last-child { border-bottom: none; }
 .setting-row-left { flex: 1; min-width: 0; }
-.setting-row-label { font-size: 13px; font-weight: 500; color: var(--text-primary); }
-.setting-row-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.setting-row-label { font-size: 15px; font-weight: 500; color: rgba(255,255,255,0.92); }
+.setting-row-sub { font-size: 12.5px; color: rgba(255,255,255,0.42); margin-top: 2px; }
 
 .setting-input {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.05);
   border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 8px;
-  color: var(--text-primary);
+  border-radius: 10px;
+  color: #fff;
   font-family: var(--font-mono);
-  font-size: 16px;
-  padding: 5px 9px;
+  font-size: 15px;
+  padding: 7px 11px;
   text-align: right;
-  width: 90px;
+  width: 96px;
   outline: none;
   -webkit-appearance: none;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
 }
 .setting-input:focus {
-  border-color: rgba(255,255,255,0.25);
-  background: rgba(255,255,255,0.10);
+  border-color: rgba(45,232,162,0.5);
+  background: rgba(45,232,162,0.06);
+  box-shadow: 0 0 0 3px rgba(45,232,162,0.12);
 }
 .setting-input[readonly] {
-  color: var(--text-tertiary);
+  color: rgba(255,255,255,0.5);
   cursor: default;
+  background: rgba(255,255,255,0.03);
 }
 .setting-input-name {
-  width: 130px;
+  width: 140px;
   text-align: left;
   font-family: var(--font);
-  font-size: 14px;
+  font-size: 14.5px;
 }
-.setting-input-time { width: 96px; }
+.setting-input-time { width: 110px; }
 
 /* ── Sex toggle ── */
-.sex-toggle { display: flex; gap: 4px; }
+.sex-toggle { display: flex; gap: 5px; }
 .sex-btn {
-  padding: 5px 9px;
-  border-radius: 8px;
+  padding: 7px 12px;
+  border-radius: 10px;
   border: 1px solid rgba(255,255,255,0.10);
-  background: transparent;
+  background: rgba(255,255,255,0.03);
   color: var(--text-tertiary);
   font-family: var(--font);
-  font-size: 12px; font-weight: 600;
+  font-size: 13px; font-weight: 600;
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 .sex-btn.active {
-  background: rgba(255,255,255,0.12);
-  color: var(--text-primary);
-  border-color: rgba(255,255,255,0.22);
+  background: rgba(45,232,162,0.14);
+  color: #2de8a2;
+  border-color: rgba(45,232,162,0.4);
+  box-shadow: 0 0 16px -8px rgba(45,232,162,0.6);
 }
 
 /* ── Action buttons ── */
 .action-btn {
   width: 100%;
-  padding: 13px;
-  border-radius: 12px;
+  height: 52px;
+  border-radius: 15px;
   border: 1px solid rgba(255,255,255,0.08);
   background: rgba(255,255,255,0.04);
   color: var(--text-primary);
   font-family: var(--font);
-  font-size: 14px; font-weight: 600;
+  font-size: 15px; font-weight: 600;
   cursor: pointer;
   text-align: center;
   -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.10s;
+  transition: background 0.15s, transform 0.10s, box-shadow 0.15s;
   display: block;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
 }
 .action-btn:last-child { margin-bottom: 0; }
 .action-btn:active { transform: scale(0.97); }
 .action-btn.danger {
-  color: var(--danger);
-  border-color: rgba(255,107,107,0.20);
+  color: #ff8c8c;
+  border-color: rgba(255,107,107,0.22);
   background: rgba(255,107,107,0.06);
 }
 .action-btn.export {
   color: var(--success);
-  border-color: rgba(107,227,164,0.20);
-  background: rgba(107,227,164,0.06);
+  border-color: rgba(45,232,162,0.22);
+  background: rgba(45,232,162,0.06);
 }
 .action-btn.sync {
-  color: #000;
-  border-color: #6BE3A4;
-  background: #6BE3A4;
+  color: #04140d;
+  border: none;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
   font-weight: 700;
+  box-shadow: 0 0 22px -8px rgba(45,232,162,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
 }
 
 /* ── Notification toggle switch ── */
 .notif-toggle {
   position: relative;
   display: inline-block;
-  width: 44px; height: 26px;
+  width: 48px; height: 29px;
   flex-shrink: 0; cursor: pointer;
 }
 .notif-toggle input {
@@ -305,26 +363,25 @@ html, body {
 }
 .notif-toggle-track {
   position: absolute; inset: 0;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 13px;
-  transition: background 0.2s, border-color 0.2s;
+  background: rgba(255,255,255,0.12);
+  border-radius: 16px;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+  transition: background 0.2s, box-shadow 0.2s;
 }
 .notif-toggle-track::before {
   content: '';
   position: absolute; left: 3px; top: 3px;
-  width: 18px; height: 18px; border-radius: 50%;
-  background: rgba(255,255,255,0.55);
-  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+  width: 23px; height: 23px; border-radius: 50%;
+  background: #fff;
+  transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.35);
 }
 .notif-toggle input:checked + .notif-toggle-track {
-  background: #6BE3A4;
-  border-color: #6BE3A4;
+  background: linear-gradient(180deg, #2de8a2, #1ec78a);
+  box-shadow: 0 0 16px -4px rgba(45,232,162,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
 }
 .notif-toggle input:checked + .notif-toggle-track::before {
-  transform: translateX(18px);
-  background: #fff;
+  transform: translateX(19px);
 }
 .notif-toggle input:disabled + .notif-toggle-track {
   opacity: 0.35; cursor: not-allowed;
@@ -334,16 +391,16 @@ html, body {
 .notif-denied-card {
   background: rgba(255,107,107,0.07);
   border: 1px solid rgba(255,107,107,0.18);
-  border-radius: 12px;
-  padding: 12px 14px;
+  border-radius: 16px;
+  padding: 14px 16px;
   margin-bottom: 18px;
 }
 .notif-denied-title {
-  font-size: 12px; font-weight: 700;
+  font-size: 13px; font-weight: 700;
   color: var(--danger); margin: 0 0 5px;
 }
 .notif-denied-desc {
-  font-size: 11px; color: var(--text-tertiary);
+  font-size: 12px; color: var(--text-tertiary);
   line-height: 1.55; margin: 0;
 }
 .notif-denied-desc strong { color: var(--text-secondary); }
@@ -351,13 +408,23 @@ html, body {
 .notif-sub.is-muted { opacity: 0.38; pointer-events: none; }
 .notif-sub-rows { transition: opacity 0.2s; }
 .notif-sub-rows.is-muted { opacity: 0.38; pointer-events: none; }
-.notif-pct-wrap { display: flex; align-items: center; gap: 5px; }
-.notif-pct-input { width: 62px !important; }
+.notif-pct-wrap { display: flex; align-items: center; gap: 6px; }
+.notif-pct-input { width: 66px !important; }
 .notif-pct-unit {
-  font-size: 11px; font-weight: 600;
+  font-size: 12px; font-weight: 600;
   color: var(--text-tertiary);
   font-family: var(--font-mono);
   white-space: nowrap;
+}
+
+/* ── Footer ── */
+.settings-footer {
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(255,255,255,0.28);
+  margin-top: 26px;
 }
 
 </style>
@@ -372,7 +439,24 @@ html, body {
 
   <!-- PERSONAL INFO PANEL -->
   <div class="section-panel active" id="panel-personal">
+
+    <!-- profile hero -->
+    <div class="profile-card">
+      <div class="profile-glow"></div>
+      <div class="profile-row">
+        <div class="profile-avatar" id="profileAvatar">G</div>
+        <div class="profile-meta">
+          <div class="profile-name" id="profileName">George Kourtis</div>
+          <div class="profile-handle" id="profileHandle">@axis</div>
+        </div>
+        <button class="profile-edit" id="profileEdit" aria-label="Edit name">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        </button>
+      </div>
+    </div>
+
     <div class="setting-section">
+      <div class="setting-section-label">Details</div>
       <div class="setting-card">
         <div class="setting-row">
           <div class="setting-row-left">
@@ -436,6 +520,8 @@ html, body {
       <button class="action-btn export" id="btnExport">Export all data as JSON</button>
       <button class="action-btn danger" id="btnReset">Reset today's data</button>
     </div>
+
+    <div class="settings-footer">Axis · Aurora</div>
   </div>
 
   <!-- NOTIFICATIONS PANEL -->
@@ -556,6 +642,7 @@ html, body {
       <button class="action-btn" id="btnTestNotif">Send test notification</button>
     </div>
 
+    <div class="settings-footer">Axis · Aurora</div>
   </div>
 
 </div>
@@ -680,6 +767,8 @@ html, body {
       document.getElementById('settingWeight').value = '—';
       document.getElementById('weightSub').textContent = 'no gym entry yet';
     }
+
+    try { if (typeof window._axisRefreshProfile === 'function') window._axisRefreshProfile(); } catch(e) {}
   }
 
   // ── Save all ─────────────────────────────────────────────────
@@ -707,6 +796,8 @@ html, body {
 
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
+
+    try { if (typeof window._axisRefreshProfile === 'function') window._axisRefreshProfile(); } catch(e) {}
   }
 
   // ── Sex toggle ───────────────────────────────────────────────
@@ -823,6 +914,13 @@ html, body {
     if (id === 'settingWake' || id === 'settingSleep') {
       el.addEventListener('input', onChanged);
     }
+  });
+
+  // First/Last name inputs also persist on change.
+  ['settingFirstName', 'settingLastName'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function() { saveAll(); stSchedulePush(); });
   });
 
   // Sex toggle: active class is set by the earlier listener, then we save.
@@ -1009,6 +1107,44 @@ html, body {
   }
 
   loadNotifPanel();
+})();
+</script>
+
+<!-- Profile hero card — live name/avatar/handle from the name fields -->
+<script>
+(function () {
+  var avatarEl = document.getElementById('profileAvatar');
+  var nameEl   = document.getElementById('profileName');
+  var handleEl = document.getElementById('profileHandle');
+  var editBtn  = document.getElementById('profileEdit');
+  var firstEl  = document.getElementById('settingFirstName');
+  var lastEl   = document.getElementById('settingLastName');
+  if (!avatarEl || !firstEl) return;
+
+  function refresh() {
+    var first = (firstEl.value || '').trim();
+    var last  = (lastEl.value  || '').trim();
+    var full  = [first, last].filter(Boolean).join(' ') || 'Your name';
+    nameEl.textContent   = full;
+    avatarEl.textContent = (first || full).charAt(0) || 'A';
+    var handle = (first || 'you').toLowerCase().replace(/[^a-z0-9]/g, '') || 'you';
+    handleEl.textContent = handle + '@axis.app';
+  }
+
+  // Expose so the main script can refresh after load / remote sync.
+  window._axisRefreshProfile = refresh;
+
+  firstEl.addEventListener('input', refresh);
+  lastEl.addEventListener('input', refresh);
+
+  if (editBtn) {
+    editBtn.addEventListener('click', function () {
+      firstEl.focus();
+      firstEl.select && firstEl.select();
+    });
+  }
+
+  refresh();
 })();
 </script>
 <script src="/anim-hooks.js" defer></script>
