@@ -1286,6 +1286,10 @@ Available tools:
     params: { url: string }
   get_finances         — read net worth, accounts, subscriptions, and recent money activity
     params: {}
+  find_place           — find places/businesses by name or category near a location
+    params: { query: string, near?: string }
+  get_directions       — driving distance and travel time between two places
+    params: { from: string, to: string }
   add_reminder         — schedule a one-off reminder notification
     params: { text: string, time?: "HH:MM", date?: "YYYY-MM-DD", in_minutes?: number }
   delete_reminder      — cancel a scheduled reminder (match by text)
@@ -1295,6 +1299,7 @@ Notes:
 - For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
 - search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
 - search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
+- find_place and get_directions are READ tools (free OpenStreetMap data). Use find_place to look up a business/address/category (pass a "near" town or area when the user implies one); use get_directions for "how far / how long to drive" between two places — it returns driving distance and time. For "when should I leave?", combine get_directions with the event time from get_calendar. If a place isn't found, say so rather than guessing an address.
 - read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
 - send_email writes and sends a real email, so the user must tap a Confirm button before it goes out — just emit the action; show them the recipient, subject, and the full body you propose in your prose first. Write the complete message yourself (greeting + body + sign-off); do not use placeholders like [Name]. If the user only wants to prepare something, or you are unsure, use create_draft instead (it saves to Gmail without sending and needs no confirmation). Reply to an address from the user's email/contacts; never invent one.
 - delete_calendar_event and move_calendar_event need an event id from get_calendar — call get_calendar first to find the right event, never guess an id. Both require the user to tap a Confirm button before they run, so just emit the action; describe in prose which event you're changing. To "move" an event, pass only the fields that change (e.g. just a new time); other fields are preserved.
@@ -2296,6 +2301,41 @@ Notes:
     } catch (e) { return 'Weather error: ' + e.message; }
   }
 
+  // Read tool: find places / businesses (serverless, OpenStreetMap).
+  async function findPlace(params) {
+    params = params || {};
+    const q = String(params.query || '').trim();
+    if (!q) return 'Place search skipped: no query.';
+    try {
+      const res = await fetch('/api/place-search?q=' + encodeURIComponent(q)
+        + (params.near ? '&near=' + encodeURIComponent(params.near) : ''));
+      if (!res.ok) return 'Place search failed (HTTP ' + res.status + ').';
+      const d = await res.json();
+      const results = Array.isArray(d.results) ? d.results : [];
+      if (!results.length) return 'No places found for "' + (d.query || q) + '".';
+      let block = 'Places for "' + (d.query || q) + '":';
+      results.forEach(function(p, i) {
+        block += '\n' + (i + 1) + '. ' + (p.name || p.address) + (p.category ? ' (' + p.category + ')' : '')
+          + (p.address ? '\n   ' + p.address : '');
+      });
+      return block;
+    } catch (e) { return 'Place search error: ' + e.message; }
+  }
+
+  // Read tool: driving distance + time between two places (serverless).
+  async function getDirections(params) {
+    params = params || {};
+    const from = String(params.from || '').trim(), to = String(params.to || '').trim();
+    if (!from || !to) return 'Directions need both a "from" and a "to".';
+    try {
+      const res = await fetch('/api/directions?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to));
+      if (!res.ok) return 'Directions failed (HTTP ' + res.status + ').';
+      const d = await res.json();
+      if (d.error) return d.error;
+      return d.summary || ('Driving: ~' + d.distance_km + ' km, ~' + d.duration_min + ' min.');
+    } catch (e) { return 'Directions error: ' + e.message; }
+  }
+
   // Read tool: fetch the readable text of a specific web page (serverless).
   async function fetchUrl(url) {
     url = (url || '').trim();
@@ -2588,7 +2628,9 @@ Notes:
     fetch_url:    { pref: 'web',      run: function(p){ return fetchUrl(p.url); } },
     get_calendar: { pref: 'calendar', run: function(p){ return getCalendar(p); } },
     get_weather:  { pref: null,       run: function(p){ return getWeather(p.location); } },
-    get_finances: { pref: 'finances', run: function(p){ return getFinances(p); } }
+    get_finances: { pref: 'finances', run: function(p){ return getFinances(p); } },
+    find_place:     { pref: null,     run: function(p){ return findPlace(p); } },
+    get_directions: { pref: null,     run: function(p){ return getDirections(p); } }
   };
 
   // Tools that require an explicit user tap before running (destructive /
