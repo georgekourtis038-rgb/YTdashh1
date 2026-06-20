@@ -6,7 +6,9 @@
 // and renders the water +1 button in the top bar plus the
 // Main/Health/Fitness bottom tabs. Skips chrome on finance.html,
 // ai.html, and inside iframes (so the water tracker can embed cleanly).
-// ai.html supplies its own in-page header (with a Home button for nav).
+// The logo is Home (index.html); the floating Jarvis orb summons the AI
+// (ai.html) and remembers the return page. ai.html supplies its own
+// in-page header with a Home button back to wherever you came from.
 // =============================================================
 (function() {
   if (window.__lsOrigSet) return;
@@ -186,6 +188,33 @@ body.has-topbar {
 body.has-bottombar {
   padding-bottom: calc(98px + env(safe-area-inset-bottom)) !important;
 }
+.axis-jarvis-orb {
+  position: fixed;
+  right: 18px;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  width: 58px; height: 58px;
+  border-radius: 50%;
+  z-index: 46;
+  border: 1px solid rgba(45,232,162,0.40);
+  background: radial-gradient(circle at 50% 34%, rgba(45,232,162,0.26), rgba(12,18,16,0.86) 72%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
+  backdrop-filter: blur(20px) saturate(160%);
+  box-shadow: 0 12px 32px -8px rgba(0,0,0,0.65), inset 0 1px 0 rgba(255,255,255,0.14);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; -webkit-tap-highlight-color: transparent;
+  color: #2de8a2; padding: 0;
+  animation: ajoBreath 4.2s ease-in-out infinite;
+  will-change: transform, box-shadow; backface-visibility: hidden;
+  transition: transform 0.12s ease;
+}
+.axis-jarvis-orb:active { transform: scale(0.90); }
+.axis-jarvis-orb svg { width: 25px; height: 25px; filter: drop-shadow(0 0 6px rgba(45,232,162,0.55)); }
+@keyframes ajoBreath {
+  0%, 100% { box-shadow: 0 12px 32px -8px rgba(0,0,0,0.65), 0 0 0 0 rgba(45,232,162,0.40), inset 0 1px 0 rgba(255,255,255,0.14); }
+  50%      { box-shadow: 0 12px 32px -8px rgba(0,0,0,0.65), 0 0 0 10px rgba(45,232,162,0), inset 0 1px 0 rgba(255,255,255,0.14); }
+}
+@media (prefers-reduced-motion: reduce) { .axis-jarvis-orb { animation: none; } }
+@media (max-width: 480px) { .axis-jarvis-orb { width: 54px; height: 54px; right: 16px; } }
 @media (max-width: 480px) {
   .topbar { gap: 6px; }
   .topbar-water-pill { padding: 8px 11px; gap: 6px; }
@@ -225,7 +254,7 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
 
   const topbarHtml = `
 <header class="topbar" id="topbar" role="navigation" aria-label="Quick actions">
-  <a href="ai.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
+  <a href="index.html" class="topbar-logo-link" id="topbarLogoLink" aria-label="Home">
     <svg class="topbar-logo-svg" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true">
       <defs>
         <filter id="tbAxisGlow" x="-50%" y="-50%" width="200%" height="200%">
@@ -285,6 +314,13 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   </a>
 </nav>`;
 
+  const orbHtml = `
+<button class="axis-jarvis-orb" id="axisJarvisOrb" type="button" aria-label="Summon Jarvis">
+  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <path d="M12 2.5 13.7 9.4 20.5 11.1 13.9 13 12 21.5 10.1 13 3.5 11.1 10.3 9.4 12 2.5Z" fill="currentColor"/>
+  </svg>
+</button>`;
+
   function pageIs(name) {
     const p = (window.location.pathname || '').toLowerCase().replace(/\.html$/, '');
     return p === '/' + name || p.endsWith('/' + name) || p === name;
@@ -295,8 +331,8 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
   function isEmbedded() {
     try { return window.self !== window.top; } catch (e) { return true; }
   }
-  // ai.html has its own in-page top bar (orb, conversations, memory, new chat,
-  // home) — the global chrome is suppressed there, like finance.html.
+  // ai.html has its own in-page header (Home + new conversation) — the global
+  // chrome and the Jarvis orb are suppressed there, like finance.html.
   function shouldShowChrome() { return !isFinancePage() && !isAIPage() && !isEmbedded(); }
   function currentPageKey() {
     const p = (window.location.pathname || '').toLowerCase().replace(/\.html$/, '');
@@ -329,6 +365,11 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
         t.classList.toggle('active', t.getAttribute('data-page') === active);
       });
       document.body.classList.add('has-bottombar');
+    }
+    if (!document.getElementById('axisJarvisOrb')) {
+      const orbWrap = document.createElement('div');
+      orbWrap.innerHTML = orbHtml.trim();
+      document.body.appendChild(orbWrap.firstChild);
     }
     if (isSettingsPage()) {
       const finBtn = document.getElementById('topbarFinance');
@@ -480,12 +521,16 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
     if (logoLink) {
       logoLink.addEventListener('click', function(e) {
         e.preventDefault();
-        if (isAIPage()) {
-          window.location.href = sessionStorage.getItem('axisReturnUrl') || 'index.html';
-        } else {
-          sessionStorage.setItem('axisReturnUrl', window.location.href);
-          window.location.href = 'ai.html';
-        }
+        window.location.href = 'index.html';
+      });
+    }
+    // Floating Jarvis orb — the AI summon point on every chrome page. Remembers
+    // where we came from so the AI page's Home button can return here.
+    const orb = document.getElementById('axisJarvisOrb');
+    if (orb) {
+      orb.addEventListener('click', function() {
+        try { sessionStorage.setItem('axisReturnUrl', window.location.href); } catch (e) {}
+        window.location.href = 'ai.html';
       });
     }
     const btn = document.getElementById('topbarWaterAdd');

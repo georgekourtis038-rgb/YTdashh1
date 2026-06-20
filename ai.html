@@ -31,8 +31,7 @@
   --text-3:      rgba(255,255,255,0.42);
   --card-bg:     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
   --card-border: rgba(255,255,255,0.08);
-  --accent-card-bg:     linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
-  --accent-card-border: rgba(45,232,162,0.16);
+  --glass:       rgba(12,18,16,0.72);
   --font: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --mono: 'Space Mono', ui-monospace, monospace;
 }
@@ -63,96 +62,101 @@ body {
 @keyframes auroraA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vw,4vh) scale(1.12); } }
 @keyframes auroraB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-5vw,6vh) scale(1.08); } }
 
-/* ── Layout ────────────────────────────────────────────────────────── */
-.surface {
-  position: relative;
-  height: 100%;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: calc(env(safe-area-inset-top) + 78px) 18px 0;
-  padding-bottom: 168px;
+/* ── Header ────────────────────────────────────────────────────────── */
+.hdr {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 40;
+  padding: calc(env(safe-area-inset-top) + 8px) 14px 10px;
+  background: linear-gradient(180deg, rgba(8,12,11,0.92), rgba(8,12,11,0.66) 70%, transparent);
+  -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
 }
-.surface::-webkit-scrollbar { width: 0; }
+.hdr-row { display: flex; align-items: center; gap: 12px; }
+.hdr-btn {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: var(--text-2);
+  transition: transform .12s, color .2s, background .2s;
+}
+.hdr-btn:active { transform: scale(0.92); }
+.hdr-btn svg { width: 18px; height: 18px; }
+.hdr-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 9px; }
+.hdr-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow); animation: pulse 2.6s ease-in-out infinite; flex: 0 0 auto; }
+.hdr-title .name { font-weight: 600; letter-spacing: 0.02em; font-size: 16px; }
+.hdr-title .clock { font-family: var(--mono); font-size: 11px; color: var(--text-3); margin-left: auto; letter-spacing: 0.04em; }
 
-/* ── Briefing card ─────────────────────────────────────────────────── */
-.brief {
-  background: var(--accent-card-bg);
-  border: 1px solid var(--accent-card-border);
-  border-radius: 24px;
-  padding: 22px 20px 20px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
-  animation: rise 0.55s cubic-bezier(.2,.7,.2,1) both;
-}
-.brief-eyebrow {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
-  color: var(--text-3); display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-}
-.brief-eyebrow .dot {
-  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
-  box-shadow: 0 0 10px var(--accent-glow); animation: pulse 2.6s ease-in-out infinite;
-}
-.brief-eyebrow .clock { margin-left: auto; letter-spacing: 0.08em; color: var(--text-2); }
-.greeting { font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.12; }
-
-.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chips { display: flex; gap: 7px; margin-top: 11px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
 .chip {
-  display: inline-flex; align-items: baseline; gap: 6px;
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 12px; padding: 7px 11px;
+  flex: 0 0 auto; display: inline-flex; align-items: baseline; gap: 6px;
+  background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 11px; padding: 6px 10px;
 }
-.chip .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
-.chip .v { font-family: var(--mono); font-size: 13px; color: var(--text-1); }
+.chip .k { font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.chip .v { font-family: var(--mono); font-size: 12.5px; color: var(--text-1); }
 .chip.warn .v { color: #ffcf7a; }
 .chip.good .v { color: var(--accent); }
 
-.brief-body {
-  margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07);
-  font-size: 15.5px; line-height: 1.55; color: var(--text-1); white-space: pre-wrap;
-  min-height: 1.4em;
+/* ── Thread ────────────────────────────────────────────────────────── */
+.thread {
+  position: relative; height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: calc(env(safe-area-inset-top) + 116px) 18px 156px;
+  display: flex; flex-direction: column; gap: 18px;
 }
-.brief-body.thinking { color: var(--text-3); }
-.cursor { display: inline-block; width: 7px; height: 1.05em; vertical-align: -0.18em;
-  background: var(--accent); border-radius: 2px; margin-left: 2px; animation: blink 1s steps(2) infinite; }
+.thread::-webkit-scrollbar { width: 0; }
 
-/* ── Response surface ──────────────────────────────────────────────── */
-.response { margin-top: 20px; }
-.response.empty { display: none; }
-.response-q {
-  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
-  color: var(--text-3); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+.divider { display: flex; align-items: center; gap: 12px; margin: 6px 2px; }
+.divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.07); }
+.divider span { font-family: var(--mono); font-size: 10px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3); }
+
+.msg { display: flex; flex-direction: column; animation: rise .4s cubic-bezier(.2,.7,.2,1) both; }
+.msg.user { align-items: flex-end; }
+.msg.assistant { align-items: stretch; }
+
+.msg.user .bubble {
+  max-width: 84%; background: rgba(45,232,162,0.10); border: 1px solid rgba(45,232,162,0.18);
+  color: var(--text-1); border-radius: 18px 18px 6px 18px; padding: 11px 15px;
+  font-size: 16px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word;
 }
-.response-q::before { content: '›'; color: var(--accent); font-size: 14px; }
-.response-body { font-size: 16px; line-height: 1.6; color: var(--text-1); white-space: pre-wrap; }
+.msg.assistant .label {
+  font-family: var(--mono); font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 7px; display: flex; align-items: center; gap: 7px;
+}
+.msg.assistant .label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent-glow); }
+.msg.assistant .body {
+  font-size: 16px; line-height: 1.62; color: var(--text-1); white-space: pre-wrap; word-wrap: break-word;
+  padding-left: 14px; border-left: 2px solid rgba(45,232,162,0.22);
+}
+.msg.assistant.brief .body { border-left-color: var(--accent); }
+.cursor { display: inline-block; width: 7px; height: 1.02em; vertical-align: -0.16em;
+  background: var(--accent); border-radius: 2px; margin-left: 3px; animation: blink 1s steps(2) infinite; }
 
-/* ── Dock (input) ──────────────────────────────────────────────────── */
+.empty-hint { margin: auto; text-align: center; color: var(--text-3); font-size: 14px; line-height: 1.6; max-width: 280px; }
+
+/* ── Dock ──────────────────────────────────────────────────────────── */
 .dock {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
   padding: 0 14px max(14px, env(safe-area-inset-bottom));
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  display: flex; flex-direction: column; align-items: center; gap: 9px;
 }
 .dock::before {
-  content: ''; position: absolute; inset: -40px 0 0; z-index: -1; pointer-events: none;
-  background: linear-gradient(180deg, transparent, rgba(6,9,8,0.65) 38%, rgba(6,9,8,0.95));
+  content: ''; position: absolute; inset: -44px 0 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(6,9,8,0.7) 40%, rgba(6,9,8,0.96));
 }
 .fg-btn {
-  align-self: center;
   display: inline-flex; align-items: center; gap: 7px;
   font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--text-3); background: rgba(255,255,255,0.04);
   border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 7px 14px;
   cursor: pointer; transition: color .2s, border-color .2s;
 }
-.fg-btn:hover, .fg-btn:active { color: var(--accent); border-color: var(--accent-card-border); }
+.fg-btn:active { color: var(--accent); border-color: rgba(45,232,162,0.25); }
 .fg-btn svg { width: 12px; height: 12px; }
 
 .bar {
-  width: 100%; max-width: 640px;
-  display: flex; align-items: center; gap: 8px;
-  background: rgba(12,18,16,0.72);
-  -webkit-backdrop-filter: blur(26px) saturate(170%);
-  backdrop-filter: blur(26px) saturate(170%);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 26px;
+  width: 100%; max-width: 640px; display: flex; align-items: center; gap: 8px;
+  background: var(--glass);
+  -webkit-backdrop-filter: blur(26px) saturate(170%); backdrop-filter: blur(26px) saturate(170%);
+  border: 1px solid rgba(255,255,255,0.1); border-radius: 26px;
   box-shadow: 0 14px 44px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.09);
   padding: 7px 7px 7px 18px;
 }
@@ -164,20 +168,13 @@ body {
 .icon-btn {
   flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
   display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
-  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
-  color: var(--text-2); transition: transform .12s, background .2s, color .2s;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05); color: var(--text-2);
+  transition: transform .12s, background .2s, color .2s;
 }
 .icon-btn:active { transform: scale(0.92); }
 .icon-btn svg { width: 18px; height: 18px; }
-.mic-btn.listening {
-  background: rgba(45,232,162,0.16); border-color: var(--accent-card-border); color: var(--accent);
-  animation: micpulse 1.3s ease-in-out infinite;
-}
-.send-btn {
-  background: linear-gradient(180deg, var(--accent), var(--accent-2));
-  border: none; color: #04140d;
-  box-shadow: 0 4px 16px -4px var(--accent-glow);
-}
+.mic-btn.listening { background: rgba(45,232,162,0.16); border-color: rgba(45,232,162,0.3); color: var(--accent); animation: micpulse 1.3s ease-in-out infinite; }
+.send-btn { background: linear-gradient(180deg, var(--accent), var(--accent-2)); border: none; color: #04140d; box-shadow: 0 4px 16px -4px var(--accent-glow); }
 .send-btn:disabled { opacity: 0.4; box-shadow: none; }
 
 /* ── Future George overlay ─────────────────────────────────────────── */
@@ -192,71 +189,72 @@ body {
 .fg-overlay.open { opacity: 1; visibility: visible; transform: none; }
 .fg-top { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
 .fg-top .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3); }
-.fg-close {
-  margin-left: auto; width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+.fg-top .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+.fg-close { margin-left: auto; width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
   background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-2);
-  display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
-}
+  display: inline-flex; align-items: center; justify-content: center; font-size: 18px; }
 .fg-progress { display: flex; gap: 6px; margin-bottom: 30px; }
 .fg-progress .seg { flex: 1; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.08); transition: background .3s; }
 .fg-progress .seg.done { background: linear-gradient(90deg, var(--accent-2), var(--accent)); box-shadow: 0 0 10px var(--accent-glow); }
 .fg-progress .seg.active { background: rgba(45,232,162,0.4); }
-
 .fg-stage { flex: 1; display: flex; flex-direction: column; min-height: 0; }
 .fg-domain { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
 .fg-question { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.22; }
 .fg-hint { color: var(--text-3); font-size: 14px; margin-top: 10px; line-height: 1.5; }
-.fg-answer {
-  margin-top: 22px; flex: 1; width: 100%; resize: none;
+.fg-answer { margin-top: 22px; flex: 1; width: 100%; resize: none;
   background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px;
-  padding: 16px; color: var(--text-1); font-family: var(--font); font-size: 16px; line-height: 1.55;
-  outline: none; -webkit-overflow-scrolling: touch;
-}
-.fg-answer:focus { border-color: var(--accent-card-border); }
+  padding: 16px; color: var(--text-1); font-family: var(--font); font-size: 16px; line-height: 1.55; outline: none; }
+.fg-answer:focus { border-color: rgba(45,232,162,0.25); }
 .fg-nav { display: flex; gap: 10px; margin-top: 18px; }
-.btn {
-  height: 52px; border-radius: 14px; font-family: var(--font); font-size: 15px; font-weight: 600;
-  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  border: none; transition: transform .12s, opacity .2s;
-}
+.btn { height: 52px; border-radius: 14px; font-family: var(--font); font-size: 15px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: none; transition: transform .12s, opacity .2s; }
 .btn:active { transform: scale(0.98); }
 .btn-primary { flex: 1; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #04140d; }
 .btn-primary:disabled { opacity: 0.4; }
-.btn-ghost {
-  flex: 0 0 auto; padding: 0 20px; background: rgba(255,255,255,0.05);
-  border: 1px solid rgba(255,255,255,0.1); color: var(--text-2);
-}
+.btn-ghost { flex: 0 0 auto; padding: 0 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-2); }
 .fg-saving { text-align: center; color: var(--text-3); font-size: 13px; margin-top: 14px; font-family: var(--mono); min-height: 1em; }
 
-@keyframes rise   { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+/* ── Toast / confirm ───────────────────────────────────────────────── */
+.toast {
+  position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%) translateY(10px);
+  z-index: 90; background: var(--glass); -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; padding: 14px 16px;
+  box-shadow: 0 16px 44px -12px rgba(0,0,0,0.7); display: flex; align-items: center; gap: 12px;
+  opacity: 0; visibility: hidden; transition: opacity .2s, transform .2s, visibility .2s; max-width: 340px;
+}
+.toast.open { opacity: 1; visibility: visible; transform: translateX(-50%); }
+.toast .t-msg { font-size: 14px; color: var(--text-1); }
+.toast .t-act { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+  border: none; border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.toast .t-yes { background: rgba(255,80,80,0.12); border: 1px solid rgba(255,80,80,0.25); color: rgba(255,150,150,0.95); }
+.toast .t-no { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: var(--text-2); }
+
+@keyframes rise   { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
 @keyframes pulse  { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
 @keyframes blink  { 0% { opacity: 1; } 50% { opacity: 0; } }
 @keyframes micpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(45,232,162,0.4); } 50% { box-shadow: 0 0 0 7px rgba(45,232,162,0); } }
-
 @media (prefers-reduced-motion: reduce) {
-  .aurora::before, .aurora::after, .brief, .brief-eyebrow .dot, .mic-btn.listening, .cursor { animation: none !important; }
+  .aurora::before, .aurora::after, .msg, .hdr-title .dot, .mic-btn.listening, .cursor { animation: none !important; }
 }
 </style>
 </head>
 <body>
 <div class="aurora"></div>
 
-<main class="surface" id="surface">
-  <section class="brief" id="brief">
-    <div class="brief-eyebrow">
-      <span class="dot"></span> Jarvis
-      <span class="clock" id="clock"></span>
-    </div>
-    <h1 class="greeting" id="greeting">Good evening, Sir</h1>
-    <div class="chips" id="chips"></div>
-    <div class="brief-body thinking" id="briefBody">Pulling the day together…</div>
-  </section>
+<header class="hdr">
+  <div class="hdr-row">
+    <button class="hdr-btn" id="homeBtn" type="button" aria-label="Back to app">
+      <svg viewBox="0 0 18 18" fill="none"><path d="M7.5 3.5 3 9l4.5 5.5M3.2 9H15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="hdr-title"><span class="dot"></span><span class="name">Jarvis</span><span class="clock" id="clock"></span></div>
+    <button class="hdr-btn" id="newBtn" type="button" aria-label="New conversation">
+      <svg viewBox="0 0 18 18" fill="none"><path d="M9 3.5v11M3.5 9h11" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+  <div class="chips" id="chips"></div>
+</header>
 
-  <section class="response empty" id="response">
-    <div class="response-q" id="responseQ"></div>
-    <div class="response-body" id="responseBody"></div>
-  </section>
-</main>
+<main class="thread" id="thread"></main>
 
 <div class="dock">
   <button class="fg-btn" id="fgOpen" type="button">
@@ -274,11 +272,16 @@ body {
   </div>
 </div>
 
+<div class="toast" id="toast">
+  <span class="t-msg" id="toastMsg"></span>
+  <button class="t-act t-yes" id="toastYes" type="button">Clear</button>
+  <button class="t-act t-no" id="toastNo" type="button">Keep</button>
+</div>
+
 <!-- ── Future George setup / edit flow ──────────────────────────────── -->
 <div class="fg-overlay" id="fgOverlay" aria-hidden="true">
   <div class="fg-top">
-    <span class="brief-eyebrow" style="margin:0"><span class="dot"></span></span>
-    <span class="label">Future George</span>
+    <span class="dot"></span><span class="label">Future George</span>
     <button class="fg-close" id="fgClose" type="button" aria-label="Close">✕</button>
   </div>
   <div class="fg-progress" id="fgProgress"></div>
@@ -298,6 +301,7 @@ body {
 <script>
 (function () {
   'use strict';
+  const $ = function (id) { return document.getElementById(id); };
 
   // ── Storage helpers ────────────────────────────────────────────────
   function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } }
@@ -344,66 +348,103 @@ body {
   }
   function goalData() {
     const goals = lsGet('goals:' + activeDate()) || [];
-    const done = goals.filter(function (g) { return g && g.done; }).length;
-    return { done, total: goals.length, pending: goals.filter(function (g) { return g && !g.done; }) };
+    return { done: goals.filter(function (g) { return g && g.done; }).length, total: goals.length,
+             pending: goals.filter(function (g) { return g && !g.done; }) };
   }
   function streakCount() { const s = lsGet('goal_streak_v1') || {}; return typeof s.count === 'number' ? s.count : 0; }
   function weightInfo() { const w = lsRaw('dash_weight'); const n = w != null ? parseFloat(w) : NaN; return isNaN(n) ? null : n; }
 
+  // ── Supabase (mirrors topbar.js pattern) ───────────────────────────
+  const _SUPA_URL = 'https://oyylbiscxnymnmetyrho.supabase.co';
+  const _SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
+  let _supa = null;
+  function supa() { if (_supa) return _supa; if (!window.supabase) return null; _supa = window.supabase.createClient(_SUPA_URL, _SUPA_KEY); return _supa; }
+  async function supaFetch(key) {
+    const c = supa(); if (!c) return null;
+    try { const { data } = await c.from('app_state').select('data').eq('key', key).maybeSingle(); return data ? data.data : null; }
+    catch (_) { return null; }
+  }
+  async function supaUpsert(key, data) {
+    const c = supa(); if (!c) return;
+    try { await c.from('app_state').upsert({ key, data, updated_at: new Date().toISOString() }, { onConflict: 'key' }); } catch (_) {}
+  }
+
   // ── Future George profile ──────────────────────────────────────────
   const FG_CACHE = 'future_george_v1';
   const FG_DIMENSIONS = [
-    { key: 'spiritual', label: 'Spiritual', question: 'Who are you becoming spiritually?',
-      hint: 'Bible reading, prayer, the rhythm of your faith and who you answer to.' },
-    { key: 'physical', label: 'Physical', question: 'What does your body look like a year from now?',
-      hint: 'Target weight, calories, training split — the standard you hold for it.' },
-    { key: 'mental', label: 'Mental', question: 'What is Future George learning?',
-      hint: 'Books to finish, topics and skills to master, how you guard your focus.' },
-    { key: 'financial', label: 'Financial', question: 'What does winning financially mean for you?',
-      hint: 'Income targets, Kourtis Construction, savings, the number you are chasing.' },
-    { key: 'creative', label: 'Creative', question: 'What are you building or releasing?',
-      hint: 'Music made, projects shipped — the body of work with your name on it.' },
-    { key: 'character', label: 'Character', question: 'How does Future George carry himself?',
-      hint: 'Discipline, the word you keep, how you show up for others under pressure.' }
+    { key: 'spiritual', label: 'Spiritual', question: 'Who are you becoming spiritually?', hint: 'Bible reading, prayer, the rhythm of your faith and who you answer to.' },
+    { key: 'physical',  label: 'Physical',  question: 'What does your body look like a year from now?', hint: 'Target weight, calories, training split — the standard you hold for it.' },
+    { key: 'mental',    label: 'Mental',    question: 'What is Future George learning?', hint: 'Books to finish, topics and skills to master, how you guard your focus.' },
+    { key: 'financial', label: 'Financial', question: 'What does winning financially mean for you?', hint: 'Income targets, Kourtis Construction, savings, the number you are chasing.' },
+    { key: 'creative',  label: 'Creative',  question: 'What are you building or releasing?', hint: 'Music made, projects shipped — the body of work with your name on it.' },
+    { key: 'character', label: 'Character', question: 'How does Future George carry himself?', hint: 'Discipline, the word you keep, how you show up for others under pressure.' }
   ];
   let fgProfile = lsGet(FG_CACHE) || null;
-
   function cacheFG(p) { try { localStorage.setItem(FG_CACHE, JSON.stringify(p)); } catch (_) {} }
-
   async function loadFG() {
-    try {
-      const r = await fetch('/api/future-george', { method: 'GET' });
-      if (r.ok) {
-        const j = await r.json();
-        if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); }
-      }
-    } catch (_) { /* keep cached copy */ }
+    try { const r = await fetch('/api/future-george'); if (r.ok) { const j = await r.json(); if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); } } } catch (_) {}
     return fgProfile;
   }
   async function saveFG(profile) {
     cacheFG(profile); fgProfile = profile;
-    try {
-      const r = await fetch('/api/future-george', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profile: profile })
-      });
-      if (r.ok) { const j = await r.json(); if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); } return true; }
-    } catch (_) {}
+    try { const r = await fetch('/api/future-george', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ profile }) });
+      if (r.ok) { const j = await r.json(); if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); } return true; } } catch (_) {}
     return false;
   }
-
-  function fgHasContent(p) {
-    if (!p) return false;
-    return FG_DIMENSIONS.some(function (d) { return p[d.key] && String(p[d.key].summary || '').trim(); });
-  }
+  function fgHasContent(p) { return !!p && FG_DIMENSIONS.some(function (d) { return p[d.key] && String(p[d.key].summary || '').trim(); }); }
   function fgProfileText(p) {
     if (!fgHasContent(p)) return '';
     let out = '';
-    FG_DIMENSIONS.forEach(function (d) {
-      const v = p[d.key] && String(p[d.key].summary || '').trim();
-      if (v) out += '\n  ' + d.label.toUpperCase() + ': ' + v;
-    });
+    FG_DIMENSIONS.forEach(function (d) { const v = p[d.key] && String(p[d.key].summary || '').trim(); if (v) out += '\n  ' + d.label.toUpperCase() + ': ' + v; });
     return out;
+  }
+
+  // ── Conversation thread + bounded memory ───────────────────────────
+  // The FULL transcript lives here (and in Supabase) for the UI. The API only
+  // ever sees a compact rolling `summary` of old turns plus the recent tail —
+  // so the prompt stays bounded no matter how long the conversation grows.
+  const THREAD_KEY = 'axis_jarvis_thread';
+  const SUPA_THREAD = 'jarvis_thread';
+  const MAX_TAIL = 20;   // fold when the un-summarized tail exceeds this
+  const KEEP_TAIL = 8;   // verbatim turns always kept after a fold
+  const HARD_CAP = 400;  // absolute ceiling on stored messages
+
+  let THREAD = lsGet(THREAD_KEY) || null;
+  function freshThread() { return { messages: [], summary: '', summarizedCount: 0, lastBriefingDate: '', updatedAt: 0 }; }
+  function normalizeThread(t) {
+    if (!t || typeof t !== 'object') return freshThread();
+    if (!Array.isArray(t.messages)) t.messages = [];
+    if (typeof t.summary !== 'string') t.summary = '';
+    if (typeof t.summarizedCount !== 'number') t.summarizedCount = 0;
+    if (typeof t.lastBriefingDate !== 'string') t.lastBriefingDate = '';
+    if (typeof t.updatedAt !== 'number') t.updatedAt = 0;
+    return t;
+  }
+  THREAD = normalizeThread(THREAD);
+
+  let _pushTimer = null;
+  function persist() {
+    THREAD.updatedAt = Date.now();
+    if (THREAD.messages.length > HARD_CAP) {
+      const drop = THREAD.messages.length - HARD_CAP;
+      THREAD.messages = THREAD.messages.slice(drop);
+      THREAD.summarizedCount = Math.max(0, THREAD.summarizedCount - drop);
+    }
+    try { localStorage.setItem(THREAD_KEY, JSON.stringify(THREAD)); } catch (_) {}
+    clearTimeout(_pushTimer);
+    _pushTimer = setTimeout(function () { supaUpsert(SUPA_THREAD, THREAD); }, 700);
+  }
+  async function loadThreadRemote() {
+    const remote = await supaFetch(SUPA_THREAD);
+    if (remote && typeof remote === 'object' && (remote.updatedAt || 0) > (THREAD.updatedAt || 0)) {
+      THREAD = normalizeThread(remote);
+      try { localStorage.setItem(THREAD_KEY, JSON.stringify(THREAD)); } catch (_) {}
+    }
+  }
+  function addMessage(role, content) {
+    const m = { role, content, ts: Date.now(), day: activeDate() };
+    THREAD.messages.push(m);
+    return m;
   }
 
   // ── System prompt ──────────────────────────────────────────────────
@@ -418,25 +459,28 @@ body {
 "5. Flag problems plainly, once. Do not lecture.\n" +
 "6. Own what you don't know: \"I don't have that data, Sir.\"\n" +
 "7. Dry wit is permitted, sparingly, only when earned.\n" +
-"8. Formal register. No slang, no emoji, no exclamation marks.";
+"8. Formal register. No slang, no emoji, no exclamation marks.\n" +
+"9. This is one continuous relationship. Use the conversation memory and prior turns for continuity; do not reintroduce yourself or repeat standing context he already has.";
 
   function buildSystem() {
     const name = firstName() || 'George';
     const now = new Date();
     const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
-    const water = waterData(), supp = supplementData(), goals = goalData();
-    const streak = streakCount(), wt = weightInfo();
+    const water = waterData(), supp = supplementData(), goals = goalData(), streak = streakCount(), wt = weightInfo();
 
     let p = JARVIS_PERSONA;
 
     const fgText = fgProfileText(fgProfile);
     if (fgText) {
       p += "\n\n=== FUTURE GEORGE — who he is becoming ===" +
-           "\nThis is George's stated direction. Filter every response through it: measure today against where he said he's going, and name any drift plainly. Reference it the way a chief-of-staff references the boss's known priorities — naturally, never by reading it back." +
-           fgText;
+           "\nThis is George's stated direction. Filter every response through it: measure today against where he said he's going, and name any drift plainly. Reference it the way a chief-of-staff references the boss's known priorities — naturally, never by reading it back." + fgText;
     } else {
-      p += "\n\n=== FUTURE GEORGE ===\nNot yet defined. If it would genuinely help, you may note once that the Future George profile is empty — but do not nag.";
+      p += "\n\n=== FUTURE GEORGE ===\nNot yet defined. You may note once, if it helps, that the Future George profile is empty — but do not nag.";
+    }
+
+    if (THREAD.summary) {
+      p += "\n\n=== CONVERSATION MEMORY (earlier turns, condensed) ===\n" + THREAD.summary;
     }
 
     p += "\n\n=== LIVE DATA (" + dateStr + ", " + timeStr + ") ===";
@@ -450,19 +494,23 @@ body {
     return p;
   }
 
-  // ── /api/chat streaming ────────────────────────────────────────────
-  async function streamChat(messages, onChunk) {
+  // Build the bounded message array sent to the API: the un-summarized tail,
+  // trimmed so it begins with a user turn (Anthropic requirement).
+  function buildSendMessages() {
+    let tail = THREAD.messages.slice(THREAD.summarizedCount).map(function (m) { return { role: m.role, content: m.content }; });
+    tail = tail.filter(function (m) { return m.content; });
+    while (tail.length && tail[0].role !== 'user') tail.shift();
+    return tail;
+  }
+
+  // ── /api/chat core ─────────────────────────────────────────────────
+  async function apiChat(system, messages, onChunk) {
     const res = await fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: buildSystem(), messages: messages, max_tokens: 1000 })
+      body: JSON.stringify({ system, messages, max_tokens: 1024 })
     });
-    if (!res.ok) {
-      let detail = 'HTTP ' + res.status;
-      try { const j = await res.json(); detail = j.error || detail; } catch (_) {}
-      throw new Error(detail);
-    }
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
+    if (!res.ok) { let d = 'HTTP ' + res.status; try { const j = await res.json(); d = j.error || d; } catch (_) {} throw new Error(d); }
+    const reader = res.body.getReader(), decoder = new TextDecoder();
     let buf = '', full = '';
     while (true) {
       const { done, value } = await reader.read();
@@ -472,104 +520,158 @@ body {
       for (const line of lines) {
         if (!line.startsWith('data: ')) continue;
         const raw = line.slice(6).trim(); if (!raw) continue;
-        try {
-          const evt = JSON.parse(raw);
-          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
-            full += evt.delta.text; if (onChunk) onChunk(full);
-          }
+        try { const evt = JSON.parse(raw);
+          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') { full += evt.delta.text; if (onChunk) onChunk(full); }
         } catch (_) {}
       }
     }
     return full;
   }
 
-  // ── Greeting card render ───────────────────────────────────────────
-  const $ = function (id) { return document.getElementById(id); };
+  // ── Compaction — fold old turns into the rolling summary ───────────
+  let _compacting = false;
+  async function compactIfNeeded() {
+    if (_compacting) return;
+    if (THREAD.messages.length - THREAD.summarizedCount <= MAX_TAIL) return;
+    _compacting = true;
+    try {
+      const foldEnd = THREAD.messages.length - KEEP_TAIL;
+      const chunk = THREAD.messages.slice(THREAD.summarizedCount, foldEnd);
+      if (!chunk.length) return;
+      const transcript = chunk.map(function (m) { return (m.role === 'user' ? 'George' : 'Jarvis') + ': ' + m.content; }).join('\n');
+      const sys = "You maintain a compact running memory of an ongoing relationship between George and his assistant Jarvis. Merge the new exchanges into the existing memory. Keep durable facts, decisions, preferences, plans, numbers, and unresolved threads. Drop small talk and anything ephemeral. Write in terse third person, under 220 words. Output only the memory text.";
+      const userMsg = "EXISTING MEMORY:\n" + (THREAD.summary || '(none yet)') + "\n\nNEW EXCHANGES:\n" + transcript;
+      const next = await apiChat(sys, [{ role: 'user', content: userMsg }], null);
+      if (next && next.trim()) { THREAD.summary = next.trim(); THREAD.summarizedCount = foldEnd; persist(); }
+    } catch (_) { /* leave tail as-is; will retry next turn */ }
+    finally { _compacting = false; }
+  }
 
-  function renderClock() {
-    $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  // ── Rendering ──────────────────────────────────────────────────────
+  function escapeHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function dividerLabel(day) {
+    if (day === activeDate()) return 'Today';
+    const d = new Date(day + 'T12:00:00');
+    if (isNaN(d)) return day;
+    return d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
   }
-  function renderGreeting() {
-    const n = firstName();
-    $('greeting').textContent = 'Good ' + timeOfDay() + (n ? ', ' + n : ', Sir');
+  function makeDivider(day) {
+    const el = document.createElement('div'); el.className = 'divider';
+    el.innerHTML = '<span>' + escapeHtml(dividerLabel(day)) + '</span>'; return el;
   }
+  function makeMsgEl(m) {
+    const el = document.createElement('div');
+    if (m.role === 'user') {
+      el.className = 'msg user';
+      const b = document.createElement('div'); b.className = 'bubble'; b.textContent = m.content; el.appendChild(b);
+      return { el, body: b };
+    }
+    el.className = 'msg assistant' + (m.brief ? ' brief' : '');
+    const label = document.createElement('div'); label.className = 'label';
+    label.innerHTML = '<span class="dot"></span>Jarvis';
+    const body = document.createElement('div'); body.className = 'body'; body.textContent = m.content;
+    el.appendChild(label); el.appendChild(body);
+    return { el, body };
+  }
+  function renderAll() {
+    const thread = $('thread');
+    thread.innerHTML = '';
+    if (!THREAD.messages.length) {
+      const h = document.createElement('div'); h.className = 'empty-hint';
+      h.textContent = 'At your service, Sir. Ask anything — your day, your training, where you stand against who you are becoming.';
+      thread.appendChild(h); return;
+    }
+    let lastDay = null;
+    THREAD.messages.forEach(function (m) {
+      if (m.day !== lastDay) { thread.appendChild(makeDivider(m.day)); lastDay = m.day; }
+      thread.appendChild(makeMsgEl(m).el);
+    });
+    scrollDown(false);
+  }
+  function appendMsg(m) {
+    const thread = $('thread');
+    const hint = thread.querySelector('.empty-hint'); if (hint) hint.remove();
+    const last = THREAD.messages[THREAD.messages.length - 2]; // m already pushed
+    const prevDay = last ? last.day : null;
+    if (m.day !== prevDay) thread.appendChild(makeDivider(m.day));
+    const made = makeMsgEl(m); thread.appendChild(made.el); scrollDown(true);
+    return made.body;
+  }
+  function scrollDown(smooth) { const t = $('thread'); t.scrollTo({ top: t.scrollHeight, behavior: smooth ? 'smooth' : 'auto' }); }
+
+  // ── Header / chips ─────────────────────────────────────────────────
+  function renderClock() { $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }); }
   function renderChips() {
-    const water = waterData(), supp = supplementData(), goals = goalData();
-    const chips = [];
-    chips.push({ k: 'Water', v: water.pct + '%', cls: water.pct >= 80 ? 'good' : water.pct < 40 ? 'warn' : '' });
+    const water = waterData(), supp = supplementData(), goals = goalData(), streak = streakCount();
+    const chips = [{ k: 'Water', v: water.pct + '%', cls: water.pct >= 80 ? 'good' : water.pct < 40 ? 'warn' : '' }];
     if (supp.total) chips.push({ k: 'Stack', v: supp.done + '/' + supp.total, cls: supp.done >= supp.total ? 'good' : '' });
     chips.push({ k: 'Goals', v: goals.done + '/' + goals.total, cls: goals.total && goals.done >= goals.total ? 'good' : '' });
-    const streak = streakCount();
     if (streak > 0) chips.push({ k: 'Streak', v: streak + 'd', cls: 'good' });
-    $('chips').innerHTML = chips.map(function (c) {
-      return '<span class="chip ' + (c.cls || '') + '"><span class="k">' + c.k + '</span><span class="v">' + c.v + '</span></span>';
-    }).join('');
+    $('chips').innerHTML = chips.map(function (c) { return '<span class="chip ' + (c.cls || '') + '"><span class="k">' + c.k + '</span><span class="v">' + c.v + '</span></span>'; }).join('');
   }
 
-  // ── Proactive briefing on load ─────────────────────────────────────
-  async function runBriefing() {
-    const body = $('briefBody');
-    body.classList.add('thinking');
-    body.textContent = 'Pulling the day together…';
-    const prompt = "Deliver my standing briefing for right now, Sir. Two or three sentences. Lead with whatever matters most given the time of day and the live data — water, supplements, goals, streak — and one line on where I stand against who I'm becoming if the Future George profile is set. No preamble.";
+  // ── Streaming a Jarvis turn into the thread ────────────────────────
+  let busy = false;
+  function setBusy(b) { busy = b; $('send').disabled = b || $('input').value.trim() === ''; }
+
+  async function streamAssistant(sendMessages, opts) {
+    opts = opts || {};
+    const m = addMessage('assistant', '');
+    if (opts.brief) m.brief = true;
+    const body = appendMsg(m);
+    body.innerHTML = '<span class="cursor"></span>';
     try {
       let first = true;
-      await streamChat([{ role: 'user', content: prompt }], function (full) {
-        if (first) { body.classList.remove('thinking'); first = false; }
-        body.innerHTML = escapeHtml(full) + '<span class="cursor"></span>';
-        scrollDown();
+      const full = await apiChat(buildSystem(), sendMessages, function (txt) {
+        if (first) first = false;
+        body.innerHTML = escapeHtml(txt) + '<span class="cursor"></span>';
+        scrollDown(true);
       });
-      body.innerHTML = escapeHtml(body.textContent);
+      m.content = full || '';
+      body.innerHTML = escapeHtml(m.content);
+      persist();
+      compactIfNeeded();
+      return full;
     } catch (err) {
-      body.classList.remove('thinking');
-      body.textContent = localBriefing();
+      m.content = (opts.brief ? localBriefing() : 'I could not reach the network, Sir.') + (err && err.message ? ' (' + err.message + ')' : '');
+      body.innerHTML = escapeHtml(m.content);
+      persist();
+      throw err;
     }
   }
+
   function localBriefing() {
-    // Offline / error fallback — composed from local data, in voice.
     const water = waterData(), supp = supplementData(), goals = goalData();
-    const bits = [];
-    bits.push('You are at ' + water.doneMl + 'ml of ' + water.targetMl + 'ml today, Sir — ' + water.pct + '%.');
+    const bits = ['You are at ' + water.doneMl + 'ml of ' + water.targetMl + 'ml today, Sir — ' + water.pct + '%.'];
     if (supp.total) bits.push(supp.done + ' of ' + supp.total + ' supplements logged.');
     bits.push(goals.total ? (goals.done + ' of ' + goals.total + ' goals done.') : 'No goals set yet.');
     return bits.join(' ');
   }
 
-  // ── Ask / response surface ─────────────────────────────────────────
-  let busy = false;
   async function ask(text) {
     text = String(text || '').trim();
     if (!text || busy) return;
-    busy = true;
-    $('send').disabled = true;
-    const resp = $('response'), q = $('responseQ'), b = $('responseBody');
-    resp.classList.remove('empty');
-    q.textContent = text;
-    b.classList.add('thinking'); b.textContent = '';
-    b.innerHTML = '<span class="cursor"></span>';
-    scrollResponse();
-    try {
-      let first = true;
-      await streamChat([{ role: 'user', content: text }], function (full) {
-        if (first) { b.classList.remove('thinking'); first = false; }
-        b.innerHTML = escapeHtml(full) + '<span class="cursor"></span>';
-        scrollResponse();
-      });
-      b.innerHTML = escapeHtml(b.textContent);
-    } catch (err) {
-      b.classList.remove('thinking');
-      b.textContent = 'I could not reach the network, Sir. ' + (err.message || '');
-    } finally {
-      busy = false;
-      $('send').disabled = $('input').value.trim() === '';
-    }
+    setBusy(true);
+    addMessage('user', text);
+    appendMsg(THREAD.messages[THREAD.messages.length - 1]);
+    persist();
+    const sendMessages = buildSendMessages();
+    try { await streamAssistant(sendMessages, {}); } catch (_) {}
+    finally { setBusy(false); }
   }
 
-  function escapeHtml(s) {
-    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  // ── Daily briefing (once per active day) ───────────────────────────
+  async function maybeBrief(force) {
+    const today = activeDate();
+    if (!force && THREAD.lastBriefingDate === today) return;
+    if (busy) return;
+    THREAD.lastBriefingDate = today;
+    persist();
+    setBusy(true);
+    const prompt = "Deliver my standing briefing for right now, Sir. Two or three sentences. Lead with whatever matters most given the time of day and the live data — water, supplements, goals, streak — and one line on where I stand against who I'm becoming if the Future George profile is set. This is a continuation of our ongoing relationship, so do not greet me as a stranger. No preamble.";
+    try { await streamAssistant([{ role: 'user', content: prompt }], { brief: true }); } catch (_) {}
+    finally { setBusy(false); }
   }
-  function scrollDown() { const s = $('surface'); s.scrollTop = s.scrollHeight; }
-  function scrollResponse() { $('response').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 
   // ── Input wiring ───────────────────────────────────────────────────
   const input = $('input'), send = $('send');
@@ -578,39 +680,50 @@ body {
   send.addEventListener('click', submit);
   input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
 
+  // ── Home / new conversation ────────────────────────────────────────
+  $('homeBtn').addEventListener('click', function () {
+    let url = 'index.html';
+    try { url = sessionStorage.getItem('axisReturnUrl') || 'index.html'; } catch (_) {}
+    window.location.href = url;
+  });
+  const toast = $('toast');
+  $('newBtn').addEventListener('click', function () {
+    if (busy) return;
+    $('toastMsg').textContent = 'Clear this conversation and start fresh?';
+    toast.classList.add('open');
+  });
+  $('toastNo').addEventListener('click', function () { toast.classList.remove('open'); });
+  $('toastYes').addEventListener('click', function () {
+    toast.classList.remove('open');
+    THREAD = freshThread();
+    persist();
+    renderAll();
+    maybeBrief(true);
+  });
+
   // ── Voice (Web Speech API) ─────────────────────────────────────────
   (function () {
     const mic = $('mic');
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) { mic.style.display = 'none'; return; }
-    const rec = new SR();
-    rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
-    let listening = false, finalText = '';
+    const rec = new SR(); rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
+    let listening = false;
     rec.onresult = function (e) {
-      let interim = '';
-      finalText = '';
-      for (let i = 0; i < e.results.length; i++) {
-        const t = e.results[i][0].transcript;
-        if (e.results[i].isFinal) finalText += t; else interim += t;
-      }
-      input.value = (finalText + interim).trim();
-      send.disabled = input.value.trim() === '';
+      let txt = '';
+      for (let i = 0; i < e.results.length; i++) txt += e.results[i][0].transcript;
+      input.value = txt.trim(); send.disabled = input.value.trim() === '';
     };
-    rec.onend = function () {
-      listening = false; mic.classList.remove('listening');
-      if (input.value.trim()) submit();
-    };
+    rec.onend = function () { listening = false; mic.classList.remove('listening'); if (input.value.trim()) submit(); };
     rec.onerror = function () { listening = false; mic.classList.remove('listening'); };
     mic.addEventListener('click', function () {
       if (listening) { rec.stop(); return; }
-      try { input.value = ''; finalText = ''; rec.start(); listening = true; mic.classList.add('listening'); } catch (_) {}
+      try { input.value = ''; rec.start(); listening = true; mic.classList.add('listening'); } catch (_) {}
     });
   })();
 
   // ── Future George flow ─────────────────────────────────────────────
   const fgOverlay = $('fgOverlay');
   let fgStep = 0, fgDraft = null;
-
   function fgWorkingCopy() {
     const base = (fgProfile && typeof fgProfile === 'object') ? JSON.parse(JSON.stringify(fgProfile)) : {};
     FG_DIMENSIONS.forEach(function (d) {
@@ -620,23 +733,10 @@ body {
     });
     return base;
   }
-  function openFG() {
-    fgDraft = fgWorkingCopy();
-    fgStep = 0;
-    fgOverlay.classList.add('open');
-    fgOverlay.setAttribute('aria-hidden', 'false');
-    renderFGStep();
-  }
-  function closeFG() {
-    fgOverlay.classList.remove('open');
-    fgOverlay.setAttribute('aria-hidden', 'true');
-    $('fgSaving').textContent = '';
-  }
+  function openFG() { fgDraft = fgWorkingCopy(); fgStep = 0; fgOverlay.classList.add('open'); fgOverlay.setAttribute('aria-hidden', 'false'); renderFGStep(); }
+  function closeFG() { fgOverlay.classList.remove('open'); fgOverlay.setAttribute('aria-hidden', 'true'); $('fgSaving').textContent = ''; }
   function renderProgress() {
-    $('fgProgress').innerHTML = FG_DIMENSIONS.map(function (_, i) {
-      const cls = i < fgStep ? 'done' : i === fgStep ? 'active' : '';
-      return '<span class="seg ' + cls + '"></span>';
-    }).join('');
+    $('fgProgress').innerHTML = FG_DIMENSIONS.map(function (_, i) { const c = i < fgStep ? 'done' : i === fgStep ? 'active' : ''; return '<span class="seg ' + c + '"></span>'; }).join('');
   }
   function renderFGStep() {
     const d = FG_DIMENSIONS[fgStep];
@@ -644,52 +744,40 @@ body {
     $('fgDomain').textContent = (fgStep + 1) + ' / ' + FG_DIMENSIONS.length + ' · ' + d.label;
     $('fgQuestion').textContent = d.question;
     $('fgHint').textContent = d.hint;
-    const ans = $('fgAnswer');
-    ans.value = (fgDraft[d.key] && fgDraft[d.key].summary) || '';
+    $('fgAnswer').value = (fgDraft[d.key] && fgDraft[d.key].summary) || '';
     $('fgBack').style.visibility = fgStep === 0 ? 'hidden' : 'visible';
     $('fgNext').textContent = fgStep === FG_DIMENSIONS.length - 1 ? 'Save' : 'Next';
     $('fgSaving').textContent = '';
-    setTimeout(function () { ans.focus(); }, 60);
+    setTimeout(function () { $('fgAnswer').focus(); }, 60);
   }
-  function captureFG() {
-    const d = FG_DIMENSIONS[fgStep];
-    fgDraft[d.key].summary = $('fgAnswer').value.trim();
-  }
+  function captureFG() { fgDraft[FG_DIMENSIONS[fgStep].key].summary = $('fgAnswer').value.trim(); }
   $('fgOpen').addEventListener('click', openFG);
   $('fgClose').addEventListener('click', closeFG);
   $('fgBack').addEventListener('click', function () { captureFG(); if (fgStep > 0) { fgStep--; renderFGStep(); } });
   $('fgNext').addEventListener('click', async function () {
     captureFG();
     if (fgStep < FG_DIMENSIONS.length - 1) { fgStep++; renderFGStep(); return; }
-    // Final — save
-    const btn = this; btn.disabled = true;
-    $('fgSaving').textContent = 'Saving to Axis…';
+    const btn = this; btn.disabled = true; $('fgSaving').textContent = 'Saving to Axis…';
     const ok = await saveFG(fgDraft);
-    btn.disabled = false;
-    $('fgSaving').textContent = ok ? 'Saved, Sir.' : 'Saved locally — sync will retry.';
+    btn.disabled = false; $('fgSaving').textContent = ok ? 'Saved, Sir.' : 'Saved locally — sync will retry.';
     renderChips();
-    setTimeout(function () {
-      closeFG();
-      // Re-brief now that the profile changed.
-      runBriefing();
-    }, 700);
+    setTimeout(function () { closeFG(); }, 700);
   });
 
   // ── React to data changes from other tabs/pages ────────────────────
   window.addEventListener('storage', function (e) {
     if (!e.key) return;
-    if (e.key === 'po_water_v1' || e.key.indexOf('stack:') === 0 || e.key.indexOf('goals:') === 0 || e.key === 'goal_streak_v1') {
-      renderChips();
-    }
+    if (e.key === 'po_water_v1' || e.key.indexOf('stack:') === 0 || e.key.indexOf('goals:') === 0 || e.key === 'goal_streak_v1') renderChips();
+    if (e.key === THREAD_KEY) { /* another tab edited the thread */ const t = lsGet(THREAD_KEY); if (t && (t.updatedAt || 0) > (THREAD.updatedAt || 0) && !busy) { THREAD = normalizeThread(t); renderAll(); } }
   });
 
   // ── Boot ───────────────────────────────────────────────────────────
-  renderClock(); renderGreeting(); renderChips();
+  renderClock(); renderChips(); renderAll();
   setInterval(renderClock, 30000);
   (async function () {
-    await loadFG();
-    renderChips();
-    runBriefing();
+    await Promise.all([loadFG(), loadThreadRemote()]);
+    renderChips(); renderAll();
+    maybeBrief(false);
   })();
 })();
 </script>
