@@ -270,6 +270,10 @@ body{
 }
 .ltg-btn-del:active{background:rgba(239,68,68,.16)}
 
+#axAvatar{transition:transform .14s cubic-bezier(.2,.7,.2,1),border-color .2s,box-shadow .2s;-webkit-tap-highlight-color:transparent}
+#axAvatar:hover{border-color:rgba(45,232,162,.45);box-shadow:0 0 0 4px rgba(45,232,162,.08)}
+#axAvatar:active{transform:scale(.9)}
+
 @media (prefers-reduced-motion:reduce){
   .reveal{animation:none;opacity:1}
   *{animation-duration:.01ms!important;transition-duration:.01ms!important}
@@ -285,7 +289,7 @@ body{
       <div id="axDate" style="font-family:'Geist Mono',monospace;font-size:12px;letter-spacing:.1em;color:rgba(255,255,255,.4);text-transform:uppercase"></div>
       <h1 id="axGreeting" style="font-family:'Geist','Space Grotesk',sans-serif;font-weight:600;font-size:29px;letter-spacing:-.02em;color:#fff;margin-top:5px">Good morning</h1>
     </div>
-    <div id="axAvatar" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#1c2c27,#0e1614);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-family:'Geist',sans-serif;font-weight:600;font-size:16px;color:#2de8a2">G</div>
+    <a id="axAvatar" href="settings.html" aria-label="Settings" style="width:42px;height:42px;border-radius:50%;background:linear-gradient(150deg,#1c2c27,#0e1614);border:1px solid rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-family:'Geist',sans-serif;font-weight:600;font-size:16px;color:#2de8a2;text-decoration:none;cursor:pointer">G</a>
   </div>
 
   <!-- DAY PROGRESS RING CARD -->

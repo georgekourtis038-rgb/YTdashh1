@@ -48,7 +48,7 @@ body { background: transparent; }
   font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 body.has-topbar {
-  padding-top: max(80px, calc(env(safe-area-inset-top) + 20px)) !important;
+  padding-top: max(28px, calc(env(safe-area-inset-top) + 14px)) !important;
 }
 .topbar > * { pointer-events: auto; }
 .topbar-logo-link {
@@ -350,11 +350,10 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       style.textContent = css;
       document.head.appendChild(style);
     }
-    if (document.getElementById('topbar') || document.getElementById('bottombar')) return;
+    if (document.getElementById('bottombar')) return;
     if (!shouldShowChrome()) return;
-    const topWrap = document.createElement('div');
-    topWrap.innerHTML = topbarHtml.trim();
-    document.body.insertBefore(topWrap.firstChild, document.body.firstChild);
+    // The global top bar (logo / water / settings) has been retired. We keep
+    // the top spacing so page content still clears the status bar / notch.
     document.body.classList.add('has-topbar');
     if (!isAIPage()) {
       const bottomWrap = document.createElement('div');
@@ -370,10 +369,6 @@ body.topbar-modal-open { overflow: hidden; touch-action: none; }
       const orbWrap = document.createElement('div');
       orbWrap.innerHTML = orbHtml.trim();
       document.body.appendChild(orbWrap.firstChild);
-    }
-    if (isSettingsPage()) {
-      const finBtn = document.getElementById('topbarFinance');
-      if (finBtn) finBtn.href = sessionStorage.getItem('dash_prev_page') || 'index.html';
     }
   }
 
