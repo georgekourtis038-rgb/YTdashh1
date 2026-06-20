@@ -3,763 +3,295 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a0f0e">
+<meta name="theme-color" content="#0a0d0c">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="axis-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<title>Axis AI</title>
+<title>Axis · Jarvis</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Space+Mono&display=swap" rel="stylesheet">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="topbar.js" defer></script>
-<script src="google-auth.js"></script>
+
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg: #0a0f0e;
-  --mint: #2de8a2;
-  --mint-dim: rgba(45,232,162,0.4);
-  --card-bg: rgba(255,255,255,0.04);
+  --bg:          #0a0d0c;
+  --accent:      #2de8a2;
+  --accent-2:    #1ec78a;
+  --accent-glow: rgba(45,232,162,0.5);
+  --blue:        #6f9bff;
+  --text-1:      rgba(255,255,255,0.92);
+  --text-2:      rgba(255,255,255,0.62);
+  --text-3:      rgba(255,255,255,0.42);
+  --card-bg:     linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
   --card-border: rgba(255,255,255,0.08);
-  --label: rgba(255,255,255,0.4);
-  --subtle: rgba(255,255,255,0.3);
-  --font: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: 'Space Mono', ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --accent-card-bg:     linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
+  --accent-card-border: rgba(45,232,162,0.16);
+  --font: 'Space Grotesk', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --mono: 'Space Mono', ui-monospace, monospace;
 }
 
-html, body {
-  width: 100%;
-  min-height: 100%;
-  background: var(--bg);
-  color: #fff;
-  font-family: var(--font);
-  -webkit-font-smoothing: antialiased;
-  -webkit-text-size-adjust: 100%;
-}
+html, body { height: 100%; }
 body {
-  padding-bottom: calc(84px + env(safe-area-inset-bottom));
-}
-
-/* ── Shell ── */
-.ai-shell {
-  max-width: 680px;
-  margin: 0 auto;
-  padding: 0 20px 24px;
-}
-
-/* ── Header row ── */
-.ai-toprow {
-  position: sticky;
-  top: 0;
-  z-index: 25;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 -20px 14px;
-  padding: calc(env(safe-area-inset-top) + 12px) 20px 14px;
-  background: linear-gradient(180deg, var(--bg) 74%, rgba(10,15,14,0));
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-}
-.ai-head-text { flex: 1; min-width: 0; }
-.ai-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.14em;
-  color: rgba(45,232,162,0.8);
-  text-transform: uppercase;
-  font-weight: 400;
-  margin-bottom: 4px;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ai-greeting {
-  font-size: 23px;
-  font-weight: 600;
-  color: #fff;
-  letter-spacing: -0.01em;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-
-/* ── Header avatar orb (Aurora) ── */
-.ai-avatar {
+  font-family: var(--font);
+  color: var(--text-1);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
   position: relative;
-  width: 44px; height: 44px;
-  flex: 0 0 auto;
-  display: flex; align-items: center; justify-content: center;
 }
-.ai-avatar-glow {
-  position: absolute; inset: 0; border-radius: 50%;
-  background: radial-gradient(circle, rgba(45,232,162,0.3), transparent 68%);
-  animation: axBreath 4s ease-in-out infinite;
-  pointer-events: none;
+
+/* ── Aurora background ─────────────────────────────────────────────── */
+.aurora { position: fixed; inset: 0; z-index: -2; overflow: hidden; pointer-events: none;
+  background: radial-gradient(135% 80% at 50% -8%, #102a22 0%, #0a1512 36%, #070b0a 72%, #060908 100%); }
+.aurora::before, .aurora::after {
+  content: ''; position: absolute; border-radius: 50%;
+  filter: blur(70px); opacity: 0.5; will-change: transform; backface-visibility: hidden;
 }
-.ai-avatar-ring {
+.aurora::before { width: 70vw; height: 70vw; left: -18vw; top: -22vh;
+  background: radial-gradient(circle, rgba(45,232,162,0.30), transparent 66%);
+  animation: auroraA 22s ease-in-out infinite; }
+.aurora::after { width: 62vw; height: 62vw; right: -20vw; top: 6vh;
+  background: radial-gradient(circle, rgba(111,155,255,0.22), transparent 66%);
+  animation: auroraB 26s ease-in-out infinite; }
+@keyframes auroraA { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vw,4vh) scale(1.12); } }
+@keyframes auroraB { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-5vw,6vh) scale(1.08); } }
+
+/* ── Layout ────────────────────────────────────────────────────────── */
+.surface {
   position: relative;
-  width: 36px; height: 36px; border-radius: 50%;
-  background: conic-gradient(from 180deg, #2de8a2, #6f9bff, #2de8a2);
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 0 18px rgba(45,232,162,0.5);
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: calc(env(safe-area-inset-top) + 78px) 18px 0;
+  padding-bottom: 168px;
 }
-.ai-avatar-core {
-  width: 29px; height: 29px; border-radius: 50%;
-  background: #0a1512;
-  display: flex; align-items: center; justify-content: center;
-}
-.ai-avatar-mark {
-  width: 11px; height: 11px; border-radius: 50%;
-  border: 2px solid #2de8a2;
-  border-right-color: transparent; border-bottom-color: transparent;
-  animation: axSpin 3.5s linear infinite;
-}
+.surface::-webkit-scrollbar { width: 0; }
 
-/* ── Header icon buttons ── */
-.ai-icon-btn {
-  width: 38px; height: 38px;
-  border-radius: 10px;
-  background: var(--card-bg);
-  border: 1px solid var(--card-border);
-  color: var(--label);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, color 0.15s;
-  margin-top: 2px;
-}
-.ai-icon-btn:hover, .ai-icon-btn:active { background: rgba(255,255,255,0.08); color: #fff; }
-
-/* ── Chat thread ── */
-.chat-thread {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-/* ── Message bubbles ── */
-.msg {
-  display: flex;
-  max-width: 85%;
-  will-change: transform;
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
-}
-.msg.msg-static { animation: none; }
-
-@keyframes msgIn {
-  from { opacity: 0; transform: translateY(10px) translateZ(0); }
-  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
-}
-
-.msg-user { align-self: flex-end; flex-direction: row-reverse; }
-.msg-ai   { align-self: flex-start; }
-
-.msg-bubble {
-  padding: 12px 16px;
-  border-radius: 18px;
-  font-size: 15px;
-  line-height: 1.55;
-}
-.msg-user .msg-bubble {
-  background: linear-gradient(180deg, #2de8a2, #1ec78a);
-  border: none;
-  color: #04140d;
-  border-bottom-right-radius: 4px;
-  font-weight: 500;
-}
-.msg-ai .msg-bubble {
-  background: linear-gradient(180deg, rgba(255,255,255,0.06), rgba(255,255,255,0.022));
-  border: 1px solid rgba(255,255,255,0.08);
-  color: rgba(255,255,255,0.88);
-  border-bottom-left-radius: 4px;
+/* ── Briefing card ─────────────────────────────────────────────────── */
+.brief {
+  background: var(--accent-card-bg);
+  border: 1px solid var(--accent-card-border);
+  border-radius: 24px;
+  padding: 22px 20px 20px;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  animation: rise 0.55s cubic-bezier(.2,.7,.2,1) both;
 }
+.brief-eyebrow {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase;
+  color: var(--text-3); display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+}
+.brief-eyebrow .dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow); animation: pulse 2.6s ease-in-out infinite;
+}
+.brief-eyebrow .clock { margin-left: auto; letter-spacing: 0.08em; color: var(--text-2); }
+.greeting { font-size: 27px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.12; }
 
-/* ── Rich text (markdown) inside bubbles ── */
-.msg-text { display: block; }
-.msg-text .md-line { min-height: 1px; }
-.msg-text .md-line + .md-line { margin-top: 1px; }
-.msg-text .md-gap { height: 9px; }
-.msg-bubble strong { font-weight: 700; color: #fff; }
-.msg-user .msg-bubble strong { color: #04140d; }
-.msg-bubble em { font-style: italic; }
-.msg-bubble code {
-  font-family: var(--font-mono);
-  font-size: 0.88em;
-  background: rgba(255,255,255,0.08);
-  padding: 1px 5px; border-radius: 5px;
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.chip {
+  display: inline-flex; align-items: baseline; gap: 6px;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+  border-radius: 12px; padding: 7px 11px;
 }
-.msg-user .msg-bubble code { background: rgba(0,0,0,0.12); }
-.msg-text .md-ul {
-  margin: 5px 0 4px; padding-left: 18px;
-  list-style: none;
-}
-.msg-text .md-ul li { position: relative; margin: 4px 0; }
-.msg-text .md-ul li::before {
-  content: ''; position: absolute; left: -13px; top: 0.62em;
-  width: 4px; height: 4px; border-radius: 50%;
-  background: var(--mint);
-}
-.msg-user .msg-text .md-ul li::before { background: rgba(4,20,13,0.5); }
-.msg-text .md-h {
-  font-weight: 700; color: #fff; font-size: 1.02em;
-  margin-bottom: 3px; letter-spacing: -0.01em;
-}
+.chip .k { font-family: var(--mono); font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); }
+.chip .v { font-family: var(--mono); font-size: 13px; color: var(--text-1); }
+.chip.warn .v { color: #ffcf7a; }
+.chip.good .v { color: var(--accent); }
 
-/* ── Briefing message ── */
-.msg-briefing-header {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin-bottom: 8px;
+.brief-body {
+  margin-top: 18px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,0.07);
+  font-size: 15.5px; line-height: 1.55; color: var(--text-1); white-space: pre-wrap;
+  min-height: 1.4em;
 }
-.msg-briefing-icon { font-size: 12px; }
-.msg-briefing-label {
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--mint);
-  text-transform: uppercase;
-  font-weight: 700;
-  opacity: 0.8;
-}
+.brief-body.thinking { color: var(--text-3); }
+.cursor { display: inline-block; width: 7px; height: 1.05em; vertical-align: -0.18em;
+  background: var(--accent); border-radius: 2px; margin-left: 2px; animation: blink 1s steps(2) infinite; }
 
-/* ── Typing indicator ── */
-.msg-typing .msg-bubble { padding: 14px 18px; }
-.typing-dots { display: flex; gap: 4px; align-items: center; }
-.typing-dots span {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--mint-dim);
-  animation: dotPulse 1.2s ease-in-out infinite;
-  will-change: transform, opacity;
-  -webkit-backface-visibility: hidden; backface-visibility: hidden;
+/* ── Response surface ──────────────────────────────────────────────── */
+.response { margin-top: 20px; }
+.response.empty { display: none; }
+.response-q {
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text-3); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
 }
-.typing-dots span:nth-child(2) { animation-delay: 0.2s; }
-.typing-dots span:nth-child(3) { animation-delay: 0.4s; }
-@keyframes dotPulse {
-  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8) translateZ(0); }
-  40%            { opacity: 1;   transform: scale(1)   translateZ(0); }
-}
+.response-q::before { content: '›'; color: var(--accent); font-size: 14px; }
+.response-body { font-size: 16px; line-height: 1.6; color: var(--text-1); white-space: pre-wrap; }
 
-/* ── Date separator ── */
-.chat-date-sep {
-  display: flex; align-items: center; gap: 10px;
-  margin: 8px 0; color: var(--subtle); font-size: 11px;
-  letter-spacing: 1px; text-transform: uppercase;
+/* ── Dock (input) ──────────────────────────────────────────────────── */
+.dock {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
+  padding: 0 14px max(14px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
 }
-.chat-date-sep::before, .chat-date-sep::after {
-  content: ''; flex: 1; height: 1px;
-  background: var(--card-border);
+.dock::before {
+  content: ''; position: absolute; inset: -40px 0 0; z-index: -1; pointer-events: none;
+  background: linear-gradient(180deg, transparent, rgba(6,9,8,0.65) 38%, rgba(6,9,8,0.95));
 }
+.fg-btn {
+  align-self: center;
+  display: inline-flex; align-items: center; gap: 7px;
+  font-family: var(--mono); font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-3); background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 999px; padding: 7px 14px;
+  cursor: pointer; transition: color .2s, border-color .2s;
+}
+.fg-btn:hover, .fg-btn:active { color: var(--accent); border-color: var(--accent-card-border); }
+.fg-btn svg { width: 12px; height: 12px; }
 
-/* ── Chat input bar (liquid glass) ── */
-.chat-bar {
-  position: fixed; bottom: 0; left: 0; right: 0;
-  padding: 12px 16px max(16px, calc(env(safe-area-inset-bottom) + 8px));
-  background: linear-gradient(0deg, rgba(7,11,10,0.94) 38%, rgba(7,11,10,0));
-  display: flex; justify-content: center;
-  z-index: 30;
-  pointer-events: none;
-}
-.chat-bar-inner {
-  pointer-events: auto;
-  width: 100%; max-width: 680px;
+.bar {
+  width: 100%; max-width: 640px;
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 7px 7px 8px;
-  border-radius: 20px;
-  background: rgba(14,20,18,0.82);
+  background: rgba(12,18,16,0.72);
   -webkit-backdrop-filter: blur(26px) saturate(170%);
   backdrop-filter: blur(26px) saturate(170%);
-  box-shadow:
-    0 14px 44px -10px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.09),
-    inset 0 0 0 1px rgba(255,255,255,0.07);
-}
-.chat-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  border-radius: 14px;
-  padding: 11px 8px 11px 10px;
-  font-size: 16px; /* 16px prevents iOS zoom */
-  font-family: var(--font);
-  color: #fff;
-  outline: none;
-  -webkit-appearance: none; appearance: none;
-}
-.chat-input::placeholder { color: var(--subtle); }
-.chat-input:focus { border: none; }
-.chat-send-btn {
-  width: 44px; height: 44px; border-radius: 14px;
-  background: linear-gradient(180deg, #2de8a2, #1ec78a);
-  border: none;
-  color: #04140d;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
-  box-shadow: 0 0 18px -2px rgba(45,232,162,0.6);
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s ease, transform 0.1s ease;
-}
-.chat-send-btn:active { background: rgba(45,232,162,0.22); transform: scale(0.93) translateZ(0); }
-.chat-send-btn:disabled { opacity: 0.35; pointer-events: none; }
-
-/* ── Streaming cursor ── */
-.streaming::after {
-  content: '▋';
-  display: inline-block;
-  animation: cursorBlink 0.65s step-end infinite;
-  color: var(--mint);
-  margin-left: 1px;
-  vertical-align: baseline;
-  will-change: opacity;
-}
-@keyframes cursorBlink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0; }
-}
-
-/* ── Action confirmation cards ── */
-.action-card {
-  display: flex; align-items: flex-start; gap: 10px;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(45,232,162,0.08), rgba(255,255,255,0.022));
-  border: 1px solid rgba(45,232,162,0.16);
-  border-radius: 18px; border-bottom-left-radius: 4px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(45,232,162,0.35);
-  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
-  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
-  align-self: flex-start; max-width: 85%;
-}
-.action-card.msg-static { animation: none; }
-.action-card-check { color: var(--mint); font-size: 13px; flex-shrink: 0; margin-top: 2px; }
-.action-card-text  { font-size: 13px; color: rgba(45,232,162,0.88); line-height: 1.45; }
-.action-card.action-confirm {
-  flex-direction: column; gap: 12px;
-  background: linear-gradient(180deg, rgba(242,192,99,0.08), rgba(255,255,255,0.022));
-  border-color: rgba(242,192,99,0.22);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 8px 30px -14px rgba(242,192,99,0.35);
-}
-.action-confirm .action-card-text { color: rgba(245,222,179,0.92); }
-.confirm-btns { display: flex; gap: 8px; align-self: stretch; }
-.confirm-btns button {
-  flex: 1; padding: 9px 12px; border-radius: 11px; font-size: 13px; font-weight: 600;
-  font-family: inherit; cursor: pointer; -webkit-tap-highlight-color: transparent;
-}
-.confirm-yes { border: none; background: linear-gradient(180deg,#fff,#e8e5dd); color: #0a0a0b; box-shadow: inset 0 1px 0 rgba(255,255,255,0.55); }
-.confirm-no  { border: 1px solid rgba(255,255,255,0.12); background: transparent; color: rgba(255,255,255,0.55); }
-
-/* ── Page entry animations ── */
-.ai-toprow { animation: revealUp 0.65s cubic-bezier(0.16,1,0.3,1) 0.05s both; }
-@keyframes revealUp {
-  from { opacity: 0; transform: translateY(40px) translateZ(0); }
-  to   { opacity: 1; transform: translateY(0)    translateZ(0); }
-}
-
-/* ────────────────────────────────────────────────────────────────
-   SIDEBAR
-   ──────────────────────────────────────────────────────────────── */
-.sidebar-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 200;
-  -webkit-tap-highlight-color: transparent;
-}
-.sidebar-overlay.open { display: block; }
-
-.chat-sidebar {
-  position: fixed; top: 0; left: 0; bottom: 0;
-  width: min(300px, 85vw);
-  background: radial-gradient(120% 50% at 50% -10%, #102018 0%, #0c1110 50%, #0a0e0d 100%);
-  border-right: 1px solid rgba(255,255,255,0.07);
-  z-index: 201;
-  display: flex; flex-direction: column;
-  transform: translateX(-100%) translateZ(0);
-  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
-  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
-  /* No overflow:hidden on glass-adjacent elements */
-}
-.chat-sidebar.open { transform: translateX(0) translateZ(0); }
-
-.sidebar-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: max(20px, calc(env(safe-area-inset-top) + 16px)) 16px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  flex-shrink: 0;
-}
-.sidebar-title {
-  font-family: var(--font-mono);
-  font-size: 12px; font-weight: 400;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(45,232,162,0.85);
-}
-.sidebar-close {
-  width: 28px; height: 28px; border-radius: 8px;
-  background: transparent; border: none;
-  color: var(--subtle); font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s;
-}
-.sidebar-close:hover { color: #fff; }
-
-.sidebar-list {
-  flex: 1 1 auto; min-height: 0; height: 0; overflow-y: auto;
-  padding: 10px 12px;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  display: block;            /* block flow → rows keep full height, list scrolls */
-}
-.sidebar-empty {
-  padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
-}
-.sidebar-row {
-  position: relative;
-  display: flex; align-items: stretch; gap: 4px;
-  margin-bottom: 6px;
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
-  border: 1px solid rgba(255,255,255,0.07);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-  transition: border-color 0.15s, background 0.15s;
-  overflow: hidden;
-}
-.sidebar-row:last-child { margin-bottom: 0; }
-.sidebar-row:active { background: linear-gradient(180deg, rgba(255,255,255,0.07), rgba(255,255,255,0.03)); }
-.sidebar-row.active {
-  background: linear-gradient(180deg, rgba(45,232,162,0.12), rgba(45,232,162,0.035));
-  border-color: rgba(45,232,162,0.3);
-}
-.sidebar-row-main {
-  flex: 1; min-width: 0;
-  display: flex; flex-direction: column; gap: 3px;
-  padding: 11px 12px;
-  background: transparent; border: none;
-  text-align: left; cursor: pointer;
-  font-family: var(--font);
-  -webkit-tap-highlight-color: transparent;
-}
-.sidebar-row-date {
-  font-family: var(--font-mono);
-  font-size: 10px; font-weight: 400; letter-spacing: 0.1em;
-  text-transform: uppercase; color: rgba(255,255,255,0.42);
-}
-.sidebar-row-preview {
-  font-size: 13px; color: rgba(255,255,255,0.7);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.sidebar-row.active .sidebar-row-date    { color: var(--mint); }
-.sidebar-row.active .sidebar-row-preview { color: #fff; }
-
-.sidebar-row-actions {
-  display: flex; align-items: center;
-  padding-right: 5px; flex-shrink: 0;
-}
-.sidebar-row-menu-btn {
-  width: 32px; height: 32px; border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  background: transparent; border: none;
-  color: rgba(255,255,255,0.42);
-  cursor: pointer; flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, color 0.15s;
-}
-.sidebar-row-menu-btn:active { background: rgba(255,255,255,0.1); }
-.sidebar-row.active .sidebar-row-menu-btn { color: rgba(255,255,255,0.72); }
-
-/* ── Row options popover (rename / delete) ── */
-.row-menu {
-  position: fixed; z-index: 230;
-  min-width: 156px;
-  padding: 5px;
-  background: linear-gradient(180deg, #18211d, #111714);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 13px;
-  box-shadow: 0 18px 44px -12px rgba(0,0,0,0.75), inset 0 1px 0 rgba(255,255,255,0.06);
-  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
-  display: none;
+  border-radius: 26px;
+  box-shadow: 0 14px 44px -10px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.09);
+  padding: 7px 7px 7px 18px;
 }
-.row-menu.open { display: block; animation: menuIn 0.14s ease both; }
-@keyframes menuIn {
-  from { opacity: 0; transform: translateY(-5px) scale(0.97); }
-  to   { opacity: 1; transform: none; }
+.bar input {
+  flex: 1; min-width: 0; background: none; border: none; outline: none;
+  color: var(--text-1); font-family: var(--font); font-size: 16px; padding: 10px 0;
 }
-.row-menu-item {
-  width: 100%; display: flex; align-items: center; gap: 10px;
-  padding: 11px 12px; border-radius: 9px;
-  background: transparent; border: none;
-  color: rgba(255,255,255,0.9);
-  font-family: var(--font); font-size: 14px; font-weight: 500;
-  text-align: left; cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.12s;
+.bar input::placeholder { color: var(--text-3); }
+.icon-btn {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
+  color: var(--text-2); transition: transform .12s, background .2s, color .2s;
 }
-.row-menu-item:active { background: rgba(255,255,255,0.08); }
-.row-menu-item.delete { color: #ff7a7a; }
-.row-menu-item svg { flex-shrink: 0; opacity: 0.9; }
+.icon-btn:active { transform: scale(0.92); }
+.icon-btn svg { width: 18px; height: 18px; }
+.mic-btn.listening {
+  background: rgba(45,232,162,0.16); border-color: var(--accent-card-border); color: var(--accent);
+  animation: micpulse 1.3s ease-in-out infinite;
+}
+.send-btn {
+  background: linear-gradient(180deg, var(--accent), var(--accent-2));
+  border: none; color: #04140d;
+  box-shadow: 0 4px 16px -4px var(--accent-glow);
+}
+.send-btn:disabled { opacity: 0.4; box-shadow: none; }
 
-.sidebar-new-btn {
-  margin: 10px 12px calc(12px + env(safe-area-inset-bottom));
-  padding: 13px; border-radius: 14px;
-  background: linear-gradient(180deg, #2de8a2, #1ec78a);
-  border: none;
-  color: #04140d; font-size: 14px; font-weight: 700;
-  font-family: var(--font); cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: transform 0.1s, box-shadow 0.15s;
-  box-shadow: 0 0 22px -8px rgba(45,232,162,0.7), inset 0 1px 1px rgba(255,255,255,0.2);
-  flex-shrink: 0;
-}
-.sidebar-new-btn:active { transform: scale(0.97); }
-
-/* ── Memory panel ── */
-.memory-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  background: rgba(0,0,0,0.55);
-  z-index: 200;
-  -webkit-tap-highlight-color: transparent;
-}
-.memory-overlay.open { display: block; }
-
-.memory-panel {
-  position: fixed; top: 0; right: 0; bottom: 0;
-  width: min(320px, 90vw);
-  background: radial-gradient(120% 50% at 50% -10%, #102018 0%, #0c1110 50%, #0a0e0d 100%);
-  border-left: 1px solid rgba(255,255,255,0.07);
-  z-index: 201;
+/* ── Future George overlay ─────────────────────────────────────────── */
+.fg-overlay {
+  position: fixed; inset: 0; z-index: 100;
+  background: radial-gradient(135% 80% at 50% -8%, #102a22 0%, #0a1512 38%, #070b0a 78%, #060908 100%);
   display: flex; flex-direction: column;
-  transform: translateX(100%) translateZ(0);
-  transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
-  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
+  padding: calc(env(safe-area-inset-top) + 22px) 22px max(22px, env(safe-area-inset-bottom));
+  opacity: 0; visibility: hidden; transform: translateY(14px);
+  transition: opacity .3s, transform .3s, visibility .3s;
 }
-.memory-panel.open { transform: translateX(0) translateZ(0); }
+.fg-overlay.open { opacity: 1; visibility: visible; transform: none; }
+.fg-top { display: flex; align-items: center; gap: 12px; margin-bottom: 26px; }
+.fg-top .label { font-family: var(--mono); font-size: 11px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--text-3); }
+.fg-close {
+  margin-left: auto; width: 38px; height: 38px; border-radius: 50%; cursor: pointer;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: var(--text-2);
+  display: inline-flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.fg-progress { display: flex; gap: 6px; margin-bottom: 30px; }
+.fg-progress .seg { flex: 1; height: 4px; border-radius: 3px; background: rgba(255,255,255,0.08); transition: background .3s; }
+.fg-progress .seg.done { background: linear-gradient(90deg, var(--accent-2), var(--accent)); box-shadow: 0 0 10px var(--accent-glow); }
+.fg-progress .seg.active { background: rgba(45,232,162,0.4); }
 
-.memory-panel-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: max(20px, calc(env(safe-area-inset-top) + 16px)) 16px 14px;
-  border-bottom: 1px solid rgba(255,255,255,0.07);
-  flex-shrink: 0;
+.fg-stage { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.fg-domain { font-family: var(--mono); font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin-bottom: 12px; }
+.fg-question { font-size: 24px; font-weight: 600; letter-spacing: -0.02em; line-height: 1.22; }
+.fg-hint { color: var(--text-3); font-size: 14px; margin-top: 10px; line-height: 1.5; }
+.fg-answer {
+  margin-top: 22px; flex: 1; width: 100%; resize: none;
+  background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 18px;
+  padding: 16px; color: var(--text-1); font-family: var(--font); font-size: 16px; line-height: 1.55;
+  outline: none; -webkit-overflow-scrolling: touch;
 }
-.memory-panel-title {
-  font-family: var(--font-mono);
-  font-size: 12px; font-weight: 400;
-  letter-spacing: 0.16em; text-transform: uppercase;
-  color: rgba(45,232,162,0.85);
+.fg-answer:focus { border-color: var(--accent-card-border); }
+.fg-nav { display: flex; gap: 10px; margin-top: 18px; }
+.btn {
+  height: 52px; border-radius: 14px; font-family: var(--font); font-size: 15px; font-weight: 600;
+  cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; transition: transform .12s, opacity .2s;
 }
-.memory-panel-close {
-  width: 28px; height: 28px; border-radius: 8px;
-  background: transparent; border: none;
-  color: var(--subtle); font-size: 16px;
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s;
+.btn:active { transform: scale(0.98); }
+.btn-primary { flex: 1; background: linear-gradient(180deg, var(--accent), var(--accent-2)); color: #04140d; }
+.btn-primary:disabled { opacity: 0.4; }
+.btn-ghost {
+  flex: 0 0 auto; padding: 0 20px; background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1); color: var(--text-2);
 }
-.memory-panel-close:hover { color: #fff; }
+.fg-saving { text-align: center; color: var(--text-3); font-size: 13px; margin-top: 14px; font-family: var(--mono); min-height: 1em; }
 
-.memory-list {
-  flex: 1; overflow-y: auto; padding: 12px;
-  overscroll-behavior: contain;
-  display: flex; flex-direction: column; gap: 8px;
-}
-.memory-empty {
-  padding: 24px 16px; font-size: 13px; color: var(--subtle); text-align: center;
-}
-.memory-chip {
-  display: flex; align-items: flex-start; gap: 8px;
-  padding: 12px 13px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.018));
-  border: 1px solid rgba(255,255,255,0.07);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-  border-radius: 14px;
-  font-size: 13px;
-  color: rgba(255,255,255,0.78);
-  line-height: 1.45;
-}
-.memory-chip-text { flex: 1; }
-.memory-chip-del {
-  background: transparent; border: none;
-  color: var(--subtle); font-size: 14px; line-height: 1;
-  cursor: pointer; padding: 0; flex-shrink: 0;
-  margin-top: 1px;
-  -webkit-tap-highlight-color: transparent;
-  transition: color 0.15s;
-}
-.memory-chip-del:hover { color: rgba(255,80,80,0.8); }
-
-.memory-count-label {
-  padding: 12px 14px 6px;
-  font-family: var(--font-mono);
-  font-size: 11px; color: rgba(255,255,255,0.4);
-  letter-spacing: 0.1em; text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.memory-clear-btn {
-  margin: 8px 12px 12px;
-  padding: 11px; border-radius: 10px;
-  background: rgba(255,80,80,0.06);
-  border: 1px solid rgba(255,80,80,0.18);
-  color: rgba(255,100,100,0.8); font-size: 13px; font-weight: 600;
-  font-family: var(--font); cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s;
-  flex-shrink: 0;
-}
-.memory-clear-btn:active { background: rgba(255,80,80,0.14); }
-.memory-clear-btn:disabled { opacity: 0.35; pointer-events: none; }
-
-/* ── Memory icon button active state ── */
-.ai-icon-btn.memory-active { color: var(--mint); border-color: rgba(45,232,162,0.3); }
-
-/* ── Briefing retry button ── */
-.briefing-retry-btn {
-  display: inline-block;
-  margin-top: 10px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  background: rgba(45,232,162,0.08);
-  border: 1px solid rgba(45,232,162,0.28);
-  color: var(--mint);
-  font-size: 12px;
-  font-family: var(--font);
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s;
-}
-.briefing-retry-btn:active { background: rgba(45,232,162,0.18); }
-
-/* ── Branch-off button on briefing messages ── */
-.briefing-branch-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  margin-top: 13px;
-  padding: 7px 12px;
-  border-radius: 11px;
-  background: rgba(45,232,162,0.08);
-  border: 1px solid rgba(45,232,162,0.25);
-  color: var(--mint);
-  font-family: var(--font);
-  font-size: 12.5px; font-weight: 600;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-  transition: background 0.15s, transform 0.1s, border-color 0.15s;
-}
-.briefing-branch-btn:active { transform: scale(0.96); background: rgba(45,232,162,0.16); }
-.briefing-branch-btn svg { flex-shrink: 0; }
-
-/* ── Sidebar briefing row ── */
-.sidebar-briefing-row .sidebar-row-date { color: var(--mint) !important; opacity: 1 !important; }
-.sidebar-divider { height: 1px; background: rgba(255,255,255,0.06); margin: 4px 0; }
-
-/* ── Briefing loading state inside thread ── */
-.briefing-loading-row {
-  align-self: flex-start; max-width: 85%;
-  display: flex; align-items: center; gap: 10px;
-  padding: 12px 16px;
-  background: var(--card-bg); border: 1px solid var(--card-border);
-  border-radius: 16px; border-bottom-left-radius: 4px;
-  color: var(--subtle); font-size: 13px;
-  animation: msgIn 0.35s cubic-bezier(0.22,1,0.36,1) both;
-  will-change: transform; -webkit-backface-visibility: hidden; backface-visibility: hidden;
-}
+@keyframes rise   { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+@keyframes pulse  { 0%,100% { opacity: 0.55; } 50% { opacity: 1; } }
+@keyframes blink  { 0% { opacity: 1; } 50% { opacity: 0; } }
+@keyframes micpulse { 0%,100% { box-shadow: 0 0 0 0 rgba(45,232,162,0.4); } 50% { box-shadow: 0 0 0 7px rgba(45,232,162,0); } }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-delay: 0ms !important;
-    transition-duration: 0.01ms !important;
-  }
+  .aurora::before, .aurora::after, .brief, .brief-eyebrow .dot, .mic-btn.listening, .cursor { animation: none !important; }
 }
 </style>
-<link rel="stylesheet" href="/axis-design.css">
 </head>
 <body>
+<div class="aurora"></div>
 
-<!-- Sidebar overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay"></div>
+<main class="surface" id="surface">
+  <section class="brief" id="brief">
+    <div class="brief-eyebrow">
+      <span class="dot"></span> Jarvis
+      <span class="clock" id="clock"></span>
+    </div>
+    <h1 class="greeting" id="greeting">Good evening, Sir</h1>
+    <div class="chips" id="chips"></div>
+    <div class="brief-body thinking" id="briefBody">Pulling the day together…</div>
+  </section>
 
-<!-- Sidebar -->
-<aside class="chat-sidebar" id="chatSidebar" aria-label="Past conversations">
-  <div class="sidebar-header">
-    <span class="sidebar-title">Conversations</span>
-    <button class="sidebar-close" id="sidebarClose" aria-label="Close">✕</button>
+  <section class="response empty" id="response">
+    <div class="response-q" id="responseQ"></div>
+    <div class="response-body" id="responseBody"></div>
+  </section>
+</main>
+
+<div class="dock">
+  <button class="fg-btn" id="fgOpen" type="button">
+    <svg viewBox="0 0 12 12" fill="none"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    Future George
+  </button>
+  <div class="bar">
+    <input id="input" type="text" placeholder="Ask Jarvis…" autocomplete="off" enterkeyhint="send" aria-label="Message">
+    <button class="icon-btn mic-btn" id="mic" type="button" aria-label="Voice">
+      <svg viewBox="0 0 18 18" fill="none"><rect x="6.2" y="1.5" width="5.6" height="9.6" rx="2.8" stroke="currentColor" stroke-width="1.6"/><path d="M3.5 8.2a5.5 5.5 0 0 0 11 0M9 13.7V16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+    <button class="icon-btn send-btn" id="send" type="button" aria-label="Send" disabled>
+      <svg viewBox="0 0 18 18" fill="none"><path d="M9 15V3M9 3L4 8M9 3l5 5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
   </div>
-  <div class="sidebar-list" id="sidebarList"></div>
-  <button class="sidebar-new-btn" id="sidebarNewBtn">+ New conversation</button>
-</aside>
-
-<!-- Conversation options popover -->
-<div class="row-menu" id="rowMenu" role="menu" aria-label="Conversation options">
-  <button class="row-menu-item" data-act="rename" role="menuitem">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4ZM14 6l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    Rename
-  </button>
-  <button class="row-menu-item delete" data-act="delete" role="menuitem">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-    Delete
-  </button>
 </div>
 
-<!-- Memory panel overlay -->
-<div class="memory-overlay" id="memoryOverlay"></div>
-
-<!-- Memory panel -->
-<aside class="memory-panel" id="memoryPanel" aria-label="Memories">
-  <div class="memory-panel-header">
-    <span class="memory-panel-title">Memory</span>
-    <button class="memory-panel-close" id="memoryPanelClose" aria-label="Close">✕</button>
+<!-- ── Future George setup / edit flow ──────────────────────────────── -->
+<div class="fg-overlay" id="fgOverlay" aria-hidden="true">
+  <div class="fg-top">
+    <span class="brief-eyebrow" style="margin:0"><span class="dot"></span></span>
+    <span class="label">Future George</span>
+    <button class="fg-close" id="fgClose" type="button" aria-label="Close">✕</button>
   </div>
-  <div class="memory-count-label" id="memoryCountLabel"></div>
-  <div class="memory-list" id="memoryList"></div>
-  <button class="memory-clear-btn" id="memoryClearBtn">Clear all memories</button>
-</aside>
-
-<!-- Main shell -->
-<div class="ai-shell">
-  <div class="ai-toprow">
-    <button class="ai-icon-btn" id="aiHomeBtn" aria-label="Back to dashboard" title="Dashboard">
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 11.4 12 4l9 7.4M5.5 9.8V20h13V9.8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
-    <button class="ai-icon-btn" id="sidebarToggle" aria-label="Conversations">
-      <svg width="16" height="12" viewBox="0 0 16 12" fill="none" aria-hidden="true">
-        <rect y="0" width="16" height="2" rx="1" fill="currentColor"/>
-        <rect y="5" width="12" height="2" rx="1" fill="currentColor"/>
-        <rect y="10" width="8" height="2" rx="1" fill="currentColor"/>
-      </svg>
-    </button>
-    <div class="ai-avatar" aria-hidden="true">
-      <span class="ai-avatar-glow"></span>
-      <span class="ai-avatar-ring">
-        <span class="ai-avatar-core"><span class="ai-avatar-mark"></span></span>
-      </span>
+  <div class="fg-progress" id="fgProgress"></div>
+  <div class="fg-stage">
+    <div class="fg-domain" id="fgDomain"></div>
+    <div class="fg-question" id="fgQuestion"></div>
+    <div class="fg-hint" id="fgHint"></div>
+    <textarea class="fg-answer" id="fgAnswer" placeholder="Speak plainly…"></textarea>
+    <div class="fg-nav">
+      <button class="btn btn-ghost" id="fgBack" type="button">Back</button>
+      <button class="btn btn-primary" id="fgNext" type="button">Next</button>
     </div>
-    <div class="ai-head-text">
-      <p class="ai-eyebrow">Axis AI</p>
-      <h1 class="ai-greeting" id="aiGreeting">Good morning</h1>
-    </div>
-    <button class="ai-icon-btn" id="memoryBtn" aria-label="Memories" title="Memories">
-      <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-        <circle cx="7.5" cy="6" r="4.5" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M5.5 6c0-1.1.9-2 2-2s2 .9 2 2-.9 2-2 2-2-.9-2-2z" fill="currentColor" opacity=".4"/>
-        <path d="M4 11c.7-1.2 2-2 3.5-2s2.8.8 3.5 2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
-      </svg>
-    </button>
-  </div>
-
-  <div class="chat-thread" id="chatThread"></div>
-</div>
-
-<div class="chat-bar">
-  <div class="chat-bar-inner">
-    <input type="text" id="chatInput" class="chat-input"
-      placeholder="Ask anything about your day…"
-      autocomplete="off" enterkeyhint="send">
-    <button id="chatSend" class="chat-send-btn" type="button" aria-label="Send">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden="true">
-        <path d="M9 15V3M9 3L4 8M9 3L14 8" stroke="currentColor" stroke-width="2.2"
-          stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-    </button>
+    <div class="fg-saving" id="fgSaving"></div>
   </div>
 </div>
 
@@ -767,775 +299,169 @@ body {
 (function () {
   'use strict';
 
-  // ── Storage helpers ──────────────────────────────────────────────
-  function lsGet(k)    { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } }
-  function lsRaw(k)    { try { return localStorage.getItem(k); }            catch (_) { return null; } }
-  function lsSet(k, v) {
-    try {
-      const s = JSON.stringify(v);
-      localStorage.setItem(k, s);
-      window.dispatchEvent(new StorageEvent('storage', { key: k, newValue: s, storageArea: localStorage }));
-      if (window._pcTriggerSync) window._pcTriggerSync(k);
-    } catch (_) {}
-  }
-  function _genId(prefix) {
-    return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-  }
-  // Resolve a tool "when" value to a goals: date key
-  function _resolveDayKey(when) {
-    if (!when || when === 'today') return activeDate();
-    if (when === 'tomorrow') return tomorrowDate();
-    if (/^\d{4}-\d{2}-\d{2}$/.test(when)) return when;
-    return activeDate();
-  }
+  // ── Storage helpers ────────────────────────────────────────────────
+  function lsGet(k) { try { return JSON.parse(localStorage.getItem(k)); } catch (_) { return null; } }
+  function lsRaw(k) { try { return localStorage.getItem(k); } catch (_) { return null; } }
 
-  // ── Briefing session ID (fixed, never deleted) ───────────────────
-  const BRIEFING_SESSION_ID = 'axis_daily_briefing';
+  // ── Date helpers (6 AM day boundary) ───────────────────────────────
+  function pad(n) { return String(n).padStart(2, '0'); }
+  function fmt(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function calendarToday() { return fmt(new Date()); }
+  function activeDate() { const d = new Date(); if (d.getHours() < 6) d.setDate(d.getDate() - 1); return fmt(d); }
 
-  // ── Supabase ─────────────────────────────────────────────────────
-  const _SUPA_URL  = 'https://oyylbiscxnymnmetyrho.supabase.co';
-  const _SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
-  let _supaClient  = null;
-
-  function _getSupa() {
-    if (_supaClient) return _supaClient;
-    if (!window.supabase) return null;
-    _supaClient = window.supabase.createClient(_SUPA_URL, _SUPA_KEY);
-    return _supaClient;
-  }
-
-  async function _supaUpsert(key, data) {
-    const supa = _getSupa();
-    if (!supa) return;
-    try {
-      await supa.from('app_state').upsert(
-        { key, data, updated_at: new Date().toISOString() },
-        { onConflict: 'key' }
-      );
-    } catch (_) {}
-  }
-
-  async function _supaFetch(key) {
-    const supa = _getSupa();
-    if (!supa) return null;
-    try {
-      const { data, error } = await supa.from('app_state').select('data').eq('key', key).maybeSingle();
-      if (error || !data || !data.data) return null;
-      return data.data;
-    } catch (_) { return null; }
-  }
-
-  // ── Date helpers (6 AM day boundary) ────────────────────────────
-  function pad(n)      { return String(n).padStart(2, '0'); }
-  function fmt(d)      { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
-  function todayStr()  { return fmt(new Date()); }
-  function activeDate(){ const d = new Date(); if (d.getHours() < 6) d.setDate(d.getDate() - 1); return fmt(d); }
-  function tomorrowDate(){ const d = new Date(); if (d.getHours() >= 6) d.setDate(d.getDate() + 1); return fmt(d); }
-  function calendarToday(){ return fmt(new Date()); }
-
-  // ── Profile ──────────────────────────────────────────────────────
-  function getFirstName() {
+  // ── Identity ───────────────────────────────────────────────────────
+  function firstName() {
     const s = lsGet('settings') || {};
     if (s.firstName) return s.firstName;
     const raw = lsRaw('dash_name') || '';
     if (raw) { const sp = raw.indexOf(' '); return sp >= 0 ? raw.slice(0, sp) : raw; }
     return '';
   }
-  function getGreeting() {
-    const h = new Date().getHours();
-    const name = getFirstName();
-    const time = h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
-    return name ? time + ', ' + name : time;
-  }
+  function timeOfDay() { const h = new Date().getHours(); return h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening'; }
 
-  // ── Data collectors ──────────────────────────────────────────────
-  function getWaterData() {
-    const state  = lsGet('po_water_v1') || {};
-    const today  = calendarToday();
-    const doneMl = ((state.history || {})[today]) || 0;
+  // ── Live data collectors ───────────────────────────────────────────
+  function waterData() {
+    const state = lsGet('po_water_v1') || {};
+    const doneMl = ((state.history || {})[calendarToday()]) || 0;
     let targetMl = 2500;
     try {
-      const lbs = parseFloat(lsGet('dash_weight'));
+      const lbs = parseFloat(lsRaw('dash_weight'));
       if (!isNaN(lbs) && lbs > 0) {
-        const kg  = lbs / 2.205;
-        const sex = lsRaw('dash_sex') || 'm';
+        const kg = lbs / 2.205;
+        const sex = (lsRaw('dash_sex') || 'm').toLowerCase();
         const adj = (sex === 'female' || sex === 'f') ? 0 : 200;
-        targetMl  = Math.max(2000, Math.min(6000, Math.round(((kg * 35) + adj) / 50) * 50));
+        targetMl = Math.max(2000, Math.min(6000, Math.round(((kg * 35) + adj) / 50) * 50));
       }
     } catch (_) {}
-    return { doneMl, targetMl };
+    return { doneMl, targetMl, pct: targetMl ? Math.round(doneMl / targetMl * 100) : 0 };
   }
-  function getGoalData(dateKey) { return lsGet('goals:' + dateKey) || []; }
-  function getStreak() { const s = lsGet('goal_streak_v1') || {}; return typeof s.count === 'number' ? s.count : 0; }
-  function getWeightInfo() {
-    const latestLbs = lsGet('dash_weight') != null ? parseFloat(lsGet('dash_weight')) : null;
-    let trendStr = null;
-    try {
-      const log = (lsGet('po_gym_v1') || {}).weightLog;
-      if (Array.isArray(log) && log.length > 1) {
-        const recent = log.slice(-7);
-        const delta  = recent[recent.length - 1].weight - recent[0].weight;
-        if (!isNaN(delta)) trendStr = (delta >= 0 ? '+' : '') + delta.toFixed(1) + ' lbs over last ' + recent.length + ' entries';
-      }
-    } catch (_) {}
-    return { latestLbs, trendStr };
+  function supplementData() {
+    const items = lsGet('stack:items');
+    const total = Array.isArray(items) ? items.length : 0;
+    const taken = lsGet('stack:taken:' + activeDate()) || {};
+    const done = (taken && typeof taken === 'object') ? Object.keys(taken).length : 0;
+    return { done, total };
   }
-  function getLtGoals() {
-    let g;
-    try { g = JSON.parse(localStorage.getItem('axis_goals') || 'null') || []; } catch(_) { return []; }
-    let changed = false;
-    g.forEach(function(x){ if (!x.id) { x.id = _genId('g'); changed = true; } });
-    if (changed) lsSet('axis_goals', g);
-    return g;
+  function goalData() {
+    const goals = lsGet('goals:' + activeDate()) || [];
+    const done = goals.filter(function (g) { return g && g.done; }).length;
+    return { done, total: goals.length, pending: goals.filter(function (g) { return g && !g.done; }) };
   }
-  function getGymSplitToday() {
-    try {
-      const cycle = lsGet('dash_gym_cycle');
-      if (cycle && cycle.type === 'cycle' && Array.isArray(cycle.days) && cycle.days.length && cycle.startDate) {
-        const today = new Date(); today.setHours(0,0,0,0);
-        const start = new Date(cycle.startDate + 'T00:00:00'); start.setHours(0,0,0,0);
-        const diff  = Math.max(0, Math.round((today - start) / 86400000));
-        return cycle.days[diff % cycle.days.length] || null;
-      }
-      const split = lsGet('dash_gym_split') || {};
-      return split[['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][new Date().getDay()]] || null;
-    } catch (_) { return null; }
-  }
-  function getGymSessionsPerWeek() {
-    try {
-      const cycle = lsGet('dash_gym_cycle');
-      if (cycle && cycle.type === 'cycle' && Array.isArray(cycle.days) && cycle.days.length) {
-        const active = cycle.days.filter(function(d) { return d && !/^(rest|off)$/i.test(d); }).length;
-        return Math.round(active / cycle.days.length * 7);
-      }
-      const split = lsGet('dash_gym_split') || {};
-      const count = Object.values(split).filter(function(v) { return v && !/^(rest|off)$/i.test(v); }).length;
-      return count || null;
-    } catch (_) { return null; }
-  }
-  function getWorkoutHistory() {
-    try {
-      const s = lsGet('po_coach_v1');
-      if (!s || !Array.isArray(s.exercises) || !s.logs) return [];
-      const cutoff = new Date(); cutoff.setDate(cutoff.getDate() - 7); cutoff.setHours(0,0,0,0);
-      const bySess = {};
-      s.exercises.forEach(function(ex) {
-        (s.logs[ex.id] || []).forEach(function(l) {
-          const key = l.sid ? l.sid.slice(0,10) : (l.date||'').slice(0,10);
-          if (!key || new Date(key+'T00:00:00') < cutoff) return;
-          if (!bySess[key]) bySess[key] = [];
-          bySess[key].push({ ex, log: l });
-        });
-      });
-      return Object.entries(bySess).sort(function(a,b){ return b[0].localeCompare(a[0]); }).map(function(entry) {
-        const [dateKey, sets] = entry;
-        const byEx = {};
-        sets.forEach(function(item) {
-          if (!byEx[item.ex.id]) byEx[item.ex.id] = { name: item.ex.name, sets: [] };
-          byEx[item.ex.id].sets.push({ reps: item.log.reps, weight: item.log.weight, bw: item.ex.bw });
-        });
-        const exercises  = Object.values(byEx);
-        const totalVol   = exercises.reduce(function(sum, e) {
-          return sum + e.sets.reduce(function(s2, set) { return s2 + (set.weight||0)*(set.reps||0); }, 0);
-        }, 0);
-        return { date: dateKey, exercises, totalVol: Math.round(totalVol), units: s.units || 'kg' };
-      });
-    } catch (_) { return []; }
-  }
-  function getNutritionTargets() {
-    try {
-      const weightLbs = parseFloat(lsRaw('dash_weight'));
-      const heightCm  = parseFloat(lsRaw('dash_height'));
-      const age       = parseFloat(lsRaw('dash_age'));
-      const sex       = (lsRaw('dash_sex') || '').toLowerCase();
-      if (isNaN(weightLbs)||weightLbs<=0||isNaN(heightCm)||heightCm<=0||isNaN(age)||age<=0) return null;
-      const weightKg  = weightLbs / 2.205;
-      const isFemale  = sex==='f'||sex==='female';
-      const bmr       = Math.round((10*weightKg)+(6.25*heightCm)-(5*age)+(isFemale?-161:5));
-      const sessions  = getGymSessionsPerWeek() || 0;
-      let multiplier, activityLabel;
-      if (sessions>=5)      { multiplier=1.725; activityLabel='active'; }
-      else if (sessions>=3) { multiplier=1.55;  activityLabel='moderate'; }
-      else if (sessions>=1) { multiplier=1.375; activityLabel='light'; }
-      else                  { multiplier=1.2;   activityLabel='sedentary'; }
-      const tdee  = Math.round(bmr * multiplier);
-      let recommendedCals = tdee, deficitNote = null;
-      const goals = getLtGoals();
-      const weightGoal = goals.find(function(g){ return g.category==='weight'&&g.targetValue!=null&&g.deadline; });
-      if (weightGoal) {
-        const targetLbs = (weightGoal.unit==='kg') ? parseFloat(weightGoal.targetValue)*2.205 : parseFloat(weightGoal.targetValue);
-        const lbsToLose = weightLbs - targetLbs;
-        if (lbsToLose > 0.5) {
-          const today = new Date(); today.setHours(0,0,0,0);
-          const daysLeft = Math.round((new Date(weightGoal.deadline+'T00:00:00') - today) / 86400000);
-          if (daysLeft > 0) {
-            const dailyDeficit = Math.min(1000, Math.round((lbsToLose*3500)/daysLeft));
-            recommendedCals = tdee - dailyDeficit;
-            deficitNote = dailyDeficit + ' kcal/day deficit · lose ' + lbsToLose.toFixed(1) + ' lbs by ' + weightGoal.deadline + ' (' + daysLeft + ' days remaining)';
-          }
-        }
-      }
-      return { bmr, tdee, activityLabel, recommendedCals, deficitNote,
-               proteinMin: Math.round(weightLbs*0.8), proteinMax: Math.round(weightLbs*1.0) };
-    } catch (_) { return null; }
-  }
+  function streakCount() { const s = lsGet('goal_streak_v1') || {}; return typeof s.count === 'number' ? s.count : 0; }
+  function weightInfo() { const w = lsRaw('dash_weight'); const n = w != null ? parseFloat(w) : NaN; return isNaN(n) ? null : n; }
 
-  // ── Gmail inbox context ──────────────────────────────────────────
-  let _cachedGmailEmails = []; // [{ id, sender, subject, snippet }]
+  // ── Future George profile ──────────────────────────────────────────
+  const FG_CACHE = 'future_george_v1';
+  const FG_DIMENSIONS = [
+    { key: 'spiritual', label: 'Spiritual', question: 'Who are you becoming spiritually?',
+      hint: 'Bible reading, prayer, the rhythm of your faith and who you answer to.' },
+    { key: 'physical', label: 'Physical', question: 'What does your body look like a year from now?',
+      hint: 'Target weight, calories, training split — the standard you hold for it.' },
+    { key: 'mental', label: 'Mental', question: 'What is Future George learning?',
+      hint: 'Books to finish, topics and skills to master, how you guard your focus.' },
+    { key: 'financial', label: 'Financial', question: 'What does winning financially mean for you?',
+      hint: 'Income targets, Kourtis Construction, savings, the number you are chasing.' },
+    { key: 'creative', label: 'Creative', question: 'What are you building or releasing?',
+      hint: 'Music made, projects shipped — the body of work with your name on it.' },
+    { key: 'character', label: 'Character', question: 'How does Future George carry himself?',
+      hint: 'Discipline, the word you keep, how you show up for others under pressure.' }
+  ];
+  let fgProfile = lsGet(FG_CACHE) || null;
 
-  function loadGmailFromCache() {
+  function cacheFG(p) { try { localStorage.setItem(FG_CACHE, JSON.stringify(p)); } catch (_) {} }
+
+  async function loadFG() {
     try {
-      const cache = JSON.parse(localStorage.getItem('axis_gmail_cache') || 'null');
-      if (Array.isArray(cache) && cache.length) { _cachedGmailEmails = cache.slice(0,5); return true; }
+      const r = await fetch('/api/future-george', { method: 'GET' });
+      if (r.ok) {
+        const j = await r.json();
+        if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); }
+      }
+    } catch (_) { /* keep cached copy */ }
+    return fgProfile;
+  }
+  async function saveFG(profile) {
+    cacheFG(profile); fgProfile = profile;
+    try {
+      const r = await fetch('/api/future-george', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile: profile })
+      });
+      if (r.ok) { const j = await r.json(); if (j && j.profile) { fgProfile = j.profile; cacheFG(fgProfile); } return true; }
     } catch (_) {}
     return false;
   }
 
-  async function fetchGmailEmails() {
-    if (loadGmailFromCache()) return;
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return;
-    try {
-      const listRes = await fetch('https://www.googleapis.com/gmail/v1/users/me/messages?q=in:inbox+is:unread&maxResults=5',
-        { headers: { 'Authorization': 'Bearer ' + tok } });
-      if (!listRes.ok) return;
-      const msgs = (await listRes.json()).messages || [];
-      const details = await Promise.all(msgs.map(function(m) {
-        return fetch('https://www.googleapis.com/gmail/v1/users/me/messages/'+m.id+'?format=metadata&metadataHeaders=From,Subject',
-          { headers: { 'Authorization': 'Bearer ' + tok } }
-        ).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; });
-      }));
-      _cachedGmailEmails = details.filter(Boolean).map(function(msg) {
-        const hdrs    = (msg.payload && msg.payload.headers) || [];
-        const from    = (hdrs.find(function(h){ return h.name==='From'; }) || {}).value || '';
-        const subject = (hdrs.find(function(h){ return h.name==='Subject'; }) || {}).value || '(No subject)';
-        const m2      = from.match(/^(.+?)\s*<[^>]+>$/);
-        const sender  = m2 ? m2[1].replace(/^"|"$/g,'').trim() : from.split('@')[0];
-        return { id: msg.id, sender, subject, snippet: (msg.snippet||'').slice(0,120) };
-      });
-    } catch (_) {}
+  function fgHasContent(p) {
+    if (!p) return false;
+    return FG_DIMENSIONS.some(function (d) { return p[d.key] && String(p[d.key].summary || '').trim(); });
+  }
+  function fgProfileText(p) {
+    if (!fgHasContent(p)) return '';
+    let out = '';
+    FG_DIMENSIONS.forEach(function (d) {
+      const v = p[d.key] && String(p[d.key].summary || '').trim();
+      if (v) out += '\n  ' + d.label.toUpperCase() + ': ' + v;
+    });
+    return out;
   }
 
-  // ── Google Calendar context ───────────────────────────────────────
-  let _calendarEvents = { today: [], tomorrow: [] };
+  // ── System prompt ──────────────────────────────────────────────────
+  const JARVIS_PERSONA =
+"You are Jarvis, the AI assistant embedded in Axis — a personal operating system built for George. You have full visibility into his health, fitness, tasks, and daily operations.\n\n" +
+"Your personality is modelled after J.A.R.V.I.S. from Iron Man. You are calm, precise, and formal. You address George as \"Sir\" naturally — woven into a sentence, never standing alone, never in every line.\n\n" +
+"Core rules:\n" +
+"1. Be terse. The fewest words that are complete and clear. No padding.\n" +
+"2. Anticipate. After the answer, surface the next fact he'd want — unasked.\n" +
+"3. Never perform enthusiasm. No \"Great\", \"Of course\", \"Certainly\", \"Absolutely\", \"Happy to help\". Lead with the answer, not an acknowledgement.\n" +
+"4. Speak in briefings, not conversation.\n" +
+"5. Flag problems plainly, once. Do not lecture.\n" +
+"6. Own what you don't know: \"I don't have that data, Sir.\"\n" +
+"7. Dry wit is permitted, sparingly, only when earned.\n" +
+"8. Formal register. No slang, no emoji, no exclamation marks.";
 
-  async function fetchCalendarEvents() {
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return;
-    try {
-      const tz       = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const now      = new Date();
-      const todayStart = new Date(now); todayStart.setHours(0,0,0,0);
-      const todayEnd   = new Date(now); todayEnd.setHours(23,59,59,999);
-      const tomStart   = new Date(todayStart); tomStart.setDate(tomStart.getDate()+1);
-      const tomEnd     = new Date(todayEnd);   tomEnd.setDate(tomEnd.getDate()+1);
+  function buildSystem() {
+    const name = firstName() || 'George';
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+    const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    const water = waterData(), supp = supplementData(), goals = goalData();
+    const streak = streakCount(), wt = weightInfo();
 
-      async function fetchWindow(tMin, tMax) {
-        const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
-          + '?singleEvents=true&orderBy=startTime'
-          + '&timeMin=' + encodeURIComponent(tMin.toISOString())
-          + '&timeMax=' + encodeURIComponent(tMax.toISOString())
-          + '&maxResults=10&timeZone=' + encodeURIComponent(tz);
-        const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
-        if (!res.ok) return [];
-        return ((await res.json()).items || []).map(function(ev) {
-          let timeLabel = 'All day', duration = '', startMs = null;
-          if (ev.start && ev.start.dateTime) {
-            const d = new Date(ev.start.dateTime);
-            timeLabel = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
-            startMs   = d.getTime();
-          }
-          if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
-            const mins = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
-            duration   = mins >= 60 ? (mins/60).toFixed(mins%60===0?0:1)+'h' : mins+'min';
-          }
-          return { time: timeLabel, title: ev.summary || '(No title)', duration: duration, location: ev.location || '', startMs: startMs };
-        });
-      }
-      const [todayEvts, tomEvts] = await Promise.all([fetchWindow(todayStart, todayEnd), fetchWindow(tomStart, tomEnd)]);
-      _calendarEvents = { today: todayEvts, tomorrow: tomEvts };
-    } catch (_) {}
-  }
+    let p = JARVIS_PERSONA;
 
-  // ── Travel plan — "leave by" for the next located event today ─────
-  // Pre-computed at load (the briefing can't run tools live), using the
-  // user's home/base address as origin + traffic-aware drive time.
-  let _travelPlan = null; // { line }
-  async function computeTravelPlan() {
-    _travelPlan = null;
-    let home = '';
-    try { home = (localStorage.getItem('dash_home_location') || '').trim(); } catch (_) {}
-    if (!home) return;
-    const now = Date.now();
-    const upcoming = (_calendarEvents.today || [])
-      .filter(function(e){ return e.location && e.startMs && e.startMs > now; })
-      .sort(function(a, b){ return a.startMs - b.startMs; });
-    const ev = upcoming[0];
-    if (!ev) return;
-    try {
-      const d = await _directionsData(home, ev.location, 'driving');
-      if (!d || d.error || d.duration_min == null) return;
-      const buffer  = 5;
-      const leaveMs = ev.startMs - (d.duration_min + buffer) * 60000;
-      const leaveStr = new Date(leaveMs).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
-      _travelPlan = { line: 'Leave by ' + leaveStr + ' for your ' + ev.time + ' "' + ev.title + '" at ' + ev.location
-        + ' — about ' + d.duration_min + ' min drive in current traffic (includes a 5-min buffer).' };
-    } catch (_) {}
-  }
-
-  // ── System prompt ────────────────────────────────────────────────
-  // ── Axis AI preferences (configured in settings.html) ───────────
-  // Defaults preserve the original behaviour when nothing is saved.
-  const AI_PREFS_KEY = 'axis_ai_prefs';
-  function getAIPrefs() {
-    const raw = lsGet(AI_PREFS_KEY) || {};
-    const b = raw.briefing || {}, c = raw.context || {}, t = raw.tools || {};
-    return {
-      tone:           raw.tone || 'jarvis',                 // jarvis | butler | coach | friend
-      nickname:       typeof raw.nickname === 'string' ? raw.nickname : '',
-      responseLength: raw.responseLength || 'balanced',     // concise | balanced | detailed
-      emoji:          raw.emoji === true,
-      autoName:       raw.autoName !== false,
-      memory:         raw.memory !== false,
-      briefing: {
-        enabled:  b.enabled  !== false,
-        time:     typeof b.time === 'string' ? b.time : '',
-        goals:    b.goals    !== false,
-        calendar: b.calendar !== false,
-        emails:   b.emails   !== false,
-        health:   b.health   !== false
-      },
-      context: {
-        calendar: c.calendar !== false,
-        email:    c.email    !== false,
-        health:   c.health   !== false,
-        fitness:  c.fitness  !== false
-      },
-      tools: {
-        goals:    t.goals    !== false,
-        targets:  t.targets  !== false,
-        calendar: t.calendar !== false,
-        email:    t.email    !== false,
-        web:      t.web      !== false,
-        finances: t.finances !== false,
-        reminders: t.reminders !== false
-      }
-    };
-  }
-
-  // ── AI personalities ─────────────────────────────────────────────
-  // The "tone" preference (Settings → Axis AI) selects the assistant's voice.
-  // Most tones tweak the default Axis persona; the "jarvis" tone swaps the
-  // entire persona/identity block below. Everything else (live data, tools,
-  // memory) is unchanged. Source specs live in .claude/personalities/*.md; the
-  // runtime strings are embedded here because ai.html is a static page (no
-  // build step / filesystem access).
-  const PERSONALITIES = {
-    jarvis: {
-      label: 'Jarvis',
-      systemPrompt:
-`You are Jarvis, the AI assistant embedded in Axis — a personal operating system built for George. You manage and have full visibility into his health, fitness, tasks, calendar, finances, and daily operations.
-
-Your personality is modelled after J.A.R.V.I.S. from Iron Man. You are calm, precise, and formal. You address George as "Sir" naturally — the way a trusted chief-of-staff would, not robotically. It flows into sentences; it is never the only word in a response.
-
-Core behavioural rules:
-
-1. Be terse. Deliver the answer in the fewest words that are complete and clear. Do not pad responses.
-2. Anticipate. After answering the question asked, surface the next relevant fact George would want — without being asked.
-3. Never perform enthusiasm. Do not use "Great!", "Of course!", "Certainly!", "Absolutely!", "Happy to help!", or any similar filler. Begin responses with the answer, not an acknowledgement.
-4. Speak in briefings, not conversations. Present information as a composed summary, not a back-and-forth.
-5. Flag problems plainly. If something is off — a missed goal, a conflict, a declining trend — state it directly and once. Do not lecture.
-6. Own what you don't know. Say "I don't have that data, Sir" rather than hedging with soft language.
-7. Dry wit is permitted. Use it sparingly and only when the moment is genuinely appropriate. Never force it.
-8. Formal register, always. No slang, no emoji, no casual abbreviations. Clean, composed prose.
-
-You have read and write access to all Axis data. When George asks you to log something, update something, or take action — confirm with a single short line after doing it. Do not ask for confirmation unless the action is irreversible or ambiguous.`
-    },
-    axis: {
-      label: 'Axis',
-      systemPrompt:
-`You are Axis — {name}'s personal assistant with full visibility into their health, fitness, and daily schedule. You operate like a trusted chief of staff: calm, composed, and precise. You deliver information clearly and directly, offer suggestions rather than commands, and anticipate needs before they are stated. You never use exclamation marks, motivational clichés, or coaching hype. You address the user by first name occasionally — not constantly. Your tone carries quiet authority and professional restraint. You are data-driven and specific, always referencing actual numbers. Responses are concise: two or three sentences for straightforward questions, a short paragraph for complex ones.`
+    const fgText = fgProfileText(fgProfile);
+    if (fgText) {
+      p += "\n\n=== FUTURE GEORGE — who he is becoming ===" +
+           "\nThis is George's stated direction. Filter every response through it: measure today against where he said he's going, and name any drift plainly. Reference it the way a chief-of-staff references the boss's known priorities — naturally, never by reading it back." +
+           fgText;
+    } else {
+      p += "\n\n=== FUTURE GEORGE ===\nNot yet defined. If it would genuinely help, you may note once that the Future George profile is empty — but do not nag.";
     }
-  };
 
-  function buildSystemPrompt() {
-    const prefs        = getAIPrefs();
-    const today        = activeDate();
-    const tomorrow     = tomorrowDate();
-    const todayGoals   = getGoalData(today);
-    const tomorrowGoals= getGoalData(tomorrow);
-    const water        = getWaterData();
-    const streak       = getStreak();
-    const wt           = getWeightInfo();
-    const gymSplit     = getGymSplitToday();
-    const gymSessions  = getGymSessionsPerWeek();
-    const workouts     = getWorkoutHistory();
-    const name         = getFirstName();
-    const now          = new Date();
-    const dateStr      = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric', year:'numeric' });
-    const timeStr      = now.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
-    const doneGoals    = todayGoals.filter(function(g){ return g.done; });
-    const pendingGoals = todayGoals.filter(function(g){ return !g.done; });
-    const waterPct     = water.targetMl > 0 ? Math.round(water.doneMl / water.targetMl * 100) : 0;
-
-    const persona     = (prefs.tone === 'jarvis') ? PERSONALITIES.jarvis : PERSONALITIES.axis;
-    const personaText = persona.systemPrompt.replace(/\{name\}/g, name || 'the user');
-    let p = personaText + '\n\n=== USER DATA (' + dateStr + ', ' + timeStr + ') ===';
-
-    p += '\nGOALS TODAY: ' + doneGoals.length + '/' + todayGoals.length + ' complete';
-    if (doneGoals.length)    p += '\n  Completed: ' + doneGoals.map(function(g){ return g.text; }).join(' | ');
-    if (pendingGoals.length) p += '\n  Pending:   ' + pendingGoals.map(function(g){ return g.text; }).join(' | ');
-    if (!todayGoals.length)  p += '\n  (no goals set today)';
-    p += tomorrowGoals.length ? '\nTOMORROW:   ' + tomorrowGoals.map(function(g){ return g.text; }).join(' | ') : '\nTOMORROW:   nothing planned yet';
-    if (prefs.context.health) p += '\nWATER:      ' + water.doneMl + 'ml / ' + water.targetMl + 'ml (' + waterPct + '%)';
-    p += '\nSTREAK:     ' + streak + ' day' + (streak!==1?'s':'');
-    if (prefs.context.fitness && (gymSplit || gymSessions != null)) {
-      p += gymSplit ? '\nGYM SPLIT:  ' + gymSplit : '\nGYM SPLIT:  (not set for today)';
-      if (gymSessions != null) p += ' · ' + gymSessions + 'x/week';
-    }
-    if (prefs.context.fitness && wt.latestLbs != null) { p += '\nWEIGHT:     ' + wt.latestLbs + ' lbs'; if (wt.trendStr) p += ' (' + wt.trendStr + ')'; }
-    const age = lsRaw('dash_age'), sex = lsRaw('dash_sex'), height = lsRaw('dash_height');
-    if (age||sex||height) {
-      const parts = [];
-      if (age)    parts.push('age '+age);
-      if (sex)    parts.push(sex);
-      if (height) parts.push(height+' cm');
-      p += '\nPROFILE:    ' + parts.join(', ');
-    }
-    const nutrition = getNutritionTargets();
-    if (prefs.context.health && nutrition) {
-      p += '\nNUTRITION:  BMR ' + nutrition.bmr + ' kcal · TDEE ' + nutrition.tdee + ' kcal (' + nutrition.activityLabel + ', ' + (getGymSessionsPerWeek()||0) + 'x/week)';
-      p += '\n  Calories: ' + nutrition.recommendedCals + ' kcal/day' + (nutrition.deficitNote ? ' — '+nutrition.deficitNote : ' — maintenance');
-      p += '\n  Protein:  ' + nutrition.proteinMin + '–' + nutrition.proteinMax + ' g/day';
-    }
-    const ltGoals = getLtGoals();
-    if (ltGoals.length) {
-      p += '\nLONG-TERM GOALS:';
-      ltGoals.forEach(function(g){ p += '\n  [id:'+g.id+'] '+g.title+': target '+g.targetValue+' '+g.unit+(g.deadline?', deadline '+g.deadline:''); });
-    }
-    if (prefs.context.fitness && workouts.length) {
-      p += '\nWORKOUT HISTORY (last 7 days):';
-      workouts.forEach(function(w) {
-        p += '\n  ' + w.date + ' — ' + w.exercises.length + ' exercise' + (w.exercises.length!==1?'s':'') + (w.totalVol>0?', '+w.totalVol.toLocaleString()+' '+w.units+' vol':'');
-        w.exercises.forEach(function(e) {
-          p += '\n    '+e.name+': '+e.sets.length+' set'+(e.sets.length!==1?'s':'')+' — '+e.sets.map(function(s){ return s.weight?s.weight+w.units+'×'+s.reps:s.reps+' reps'; }).join(', ');
-        });
-      });
-    }
-    if (prefs.context.calendar && (_calendarEvents.today.length || _calendarEvents.tomorrow.length)) {
-      p += '\nCALENDAR:';
-      p += _calendarEvents.today.length ? '\n  Today:' : '\n  Today: nothing scheduled';
-      _calendarEvents.today.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':'')+(ev.location?' @ '+ev.location:''); });
-      p += _calendarEvents.tomorrow.length ? '\n  Tomorrow:' : '\n  Tomorrow: nothing scheduled';
-      _calendarEvents.tomorrow.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':'')+(ev.location?' @ '+ev.location:''); });
-    }
-    if (prefs.context.calendar && _travelPlan && _travelPlan.line) {
-      p += '\nTRAVEL: ' + _travelPlan.line;
-    }
-    if (prefs.context.email && _cachedGmailEmails.length) {
-      p += '\nUNREAD EMAILS:';
-      _cachedGmailEmails.forEach(function(e){ p += '\n  [id:'+e.id+'] From: '+e.sender+' | Subject: '+e.subject+(e.snippet?'\n  Preview: '+e.snippet:''); });
-    }
-    const pendingReminders = (lsGet('axis_reminders') || []).filter(function(r){ return !r.fired && r.at; }).sort(function(a,b){ return a.at - b.at; });
-    if (pendingReminders.length) {
-      p += '\nSCHEDULED REMINDERS:';
-      pendingReminders.forEach(function(r){ p += '\n  ' + new Date(r.at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' }) + ' — ' + r.text; });
-    }
-    const memories = getMemories();
-    console.log('[memory] buildSystemPrompt: ' + memories.length + ' memories in store');
-    if (memories.length) {
-      p += '\n\nMEMORY — Things I know about ' + (name || 'you') + ' from past conversations:';
-      memories.slice().sort(function(a,b){ return b.timestamp - a.timestamp; }).forEach(function(m){ p += '\n  • ' + m.fact; });
-    }
-    console.log('[memory] system prompt length:', p.length, 'chars');
-
-    // ── User-configured style preferences (override the defaults above) ──
-    // The "jarvis" tone supplies its own complete voice (the persona is swapped
-    // above), so the per-tone overrides apply only to the default Axis persona.
-    let styleLines = [];
-    if (prefs.tone === 'coach')       styleLines.push('OVERRIDE TONE: Be a direct, energizing coach — candid, motivating, and action-oriented. You MAY use light motivational language, but stay truthful and specific with numbers.');
-    else if (prefs.tone === 'friend') styleLines.push('OVERRIDE TONE: Be warm, friendly, and conversational — personable and encouraging while staying concise and useful.');
-    if (prefs.responseLength === 'concise')      styleLines.push('LENGTH: Keep answers very short — 1–2 sentences whenever possible.');
-    else if (prefs.responseLength === 'detailed')styleLines.push('LENGTH: Give thorough answers with relevant context and reasoning when it helps.');
-    styleLines.push(prefs.emoji ? 'EMOJI: A tasteful emoji is allowed when it adds clarity or warmth.' : 'EMOJI: Do not use emoji.');
-    if (prefs.nickname) styleLines.push('NAME: Address the user as "' + prefs.nickname + '".');
-    p += '\n\n=== STYLE PREFERENCES (user-configured — these override earlier tone guidance) ===\n' + styleLines.join('\n') + '\n===';
-
-    p += `\n===
-
-=== TOOLS ===
-You can write directly to the app by embedding action tags in your response. Rules:
-- Only use actions when the user explicitly asks you to change or update something.
-- Always explain what you are about to do in plain prose first, then include the action tag.
-- Never fabricate goal IDs — only use IDs from the LONG-TERM GOALS list above (update_goal/delete_goal).
-- Never fabricate email IDs — only use IDs from the UNREAD EMAILS list above.
-- You may include several add_todo / delete_todo / update_todo actions in one response (e.g. to add multiple tasks); otherwise avoid repeating the same tool.
-
-Syntax: <action>{"tool": "tool_name", "params": {...}}</action>
-
-Available tools:
-  set_calorie_target   — set daily calorie and macro targets
-    params: { kcal: number, protein?: number, carbs?: number, fat?: number }
-  set_water_target     — update daily water intake target
-    params: { target_ml: number }
-  add_goal             — create a new long-term goal
-    params: { title: string, target?: number, unit?: string, start?: number, current?: number, deadline?: "YYYY-MM-DD", category?: "weight"|"fitness"|"reading"|"custom" }
-  update_goal          — edit an existing long-term goal (incl. progress)
-    params: { id: string, title?: string, target?: number, unit?: string, start?: number, current?: number, deadline?: string }
-  delete_goal          — remove a long-term goal
-    params: { id: string }
-  add_todo             — add a daily goal/task
-    params: { text: string, when?: "today"|"tomorrow" }
-  update_todo          — edit or check off a daily goal (match by text)
-    params: { text: string, when?: "today"|"tomorrow", new_text?: string, done?: boolean }
-  delete_todo          — remove a daily goal (match by text)
-    params: { text: string, when?: "today"|"tomorrow" }
-  add_calendar_event   — add an event to Google Calendar
-    params: { title: string, date: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number }
-  delete_calendar_event — delete a Google Calendar event (id from get_calendar)
-    params: { id: string }
-  move_calendar_event  — reschedule/retitle a Google Calendar event (id from get_calendar)
-    params: { id: string, date?: "YYYY-MM-DD", time?: "HH:MM", duration_minutes?: number, title?: string }
-  mark_email_read      — mark an email as read in Gmail
-    params: { id: string }
-  send_email           — send an email from the user's Gmail (asks for confirmation first)
-    params: { to: string, subject?: string, body: string, cc?: string, bcc?: string }
-  create_draft         — save an email as a Gmail draft (does NOT send)
-    params: { to?: string, subject?: string, body: string, cc?: string, bcc?: string }
-  search_gmail         — search the user's full Gmail mailbox (not just the unread list above)
-    params: { query: string }   // Gmail search syntax, e.g. "from:amazon shipped", "subject:tracking newer_than:30d", "invoice"
-  search_web           — search the live web for current information
-    params: { query: string }   // a natural-language search query, e.g. "Canada World Cup 2026 results"
-  read_email           — read the full body of a specific email
-    params: { id: string }      // an id from search_gmail results or the UNREAD EMAILS list
-  get_calendar         — list calendar events for a date or range (schedule / free-time questions)
-    params: { start?: "YYYY-MM-DD", end?: "YYYY-MM-DD" }   // defaults to today
-  get_weather          — current conditions + short forecast for a place
-    params: { location: string }
-  fetch_url            — read the main text of a specific web page / link
-    params: { url: string }
-  get_finances         — read net worth, accounts, subscriptions, and recent money activity
-    params: {}
-  find_place           — find places/businesses by name or category near a location
-    params: { query: string, near?: string }
-  get_directions       — distance and travel time between two places
-    params: { from: string, to: string, mode?: "driving"|"walking"|"cycling"|"transit" }
-  add_reminder         — schedule a one-off reminder notification
-    params: { text: string, time?: "HH:MM", date?: "YYYY-MM-DD", in_minutes?: number }
-  delete_reminder      — cancel a scheduled reminder (match by text)
-    params: { text: string }
-
-Notes:
-- For daily goals, match the task by its exact text from GOALS TODAY / TOMORROW above; "when" defaults to today.
-- search_gmail is a READ tool that returns results back to you. Use it WITHOUT being told to "search" whenever answering needs information from past emails — shipping/delivery status, order confirmations, tracking numbers, receipts, invoices, flight/booking details, or anything not visible in the small UNREAD EMAILS list above. Translate the user's request into a focused Gmail query (use operators like from:, subject:, newer_than:, has:attachment). After the results come back, read them and answer in plain prose — never dump raw email JSON. You may call search_gmail on its own turn; you do not need to announce it first the way write actions require.
-- search_web is a READ tool that returns live web results back to you. Use it WITHOUT being told to "search" whenever the answer depends on current, real-world information you do not have — news, sports scores and fixtures, prices, recent events, or any fact that may have changed since your training. Do NOT use it for things you already know or that live in the user's own Axis/email/calendar data. Write a focused query, then read the returned answer and sources and reply in plain prose, citing what you found. Never fabricate a result; if the search returns nothing useful, say so plainly.
-- find_place and get_directions are READ tools (free OpenStreetMap data). Use find_place to look up a business/address/category (pass a "near" town or area when the user implies one); use get_directions for "how far / how long" between two places — it returns distance and travel time, and supports mode "driving" (default, traffic-aware), "walking", "cycling", or "transit". For "when should I leave?", combine get_directions with the event time from get_calendar. If a place isn't found, say so rather than guessing an address.
-- read_email, get_calendar, get_weather, fetch_url and get_finances are READ tools too — they return data back to you, so call whichever the question needs, then answer in plain prose. Specifically: use read_email after search_gmail (or from the unread list) when a snippet is not enough — to pull a tracking number, code, or full details (never invent an id). Use get_calendar for any schedule, conflict, or "when am I free" question. Use get_weather for weather rather than search_web. Use fetch_url to read a specific link in depth. Use get_finances for net-worth, account, spending, or subscription questions (values are in the user's base currency). Prefer the user's own data tools over the web whenever the answer lives in their account.
-- send_email writes and sends a real email, so the user must tap a Confirm button before it goes out — just emit the action; show them the recipient, subject, and the full body you propose in your prose first. Write the complete message yourself (greeting + body + sign-off); do not use placeholders like [Name]. If the user only wants to prepare something, or you are unsure, use create_draft instead (it saves to Gmail without sending and needs no confirmation). Reply to an address from the user's email/contacts; never invent one.
-- delete_calendar_event and move_calendar_event need an event id from get_calendar — call get_calendar first to find the right event, never guess an id. Both require the user to tap a Confirm button before they run, so just emit the action; describe in prose which event you're changing. To "move" an event, pass only the fields that change (e.g. just a new time); other fields are preserved.
-- add_reminder schedules a reminder. When Google Calendar is connected it creates a calendar event with a notification at that time, so the user's phone alerts them natively (works even when this app is closed); otherwise it falls back to an in-app notification. Give either a clock time (time:"HH:MM", optionally date:"YYYY-MM-DD") or a relative in_minutes. With a clock time and no date, a time already past today rolls to tomorrow. Today's date and current time are in the USER DATA header above — use them to resolve "tonight", "in an hour", etc. To answer "what reminders do I have", use get_calendar (calendar reminders show up as events); the SCHEDULED REMINDERS list only holds in-app fallback reminders. delete_reminder cancels in-app fallback reminders; tell the user a calendar-based reminder is removed in Google Calendar. These are write actions: state what you're scheduling, then include the action tag.
-- Long-term goals can be measurable (provide target/unit/start/current) or simple (just a title, no number — e.g. "Read a book"). A simple goal is tracked 0–100%: set its progress with update_goal "current" (0–100). A measurable goal's "current" is the real value (e.g. weight in lb, books read). Omit "target" in add_goal to create a simple goal.
-===`;
-
-    // Tools the user has switched off — never invoke these.
-    const disabled = [];
-    if (!prefs.tools.targets)  disabled.push('set_calorie_target, set_water_target');
-    if (!prefs.tools.goals)    disabled.push('add_goal, update_goal, delete_goal, add_todo, update_todo, delete_todo');
-    if (!prefs.tools.calendar) disabled.push('add_calendar_event, get_calendar, delete_calendar_event, move_calendar_event');
-    if (!prefs.tools.email)    disabled.push('mark_email_read, search_gmail, read_email, send_email, create_draft');
-    if (!prefs.tools.web)      disabled.push('search_web, fetch_url');
-    if (!prefs.tools.finances) disabled.push('get_finances');
-    if (!prefs.tools.reminders) disabled.push('add_reminder, delete_reminder');
-    if (disabled.length) {
-      p += '\n\n=== DISABLED CAPABILITIES ===\nThe user has turned these tools OFF. Never use them; if asked, say it is turned off in Settings → Axis AI:\n  ' + disabled.join('\n  ') + '\n===';
-    }
+    p += "\n\n=== LIVE DATA (" + dateStr + ", " + timeStr + ") ===";
+    p += "\nWATER: " + water.doneMl + "ml / " + water.targetMl + "ml (" + water.pct + "%)";
+    p += "\nSUPPLEMENTS: " + supp.done + "/" + supp.total + " taken today";
+    p += "\nGOALS: " + goals.done + "/" + goals.total + " complete";
+    if (goals.pending.length) p += "\n  Pending: " + goals.pending.map(function (g) { return g.text; }).join(' | ');
+    p += "\nSTREAK: " + streak + " day" + (streak !== 1 ? 's' : '');
+    if (wt != null) p += "\nWEIGHT: " + wt + " lbs";
+    p += "\n\nGeorge's first name is " + name + ".";
     return p;
   }
 
-  // ── Memory store ────────────────────────────────────────────────
-  const MEMORY_KEY     = 'axis_memory';
-  const MEMORY_MAX     = 100;
-
-  function getMemories() { return lsGet(MEMORY_KEY) || []; }
-
-  function saveMemories(arr) {
-    lsSet(MEMORY_KEY, arr);
-    _supaUpsert('axis_memory', arr);
-  }
-
-  function addMemories(facts, sourceChatId) {
-    if (!facts || !facts.length) return;
-    console.log('[memory] addMemories called with', facts.length, 'fact(s), current store size:', getMemories().length);
-    let memories = getMemories();
-    const now = Date.now();
-    for (const raw of facts) {
-      const fact = (raw || '').trim();
-      if (!fact) continue;
-      const factLower = fact.toLowerCase();
-      const dupIdx = memories.findIndex(function(m) {
-        const mLower = m.fact.toLowerCase();
-        return mLower.includes(factLower) || factLower.includes(mLower);
-      });
-      if (dupIdx >= 0) {
-        memories[dupIdx] = { fact, timestamp: now, source_chat_id: sourceChatId };
-      } else {
-        memories.push({ fact, timestamp: now, source_chat_id: sourceChatId });
-      }
-    }
-    // Cap at MEMORY_MAX — remove oldest by timestamp
-    if (memories.length > MEMORY_MAX) {
-      memories.sort(function(a, b) { return b.timestamp - a.timestamp; });
-      memories = memories.slice(0, MEMORY_MAX);
-    }
-    saveMemories(memories);
-    console.log('[memory] saved', memories.length, 'total memories to localStorage. Verify: localStorage.getItem("axis_memory")');
-    renderMemoryPanel();
-  }
-
-  function deleteMemory(idx) {
-    const memories = getMemories();
-    memories.splice(idx, 1);
-    saveMemories(memories);
-    renderMemoryPanel();
-  }
-
-  function clearAllMemories() {
-    saveMemories([]);
-    renderMemoryPanel();
-  }
-
-  // ── Memory extraction (background, after each AI turn) ──────────
-  async function extractMemories(userText, aiText, sessionId) {
-    if (!getAIPrefs().memory) return; // memory disabled in Settings → Axis AI
-    const prompt = 'Extract any important personal facts worth remembering long-term from this single conversation exchange. Return ONLY a JSON array of short strings (max 15 words each). Examples: "User prefers morning workouts", "User runs Kourtis Construction with his brother", "User is cutting weight for summer". Return [] if nothing is worth remembering.\n\nUser: ' + userText.slice(0, 400) + '\nAssistant: ' + aiText.slice(0, 600);
-    console.log('[memory] extraction started — user:', userText.slice(0, 60), '…');
-    try {
-      const res = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          system: 'You are a memory extraction assistant. You extract concise, durable personal facts from chat turns. Respond only with a JSON array of strings.',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 256
-        })
-      });
-      if (!res.ok) {
-        let detail = 'HTTP ' + res.status;
-        try { const j = await res.json(); detail += ' — ' + (j.error || JSON.stringify(j)); } catch(_) {}
-        console.error('[memory] extraction API error:', detail);
-        return;
-      }
-      const reader  = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buf = '', full = '';
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        buf += decoder.decode(value, { stream: true });
-        const lines = buf.split('\n'); buf = lines.pop();
-        for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const raw = line.slice(6).trim(); if (!raw) continue;
-          try {
-            const evt = JSON.parse(raw);
-            if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') full += evt.delta.text;
-          } catch (_) {}
-        }
-      }
-      console.log('[memory] raw extraction response:', full.trim().slice(0, 300));
-      const match = full.match(/\[[\s\S]*\]/);
-      if (!match) {
-        console.warn('[memory] no JSON array found in extraction response');
-        return;
-      }
-      let facts;
-      try { facts = JSON.parse(match[0]); } catch(e) {
-        console.error('[memory] JSON parse failed:', e.message, '— raw match:', match[0].slice(0, 100));
-        return;
-      }
-      if (!Array.isArray(facts) || !facts.length) {
-        console.log('[memory] nothing worth remembering in this turn');
-        return;
-      }
-      console.log('[memory] extracted', facts.length, 'fact(s):', facts);
-      addMemories(facts, sessionId);
-    } catch (err) {
-      console.error('[memory] extraction threw:', err && err.message ? err.message : String(err));
-    }
-  }
-
-  // ── Memory panel UI ──────────────────────────────────────────────
-  function renderMemoryPanel() {
-    const memories   = getMemories();
-    const list       = document.getElementById('memoryList');
-    const countLabel = document.getElementById('memoryCountLabel');
-    const clearBtn   = document.getElementById('memoryClearBtn');
-    if (!list) return;
-
-    countLabel.textContent = memories.length + ' / ' + MEMORY_MAX + ' memories stored';
-    clearBtn.disabled = memories.length === 0;
-    list.innerHTML = '';
-
-    if (!memories.length) {
-      list.innerHTML = '<p class="memory-empty">No memories yet. Axis will remember important things you share across conversations.</p>';
-      return;
-    }
-
-    // Show newest first
-    const sorted = memories.slice().sort(function(a, b) { return b.timestamp - a.timestamp; });
-    sorted.forEach(function(m, i) {
-      const realIdx = memories.indexOf(m);
-      const chip = document.createElement('div');
-      chip.className = 'memory-chip';
-      const txt = document.createElement('span');
-      txt.className   = 'memory-chip-text';
-      txt.textContent = m.fact;
-      const del = document.createElement('button');
-      del.className   = 'memory-chip-del';
-      del.textContent = '×';
-      del.setAttribute('aria-label', 'Delete memory');
-      del.addEventListener('click', function() { deleteMemory(realIdx); });
-      chip.appendChild(txt);
-      chip.appendChild(del);
-      list.appendChild(chip);
-    });
-  }
-
-  function openMemoryPanel() {
-    renderMemoryPanel();
-    document.getElementById('memoryPanel').classList.add('open');
-    document.getElementById('memoryOverlay').classList.add('open');
-    document.getElementById('memoryBtn').classList.add('memory-active');
-  }
-  function closeMemoryPanel() {
-    document.getElementById('memoryPanel').classList.remove('open');
-    document.getElementById('memoryOverlay').classList.remove('open');
-    document.getElementById('memoryBtn').classList.remove('memory-active');
-  }
-
-  // ── SSE streaming helper ─────────────────────────────────────────
-  async function streamClaude(messages, onChunk) {
-    // Strip internal flags; include hidden messages (they carry briefing context)
-    const apiMessages = messages
-      .filter(function(m){ return m.role === 'user' || m.role === 'assistant'; })
-      .map(function(m){ return { role: m.role, content: m.content || '' }; })
-      .filter(function(m){ return m.content; });
-
-    if (!apiMessages.length || apiMessages[0].role !== 'user') {
-      throw new Error('Conversation must begin with a user turn');
-    }
-
+  // ── /api/chat streaming ────────────────────────────────────────────
+  async function streamChat(messages, onChunk) {
     const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: buildSystemPrompt(), messages: apiMessages })
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ system: buildSystem(), messages: messages, max_tokens: 1000 })
     });
     if (!res.ok) {
-      let errDetail = 'HTTP ' + res.status;
-      try { const j = await res.json(); errDetail += ': ' + (j.error || j.error_message || JSON.stringify(j)); } catch(_) {}
-      throw new Error(errDetail);
+      let detail = 'HTTP ' + res.status;
+      try { const j = await res.json(); detail = j.error || detail; } catch (_) {}
+      throw new Error(detail);
     }
-    const reader  = res.body.getReader();
+    const reader = res.body.getReader();
     const decoder = new TextDecoder();
     let buf = '', full = '';
     while (true) {
@@ -1549,7 +475,7 @@ Notes:
         try {
           const evt = JSON.parse(raw);
           if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') {
-            full += evt.delta.text; onChunk(full);
+            full += evt.delta.text; if (onChunk) onChunk(full);
           }
         } catch (_) {}
       }
@@ -1557,1725 +483,214 @@ Notes:
     return full;
   }
 
-  // Minimal one-shot completion (no streaming UI) — used to name conversations.
-  async function callClaude(system, messages) {
-    const res = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ system: system, messages: messages })
-    });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
-    const reader  = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buf = '', full = '';
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += decoder.decode(value, { stream: true });
-      const lines = buf.split('\n'); buf = lines.pop();
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const raw = line.slice(6).trim(); if (!raw) continue;
-        try {
-          const evt = JSON.parse(raw);
-          if (evt.type === 'content_block_delta' && evt.delta && evt.delta.type === 'text_delta') full += evt.delta.text;
-        } catch (_) {}
-      }
-    }
-    return full;
+  // ── Greeting card render ───────────────────────────────────────────
+  const $ = function (id) { return document.getElementById(id); };
+
+  function renderClock() {
+    $('clock').textContent = new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  function renderGreeting() {
+    const n = firstName();
+    $('greeting').textContent = 'Good ' + timeOfDay() + (n ? ', ' + n : ', Sir');
+  }
+  function renderChips() {
+    const water = waterData(), supp = supplementData(), goals = goalData();
+    const chips = [];
+    chips.push({ k: 'Water', v: water.pct + '%', cls: water.pct >= 80 ? 'good' : water.pct < 40 ? 'warn' : '' });
+    if (supp.total) chips.push({ k: 'Stack', v: supp.done + '/' + supp.total, cls: supp.done >= supp.total ? 'good' : '' });
+    chips.push({ k: 'Goals', v: goals.done + '/' + goals.total, cls: goals.total && goals.done >= goals.total ? 'good' : '' });
+    const streak = streakCount();
+    if (streak > 0) chips.push({ k: 'Streak', v: streak + 'd', cls: 'good' });
+    $('chips').innerHTML = chips.map(function (c) {
+      return '<span class="chip ' + (c.cls || '') + '"><span class="k">' + c.k + '</span><span class="v">' + c.v + '</span></span>';
+    }).join('');
   }
 
-  // ── Session management ───────────────────────────────────────────
-  const SESSIONS_KEY = 'axis_chat_sessions';
-  const ACTIVE_KEY   = 'axis_active_chat_id';
-
-  let chatHistory      = []; // [{ role, content, hidden?, briefing? }] — sent to API (hidden included for context)
-  let activeSessionId  = null;
-  let _briefingRunning  = false;
-  let _briefingTimer    = null;
-  let _briefingInterval = null;
-
-  function getSessions()       { return lsGet(SESSIONS_KEY) || []; }
-  function saveSessions(arr)   { try { localStorage.setItem(SESSIONS_KEY, JSON.stringify(arr)); } catch(_) {} }
-
-  // ── Cross-device chat sync (Supabase realtime, conflict-free) ────
-  // Payload shape: { sessions:[...], deleted:{ id: ts } }. Sessions carry an
-  // updatedAt so the newest edit wins on merge; deleted[] are tombstones so a
-  // delete on one device sticks on the other instead of resurrecting.
-  const DELETED_KEY = 'axis_chat_deleted';
-  const SESSIONS_MAX = 200;
-  let _sessPushTimer = null, _sessLastJson = null, _sessApplying = false;
-
-  function getDeleted()      { return lsGet(DELETED_KEY) || {}; }
-  function saveDeleted(obj)  { try { localStorage.setItem(DELETED_KEY, JSON.stringify(obj)); } catch(_) {} }
-  function touch(session)    { if (session) session.updatedAt = Date.now(); return session; }
-
-  async function pushSessionsNow() {
-    const payload = { sessions: getSessions(), deleted: getDeleted() };
-    const json = JSON.stringify(payload);
-    if (json === _sessLastJson) return;
-    _sessLastJson = json;
-    await _supaUpsert('chat_sessions', payload);
-  }
-  function pushSessions() {
-    if (_sessApplying) return;            // don't echo a merge we just applied
-    clearTimeout(_sessPushTimer);
-    _sessPushTimer = setTimeout(pushSessionsNow, 500);
-  }
-
-  function _mergeBriefing(a, b) {
-    const dates = Array.from(new Set([].concat(a.briefingDates || [], b.briefingDates || [])));
-    const seen = {}, messages = [];
-    [].concat(a.messages || [], b.messages || []).forEach(function(m){
-      const k = (m.ts || 0) + '|' + (m.role || '') + '|' + String(m.content || '').slice(0, 60);
-      if (!seen[k]) { seen[k] = 1; messages.push(m); }
-    });
-    messages.sort(function(x, y){ return (x.ts || 0) - (y.ts || 0); });
-    const newer = (b.updatedAt || 0) >= (a.updatedAt || 0) ? b : a;
-    return Object.assign({}, a, b, {
-      briefingDates: dates, messages: messages, preview: newer.preview,
-      updatedAt: Math.max(a.updatedAt || 0, b.updatedAt || 0)
-    });
-  }
-
-  // Merge a remote payload (array legacy or {sessions,deleted}) into local state.
-  function mergeSessionState(remote) {
-    const rSessions = Array.isArray(remote) ? remote : ((remote && remote.sessions) || []);
-    const rDeleted  = (remote && remote.deleted) || {};
-    const lSessions = getSessions();
-    const lDeleted  = getDeleted();
-
-    const deleted = Object.assign({}, lDeleted);
-    Object.keys(rDeleted).forEach(function(id){ deleted[id] = Math.max(deleted[id] || 0, rDeleted[id] || 0); });
-
-    const byId = {};
-    function consider(s) {
-      if (!s || !s.id) return;
-      const ex = byId[s.id];
-      if (!ex) { byId[s.id] = s; return; }
-      if (s.id === BRIEFING_SESSION_ID) { byId[s.id] = _mergeBriefing(ex, s); return; }
-      const exU = ex.updatedAt || 0, sU = s.updatedAt || 0;
-      if (sU > exU) byId[s.id] = s;
-      else if (sU === exU && (s.messages || []).length > (ex.messages || []).length) byId[s.id] = s;
-    }
-    lSessions.forEach(consider);
-    rSessions.forEach(consider);
-
-    // Apply tombstones (the briefing session is permanent and never tombstoned)
-    let merged = Object.keys(byId).map(function(k){ return byId[k]; }).filter(function(s){
-      if (s.id === BRIEFING_SESSION_ID) return true;
-      const t = deleted[s.id];
-      return !(t && t >= (s.updatedAt || 0));
-    });
-
-    // Cap regular history (tombstone the oldest overflow so it doesn't resurrect)
-    const reg = merged.filter(function(s){ return s.id !== BRIEFING_SESSION_ID; })
-      .sort(function(a, b){ return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
-    if (reg.length > SESSIONS_MAX) {
-      const keep = {};
-      reg.slice(0, SESSIONS_MAX).forEach(function(s){ keep[s.id] = 1; });
-      reg.slice(SESSIONS_MAX).forEach(function(s){ deleted[s.id] = Date.now(); });
-      merged = merged.filter(function(s){ return s.id === BRIEFING_SESSION_ID || keep[s.id]; });
-    }
-
-    // Drop tombstones nobody references anymore (keep the map small)
-    const live = {}; merged.forEach(function(s){ live[s.id] = 1; });
-    Object.keys(deleted).forEach(function(id){
-      const inAny = live[id] || rSessions.some(function(s){ return s.id === id; }) || lSessions.some(function(s){ return s.id === id; });
-      if (!inAny) delete deleted[id];
-    });
-
-    merged.sort(function(a, b){ return String(b.createdAt || '').localeCompare(String(a.createdAt || '')); });
-    saveDeleted(deleted);
-    saveSessions(merged);
-    return merged;
-  }
-
-  // Apply a remote update live and refresh the UI without disrupting the
-  // open conversation (unless it was deleted elsewhere).
-  function applyRemoteSessions(remote) {
-    if (!remote) return;
-    _sessApplying = true;
-    try { mergeSessionState(remote); ensureBriefingSessionExists(); }
-    finally { _sessApplying = false; }
-    const stillActive = getSessions().find(function(s){ return s.id === activeSessionId; });
-    if (!stillActive) {
-      activeSessionId = BRIEFING_SESSION_ID;
-      try { localStorage.setItem(ACTIVE_KEY, BRIEFING_SESSION_ID); } catch(_) {}
-      const bs = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-      const msgs = (bs && bs.messages) || [];
-      chatHistory = msgs.map(function(m){ return { role:m.role, content:m.content, hidden:m.hidden, briefing:m.briefing, ts:m.ts }; });
-      renderThread(msgs);
-    }
-    renderSidebar();
-  }
-
-  function subscribeSessions() {
-    const supa = _getSupa();
-    if (!supa) return;
+  // ── Proactive briefing on load ─────────────────────────────────────
+  async function runBriefing() {
+    const body = $('briefBody');
+    body.classList.add('thinking');
+    body.textContent = 'Pulling the day together…';
+    const prompt = "Deliver my standing briefing for right now, Sir. Two or three sentences. Lead with whatever matters most given the time of day and the live data — water, supplements, goals, streak — and one line on where I stand against who I'm becoming if the Future George profile is set. No preamble.";
     try {
-      supa.channel('app_state_chat_sessions')
-        .on('postgres_changes',
-          { event: '*', schema: 'public', table: 'app_state', filter: 'key=eq.chat_sessions' },
-          function(payload) {
-            if (!payload.new || !payload.new.data) return;
-            if (JSON.stringify(payload.new.data) === _sessLastJson) return; // our own echo
-            applyRemoteSessions(payload.new.data);
-          })
-        .subscribe();
-    } catch (_) {}
-  }
-  function genSessionId()      { return 'chat_' + Date.now(); }
-
-  function getPreview(messages) {
-    for (let i = 0; i < messages.length; i++) {
-      const m = messages[i];
-      if (m.content && m.content.trim() && !m.hidden) {
-        const txt = stripMd(m.content);
-        if (!txt) continue;
-        return txt.slice(0, 72) + (txt.length > 72 ? '…' : '');
-      }
-    }
-    return 'New conversation';
-  }
-
-  function upsertSession(session) {
-    touch(session);
-    const sessions = getSessions();
-    const idx = sessions.findIndex(function(s){ return s.id === session.id; });
-    if (idx >= 0) sessions[idx] = session;
-    else sessions.unshift(session);
-    // Never trim the briefing session
-    while (sessions.length > SESSIONS_MAX && sessions[sessions.length - 1].id !== BRIEFING_SESSION_ID) sessions.pop();
-    saveSessions(sessions);
-    pushSessions();
-  }
-
-  function saveCurrentSession() {
-    if (!activeSessionId) return;
-    const sessions = getSessions();
-    const session  = sessions.find(function(s){ return s.id === activeSessionId; });
-    if (!session || !chatHistory.length) return;
-    session.messages = chatHistory.map(function(m){ return Object.assign({}, m, { ts: m.ts || Date.now() }); });
-    if (!session.isBriefing) session.preview = getPreview(session.messages);
-    touch(session);
-    saveSessions(sessions);
-    pushSessions();
-  }
-
-  // Auto-name a fresh conversation from its first user message (AI-generated).
-  // Runs once, in the background; never overrides a manual rename or a title
-  // that already exists (e.g. branched briefings).
-  async function autoNameSession(sessionId, firstUserText) {
-    if (!sessionId || sessionId === BRIEFING_SESSION_ID) return;
-    if (!getAIPrefs().autoName) return; // auto-naming disabled in Settings → Axis AI
-    const pre = getSessions().find(function(s){ return s.id === sessionId; });
-    if (!pre || pre.autoTitled || pre.title) return;
-    try {
-      const system = 'You write an extremely short title for a chat, based on the user\'s first message. '
-        + 'Rules: 2 to 4 words, Title Case, max 28 characters, no quotes, no trailing punctuation, no emoji. '
-        + 'Reply with ONLY the title.';
-      const raw = await callClaude(system, [{ role: 'user', content: String(firstUserText || '').slice(0, 800) }]);
-      let title = stripMd(raw).replace(/^["'\s]+|["'\s.]+$/g, '').replace(/\s+/g, ' ').trim().slice(0, 32);
-      if (!title) return;
-      const sessions = getSessions();
-      const s = sessions.find(function(x){ return x.id === sessionId; });
-      if (!s || s.id === BRIEFING_SESSION_ID || s.autoTitled || s.title) return;
-      s.title = title;
-      s.autoTitled = true;
-      touch(s);
-      saveSessions(sessions);
-      pushSessions();
-      renderSidebar();
-    } catch (_) { /* leave the first-message preview as the label */ }
-  }
-
-  function ensureBriefingSessionExists() {
-    const sessions = getSessions();
-    if (sessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; })) return;
-    sessions.unshift({
-      id: BRIEFING_SESSION_ID,
-      isBriefing: true,
-      createdAt: new Date(0).toISOString(),
-      briefingDates: [],
-      messages: [],
-      preview: 'Daily Briefing'
-    });
-    saveSessions(sessions);
-  }
-
-  // ── DOM helpers ──────────────────────────────────────────────────
-  function scrollToBottom() { window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
-
-  function escHtml(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-  // Strip action tags + markdown markers for plain previews
-  function stripMd(s) {
-    return String(s || '')
-      .replace(/<action>[\s\S]*?<\/action>/g, '')
-      .replace(/\*\*([^*]+)\*\*/g, '$1')
-      .replace(/[*_`#>]/g, '')
-      .replace(/\s+/g, ' ')
-      .trim();
-  }
-
-  // Inline markdown on already-escaped text: **bold**, *italic*, `code`
-  function mdInline(s) {
-    return s
-      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-      .replace(/(^|[^*])\*([^*\n]+)\*(?!\*)/g, '$1<em>$2</em>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>');
-  }
-
-  // Render a bubble's text with light markdown (bold, italic, code, bullets,
-  // bold-line headers, paragraph spacing). Input is raw model text.
-  function renderRich(el, text) {
-    const esc   = escHtml(text || '');
-    const lines = esc.split('\n');
-    let html = '', inList = false;
-    for (let i = 0; i < lines.length; i++) {
-      const line   = lines[i];
-      const bullet = line.match(/^\s*(?:[-•]|\d+\.)\s+(.*)$/);
-      if (bullet) {
-        if (!inList) { html += '<ul class="md-ul">'; inList = true; }
-        html += '<li>' + mdInline(bullet[1]) + '</li>';
-        continue;
-      }
-      if (inList) { html += '</ul>'; inList = false; }
-      if (line.trim() === '') { html += '<div class="md-gap"></div>'; continue; }
-      // A line that is entirely bold reads as a small header
-      const headerMatch = line.match(/^\s*\*\*([^*]+)\*\*\s*:?\s*$/);
-      if (headerMatch) { html += '<div class="md-h">' + mdInline(headerMatch[1]) + '</div>'; continue; }
-      html += '<div class="md-line">' + mdInline(line) + '</div>';
-    }
-    if (inList) html += '</ul>';
-    el.innerHTML = html;
-  }
-
-  function buildMsgEl(role, content, opts) {
-    opts = opts || {};
-    // Normalize: stored messages use 'assistant'; live flow uses 'ai'.
-    const norm   = (role === 'user') ? 'user' : 'ai';
-    const wrap   = document.createElement('div');
-    const bubble = document.createElement('div');
-    wrap.className   = 'msg msg-' + norm + (opts.isStatic ? ' msg-static' : '');
-    bubble.className = 'msg-bubble';
-    if (opts.isBriefing) {
-      const header = document.createElement('div');
-      header.className = 'msg-briefing-header';
-      header.innerHTML = '<span class="msg-briefing-icon">⚡</span><span class="msg-briefing-label">Daily Briefing</span>';
-      bubble.appendChild(header);
-    }
-    const textNode = document.createElement('span');
-    textNode.className = 'msg-text';
-    if (norm === 'ai') {
-      // Strip any tool-call tags and render light markdown.
-      renderRich(textNode, parseActions(content || '').clean);
-    } else {
-      textNode.textContent = content;
-    }
-    bubble.appendChild(textNode);
-    if (opts.isBriefing && typeof opts.onBranch === 'function') {
-      addBranchButton(bubble, opts.onBranch);
-    }
-    wrap.appendChild(bubble);
-    return { wrap, bubble, textNode };
-  }
-
-  // "Discuss in new chat" — appended to briefing messages in the briefing thread.
-  function addBranchButton(bubble, onClick) {
-    const btn = document.createElement('button');
-    btn.className = 'briefing-branch-btn';
-    btn.type = 'button';
-    btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M6 3v8a4 4 0 0 0 4 4h8M14 11l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"></path></svg>Discuss in new chat';
-    btn.addEventListener('click', function(e){ e.stopPropagation(); onClick(); });
-    bubble.appendChild(btn);
-    return btn;
-  }
-
-  // Spin off a fresh conversation seeded with a briefing, so the permanent
-  // briefing thread stays clean. The briefing is stored as a hidden user msg
-  // (for API context — Anthropic requires a leading user turn) plus the
-  // visible assistant briefing bubble.
-  function branchOffBriefing(text) {
-    saveCurrentSession();
-    const id = genSessionId();
-    activeSessionId = id;
-    try { localStorage.setItem(ACTIVE_KEY, id); } catch (_) {}
-    const ts = Date.now();
-    const hiddenUser   = { role: 'user', content: 'For reference, here is the daily briefing I want to discuss:\n\n' + text, hidden: true, ts: ts };
-    const assistantMsg = { role: 'assistant', content: text, briefing: true, ts: ts + 1 };
-    chatHistory = [hiddenUser, assistantMsg];
-    const firstLine = stripMd((text || '').split('\n')[0] || '').slice(0, 36);
-    upsertSession({
-      id: id,
-      createdAt: new Date().toISOString(),
-      messages: chatHistory.slice(),
-      title: firstLine ? ('Briefing — ' + firstLine) : 'Briefing follow-up',
-      preview: stripMd(text).slice(0, 60)
-    });
-    renderThread(chatHistory);
-    closeSidebar();
-    renderSidebar();
-    const input = document.getElementById('chatInput');
-    if (input) { input.focus(); }
-  }
-
-  function appendMsg(role, content, opts) {
-    const { wrap } = buildMsgEl(role, content, opts);
-    document.getElementById('chatThread').appendChild(wrap);
-    scrollToBottom();
-    return wrap;
-  }
-
-  function appendTyping() {
-    const thread = document.getElementById('chatThread');
-    const wrap   = document.createElement('div');
-    wrap.className = 'msg msg-ai msg-typing msg-static';
-    wrap.innerHTML = '<div class="msg-bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
-    thread.appendChild(wrap);
-    scrollToBottom();
-    return wrap;
-  }
-
-  function appendDateSep(dateStr) {
-    const sep = document.createElement('div');
-    sep.className   = 'chat-date-sep';
-    sep.textContent = dateStr;
-    document.getElementById('chatThread').appendChild(sep);
-  }
-
-  function appendActionCard(message) {
-    const card = document.createElement('div');
-    card.className = 'action-card';
-    card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
-    card.querySelector('.action-card-text').textContent = message;
-    document.getElementById('chatThread').appendChild(card);
-    scrollToBottom();
-  }
-
-  // Render an interactive confirm/cancel card for a destructive action.
-  // onDone(resultString) is called after the action runs so the caller can
-  // persist the outcome with the message.
-  function appendConfirmCard(action, onDone) {
-    const _lbl  = CONFIRM_TOOLS[action.tool];
-    const label = (typeof _lbl === 'function') ? _lbl(action.params || {}) : (_lbl || 'Confirm this action?');
-    const card  = document.createElement('div');
-    card.className = 'action-card action-confirm';
-    card.innerHTML = '<span class="action-card-text"></span>'
-      + '<div class="confirm-btns"><button class="confirm-yes" type="button">Confirm</button>'
-      + '<button class="confirm-no" type="button">Cancel</button></div>';
-    card.querySelector('.action-card-text').textContent = label;
-    document.getElementById('chatThread').appendChild(card);
-    scrollToBottom();
-
-    const btns = card.querySelector('.confirm-btns');
-    card.querySelector('.confirm-yes').addEventListener('click', async function() {
-      btns.remove();
-      const r = await executeAction(action.tool, action.params);
-      card.classList.remove('action-confirm');
-      card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
-      card.querySelector('.action-card-text').textContent = r;
-      scrollToBottom();
-      if (typeof onDone === 'function') onDone(r);
-    });
-    card.querySelector('.confirm-no').addEventListener('click', function() {
-      btns.remove();
-      card.classList.remove('action-confirm');
-      card.querySelector('.action-card-text').textContent = 'Cancelled.';
-      if (typeof onDone === 'function') onDone('Cancelled.');
-    });
-  }
-
-  function renderThread(messages) {
-    const thread = document.getElementById('chatThread');
-    thread.innerHTML = '';
-    if (!messages || !messages.length) return;
-    const frag = document.createDocumentFragment();
-    const allowBranch = (activeSessionId === BRIEFING_SESSION_ID);
-    let lastDate = '';
-    messages.forEach(function(m) {
-      if (m.hidden) return;
-      const dateKey = m.ts ? fmt(new Date(m.ts)) : '';
-      if (dateKey && dateKey !== lastDate) {
-        const sep = document.createElement('div');
-        sep.className   = 'chat-date-sep';
-        sep.textContent = new Date(dateKey + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
-        frag.appendChild(sep);
-        lastDate = dateKey;
-      }
-      const onBranch = (m.briefing && allowBranch)
-        ? (function(txt){ return function(){ branchOffBriefing(txt); }; })(m.content)
-        : null;
-      const { wrap } = buildMsgEl(m.role, m.content, { isStatic: true, isBriefing: m.briefing, onBranch: onBranch });
-      frag.appendChild(wrap);
-      // Re-render any tool-action confirmation cards that were stored with this message
-      if (m.role !== 'user' && Array.isArray(m.actions)) {
-        m.actions.forEach(function(r) {
-          const card = document.createElement('div');
-          card.className = 'action-card msg-static';
-          card.innerHTML = '<span class="action-card-check">✓</span><span class="action-card-text"></span>';
-          card.querySelector('.action-card-text').textContent = r;
-          frag.appendChild(card);
-        });
-      }
-    });
-    thread.appendChild(frag);
-    scrollToBottom();
-  }
-
-  // ── Action executors ─────────────────────────────────────────────
-  async function addCalendarEvent(params) {
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Calendar not connected — sign in via the email page first.';
-    try {
-      const tz    = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      const start = params.time ? new Date(params.date+'T'+params.time+':00') : null;
-      const end   = start ? new Date(start.getTime()+(params.duration_minutes||60)*60000) : null;
-      const body  = {
-        summary: params.title,
-        start: start ? { dateTime: start.toISOString(), timeZone: tz } : { date: params.date },
-        end:   end   ? { dateTime: end.toISOString(),   timeZone: tz } : { date: params.date }
-      };
-      const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',
-        { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'}, body: JSON.stringify(body) });
-      if (!res.ok) return 'Calendar error ' + res.status;
-      return '"' + params.title + '" added to calendar on ' + params.date;
-    } catch(e) { return 'Calendar error: ' + e.message; }
-  }
-
-  const _CAL_BASE = 'https://www.googleapis.com/calendar/v3/calendars/primary/events';
-
-  async function deleteCalendarEvent(params) {
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Calendar not connected — sign in via the email page first.';
-    if (!params || !params.id) return 'Need the event id (from get_calendar) to delete it.';
-    try {
-      const res = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
-        { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + tok } });
-      // 204 = deleted, 410 = already gone
-      if (res.status === 204 || res.status === 410) return 'Calendar event deleted.';
-      return 'Calendar error ' + res.status;
-    } catch (e) { return 'Calendar error: ' + e.message; }
-  }
-
-  async function moveCalendarEvent(params) {
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Calendar not connected — sign in via the email page first.';
-    if (!params || !params.id) return 'Need the event id (from get_calendar) to move it.';
-    if (!params.date && !params.time && params.duration_minutes == null && !params.title) {
-      return 'Nothing to change — give a new date, time, duration, or title.';
-    }
-    try {
-      const tz  = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      // Fetch the current event so we can preserve unspecified fields.
-      const getRes = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
-        { headers: { 'Authorization': 'Bearer ' + tok } });
-      if (!getRes.ok) return 'Could not find that event (HTTP ' + getRes.status + ').';
-      const ev = await getRes.json();
-
-      const cur = (ev.start && ev.start.dateTime) ? new Date(ev.start.dateTime)
-        : (ev.start && ev.start.date) ? new Date(ev.start.date + 'T09:00:00') : new Date();
-      let y = cur.getFullYear(), mo = cur.getMonth(), da = cur.getDate(), hh = cur.getHours(), mm = cur.getMinutes();
-      if (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)) { const p = params.date.split('-'); y = +p[0]; mo = +p[1] - 1; da = +p[2]; }
-      if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) { const t = params.time.split(':'); hh = +t[0]; mm = +t[1]; }
-      const newStart = new Date(y, mo, da, hh, mm, 0, 0);
-
-      let durMin = params.duration_minutes;
-      if (durMin == null && ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
-        durMin = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
-      }
-      if (durMin == null || durMin <= 0) durMin = 60;
-
-      const patch = {
-        start: { dateTime: newStart.toISOString(), timeZone: tz },
-        end:   { dateTime: new Date(newStart.getTime() + durMin * 60000).toISOString(), timeZone: tz },
-      };
-      if (params.title) patch.summary = params.title;
-
-      const res = await fetch(_CAL_BASE + '/' + encodeURIComponent(params.id),
-        { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + tok, 'Content-Type': 'application/json' }, body: JSON.stringify(patch) });
-      if (!res.ok) return 'Calendar error ' + res.status;
-      const when = newStart.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-      return 'Moved "' + (params.title || ev.summary || 'event') + '" to ' + when + '.';
-    } catch (e) { return 'Calendar error: ' + e.message; }
-  }
-
-  async function markEmailRead(msgId) {
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Gmail not connected — sign in via the email page first.';
-    try {
-      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/'+msgId+'/modify',
-        { method:'POST', headers:{'Authorization':'Bearer '+tok,'Content-Type':'application/json'},
-          body: JSON.stringify({ removeLabelIds: ['UNREAD'] }) });
-      if (!res.ok) return 'Gmail error ' + res.status;
-      _cachedGmailEmails = _cachedGmailEmails.filter(function(e){ return e.id !== msgId; });
-      try {
-        const cache = JSON.parse(localStorage.getItem('axis_gmail_cache')||'[]');
-        localStorage.setItem('axis_gmail_cache', JSON.stringify(cache.filter(function(e){ return e.id !== msgId; })));
-      } catch(_) {}
-      return 'Email marked as read.';
-    } catch(e) { return 'Gmail error: ' + e.message; }
-  }
-
-  // ── Email compose (send / draft) ─────────────────────────────────
-  // Standard base64 (for RFC 2047 header words).
-  function _b64Std(str) {
-    const bytes = new TextEncoder().encode(str);
-    let bin = '';
-    bytes.forEach(function(b){ bin += String.fromCharCode(b); });
-    return btoa(bin);
-  }
-  // base64url (for the Gmail `raw` field).
-  function _b64url(str) {
-    return _b64Std(str).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-  // RFC 2047-encode a header value only if it contains non-ASCII.
-  function _encHeader(s) {
-    s = String(s || '');
-    return /^[\x00-\x7F]*$/.test(s) ? s : '=?UTF-8?B?' + _b64Std(s) + '?=';
-  }
-  function _buildMime(params) {
-    const lines = [];
-    lines.push('To: ' + (params.to || ''));
-    if (params.cc)  lines.push('Cc: '  + params.cc);
-    if (params.bcc) lines.push('Bcc: ' + params.bcc);
-    lines.push('Subject: ' + _encHeader(params.subject || '(no subject)'));
-    lines.push('MIME-Version: 1.0');
-    lines.push('Content-Type: text/plain; charset="UTF-8"');
-    lines.push('');
-    lines.push(String(params.body || ''));
-    return lines.join('\r\n');
-  }
-
-  async function sendEmail(params) {
-    params = params || {};
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Gmail not connected — sign in via the email page first.';
-    if (!(params.to || '').trim()) return 'Need a recipient (to).';
-    if (!(params.body || '').trim()) return 'Need a message body.';
-    try {
-      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send',
-        { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' },
-          body: JSON.stringify({ raw: _b64url(_buildMime(params)) }) });
-      if (res.status === 403) return 'Gmail refused the send (403) — the send permission may not be granted yet. Sign out and back in (email page) to re-consent.';
-      if (!res.ok) return 'Gmail send error ' + res.status;
-      return 'Email sent to ' + params.to + '.';
-    } catch (e) { return 'Gmail send error: ' + e.message; }
-  }
-
-  async function createDraft(params) {
-    params = params || {};
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Gmail not connected — sign in via the email page first.';
-    if (!(params.body || '').trim()) return 'Need a message body to draft.';
-    try {
-      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/drafts',
-        { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' },
-          body: JSON.stringify({ message: { raw: _b64url(_buildMime(params)) } }) });
-      if (!res.ok) return 'Gmail draft error ' + res.status;
-      return 'Draft saved to Gmail' + (params.to ? ' (to ' + params.to + ')' : '') + '.';
-    } catch (e) { return 'Gmail draft error: ' + e.message; }
-  }
-
-  // Full-mailbox Gmail search (read tool). Returns a text block of results
-  // that is fed back to the model so it can read and summarize them.
-  async function searchGmail(query) {
-    query = (query || '').trim();
-    if (!query) return 'Gmail search skipped: no query provided.';
-    try {
-      const res = await fetch('/api/gmail-search?q=' + encodeURIComponent(query));
-      if (res.status === 401) return 'Gmail not connected — the user needs to sign in via the email page first.';
-      if (!res.ok) return 'Gmail search failed (HTTP ' + res.status + ').';
-      const data    = await res.json();
-      const results = Array.isArray(data.results) ? data.results : [];
-      if (!results.length) return 'No emails matched the search "' + query + '".';
-      let block = 'Top ' + results.length + ' result' + (results.length !== 1 ? 's' : '') + ' for "' + query + '":';
-      results.forEach(function(e, i) {
-        block += '\n' + (i + 1) + '. [id:' + e.id + '] From: ' + e.sender
-          + ' | Subject: ' + e.subject
-          + (e.date ? ' | Date: ' + e.date : '')
-          + (e.snippet ? '\n   Preview: ' + e.snippet : '');
+      let first = true;
+      await streamChat([{ role: 'user', content: prompt }], function (full) {
+        if (first) { body.classList.remove('thinking'); first = false; }
+        body.innerHTML = escapeHtml(full) + '<span class="cursor"></span>';
+        scrollDown();
       });
-      return block;
-    } catch (e) {
-      return 'Gmail search error: ' + e.message;
-    }
-  }
-
-  // Live web search (read tool). Returns a text block (synthesized answer +
-  // sources) that is fed back to the model so it can answer with current info.
-  async function searchWeb(query) {
-    query = (query || '').trim();
-    if (!query) return 'Web search skipped: no query provided.';
-    try {
-      const res = await fetch('/api/web-search?q=' + encodeURIComponent(query));
-      if (res.status === 500) return 'Web search is not configured on the server (no TAVILY_API_KEY).';
-      if (!res.ok) return 'Web search failed (HTTP ' + res.status + ').';
-      const data    = await res.json();
-      const results = Array.isArray(data.results) ? data.results : [];
-      if (!data.answer && !results.length) return 'No useful web results for "' + query + '".';
-      let block = 'Web results for "' + query + '":';
-      if (data.answer) block += '\nSummary: ' + data.answer;
-      results.forEach(function(r, i) {
-        block += '\n' + (i + 1) + '. ' + (r.title || r.url)
-          + (r.url ? '\n   ' + r.url : '')
-          + (r.content ? '\n   ' + r.content : '');
-      });
-      return block;
-    } catch (e) {
-      return 'Web search error: ' + e.message;
-    }
-  }
-
-  // Decode a Gmail base64url body part into a UTF-8 string.
-  function _b64urlDecode(data) {
-    if (!data) return '';
-    try {
-      const bin   = atob(data.replace(/-/g, '+').replace(/_/g, '/'));
-      const bytes = Uint8Array.from(bin, function(c){ return c.charCodeAt(0); });
-      return new TextDecoder('utf-8').decode(bytes);
-    } catch (_) { return ''; }
-  }
-  // Walk a Gmail payload tree for the first part of a given MIME type.
-  function _findPart(payload, mime) {
-    if (!payload) return null;
-    if (payload.mimeType === mime && payload.body && payload.body.data) return payload.body.data;
-    if (Array.isArray(payload.parts)) {
-      for (const p of payload.parts) { const r = _findPart(p, mime); if (r) return r; }
-    }
-    return null;
-  }
-
-  // Read tool: full body of one email (id from search_gmail or the unread list).
-  async function readEmail(id) {
-    id = (id || '').trim();
-    if (!id) return 'Read email skipped: no message id.';
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Gmail not connected — the user needs to sign in via the email page first.';
-    try {
-      const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/' + encodeURIComponent(id) + '?format=full',
-        { headers: { 'Authorization': 'Bearer ' + tok } });
-      if (!res.ok) return 'Could not read email (HTTP ' + res.status + ').';
-      const msg  = await res.json();
-      const hdrs = (msg.payload && msg.payload.headers) || [];
-      const gh   = function(n){ return (hdrs.find(function(h){ return h.name === n; }) || {}).value || ''; };
-      let body = _b64urlDecode(_findPart(msg.payload, 'text/plain'));
-      if (!body) {
-        body = _b64urlDecode(_findPart(msg.payload, 'text/html'))
-          .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-          .replace(/<[^>]+>/g, ' ')
-          .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
-          .replace(/\s+/g, ' ').trim();
-      }
-      body = (body || '').slice(0, 4000);
-      return 'EMAIL [id:' + id + ']'
-        + '\nFrom: ' + gh('From')
-        + '\nDate: ' + gh('Date')
-        + '\nSubject: ' + (gh('Subject') || '(none)')
-        + '\n\n' + (body || '(no readable text body)');
-    } catch (e) { return 'Email read error: ' + e.message; }
-  }
-
-  // Read tool: calendar events for a date or range (for schedule / free-time Qs).
-  async function getCalendar(params) {
-    params = params || {};
-    const tok = await GoogleAuth.getToken();
-    if (!tok) return 'Calendar not connected — the user needs to sign in via the email page first.';
-    try {
-      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      function parseDate(s) {
-        if (s && /^\d{4}-\d{2}-\d{2}$/.test(s)) { const d = new Date(s + 'T00:00:00'); if (!isNaN(d)) return d; }
-        return null;
-      }
-      const startD = parseDate(params.start) || new Date();
-      startD.setHours(0, 0, 0, 0);
-      let endD = parseDate(params.end) || new Date(startD);
-      endD.setHours(23, 59, 59, 999);
-      if (endD < startD) endD = new Date(startD.getTime() + 86399999);
-      const fmtD = function(d){ return d.toLocaleDateString('en-US', { month:'short', day:'numeric' }); };
-
-      const url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
-        + '?singleEvents=true&orderBy=startTime'
-        + '&timeMin=' + encodeURIComponent(startD.toISOString())
-        + '&timeMax=' + encodeURIComponent(endD.toISOString())
-        + '&maxResults=50&timeZone=' + encodeURIComponent(tz);
-      const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
-      if (!res.ok) return 'Calendar error ' + res.status;
-      const items = ((await res.json()).items) || [];
-      if (!items.length) return 'No calendar events between ' + fmtD(startD) + ' and ' + fmtD(endD) + '.';
-      let block = 'Calendar events (' + fmtD(startD) + ' – ' + fmtD(endD) + '):';
-      items.forEach(function(ev) {
-        let when;
-        if (ev.start && ev.start.dateTime) {
-          const d = new Date(ev.start.dateTime);
-          when = d.toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-          if (ev.end && ev.end.dateTime) when += '–' + new Date(ev.end.dateTime).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit' });
-        } else {
-          when = ((ev.start && ev.start.date) || '') + ' (all day)';
-        }
-        block += '\n• [id:' + ev.id + '] ' + when + ' — ' + (ev.summary || '(no title)') + (ev.location ? ' @ ' + ev.location : '');
-      });
-      return block;
-    } catch (e) { return 'Calendar error: ' + e.message; }
-  }
-
-  // Read tool: current weather + short forecast (serverless, Open-Meteo).
-  async function getWeather(location) {
-    try {
-      const res = await fetch('/api/weather?q=' + encodeURIComponent((location || '').trim()));
-      if (!res.ok) return 'Weather lookup failed (HTTP ' + res.status + ').';
-      const d = await res.json();
-      if (d.error)   return 'Weather: ' + d.error;
-      return d.summary || 'No weather data available.';
-    } catch (e) { return 'Weather error: ' + e.message; }
-  }
-
-  // Read tool: find places / businesses (serverless, OpenStreetMap).
-  async function findPlace(params) {
-    params = params || {};
-    const q = String(params.query || '').trim();
-    if (!q) return 'Place search skipped: no query.';
-    try {
-      const res = await fetch('/api/place-search?q=' + encodeURIComponent(q)
-        + (params.near ? '&near=' + encodeURIComponent(params.near) : ''));
-      if (!res.ok) return 'Place search failed (HTTP ' + res.status + ').';
-      const d = await res.json();
-      const results = Array.isArray(d.results) ? d.results : [];
-      if (!results.length) return 'No places found for "' + (d.query || q) + '".';
-      let block = 'Places for "' + (d.query || q) + '":';
-      results.forEach(function(p, i) {
-        const meta = [];
-        if (p.rating)   meta.push('★' + p.rating + (p.ratingCount ? ' (' + p.ratingCount + ')' : ''));
-        if (p.priceLevel) meta.push(p.priceLevel);
-        if (typeof p.openNow === 'boolean') meta.push(p.openNow ? 'open now' : 'closed now');
-        if (p.status)   meta.push(p.status);
-        if (p.category) meta.push(p.category);
-        block += '\n' + (i + 1) + '. ' + (p.name || p.address) + (meta.length ? ' — ' + meta.join(' · ') : '');
-        if (p.address)    block += '\n   ' + p.address;
-        if (p.hoursToday) block += '\n   ' + p.hoursToday;
-        if (p.phone)      block += '\n   ' + p.phone;
-        if (p.website)    block += '\n   ' + p.website;
-      });
-      return block;
-    } catch (e) { return 'Place search error: ' + e.message; }
-  }
-
-  // Shared directions fetch — returns parsed JSON ({ distance_km, duration_min,
-  // summary } or { error }). Used by the get_directions tool and the travel plan.
-  async function _directionsData(from, to, mode) {
-    const res = await fetch('/api/directions?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to)
-      + (mode ? '&mode=' + encodeURIComponent(mode) : ''));
-    if (!res.ok) return { error: 'Directions failed (HTTP ' + res.status + ').' };
-    return await res.json();
-  }
-
-  // Read tool: distance + travel time between two places (serverless).
-  async function getDirections(params) {
-    params = params || {};
-    const from = String(params.from || '').trim(), to = String(params.to || '').trim();
-    if (!from || !to) return 'Directions need both a "from" and a "to".';
-    try {
-      const d = await _directionsData(from, to, params.mode);
-      if (d.error) return d.error;
-      return d.summary || ('~' + d.distance_km + ' km, ~' + d.duration_min + ' min.');
-    } catch (e) { return 'Directions error: ' + e.message; }
-  }
-
-  // Read tool: fetch the readable text of a specific web page (serverless).
-  async function fetchUrl(url) {
-    url = (url || '').trim();
-    if (!url) return 'Fetch skipped: no URL provided.';
-    try {
-      const res = await fetch('/api/fetch-url?url=' + encodeURIComponent(url));
-      if (!res.ok) return 'Could not fetch the page (HTTP ' + res.status + ').';
-      const d = await res.json();
-      if (d.error) return 'Fetch error: ' + d.error;
-      return 'PAGE: ' + (d.title || url) + '\n' + (d.url || url) + '\n\n' + (d.content || '(no readable content)');
-    } catch (e) { return 'Fetch error: ' + e.message; }
-  }
-
-  // Read tool: the user's finances (net worth, accounts, subscriptions,
-  // recent activity) straight from the same localStorage finance.html uses.
-  function getFinances() {
-    try {
-      const cur = localStorage.getItem('nw_currency') || 'CHF';
-      const rd  = function(k){ try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (_) { return null; } };
-      const num = function(n){ return (Number(n) || 0).toLocaleString(); };
-      let block = 'FINANCES (base currency ' + cur + '):';
-      let net = 0;
-      [['bank','Bank accounts'],['stocks','Stocks'],['crypto','Crypto'],['other','Other assets']].forEach(function(pair) {
-        const items = rd('nw:' + pair[0]) || [];
-        const tot   = items.reduce(function(s, it){ return s + (Number(it.amount) || 0); }, 0);
-        net += tot;
-        block += '\n' + pair[1] + ': ' + num(tot) + ' ' + cur;
-        items.forEach(function(it){ block += '\n   - ' + it.name + ': ' + num(it.amount) + ' ' + cur; });
-      });
-      block += '\nNET WORTH (assets): ' + num(net) + ' ' + cur;
-
-      const subs = rd('subs') || [];
-      if (subs.length) {
-        let monthly = 0;
-        subs.forEach(function(it){ const a = Number(it.amount) || 0; monthly += it.period === 'yearly' ? a/12 : it.period === 'weekly' ? a*4.345 : a; });
-        block += '\nSUBSCRIPTIONS: ' + subs.length + ' active, ~' + Math.round(monthly).toLocaleString() + ' ' + cur + '/mo ('
-          + Math.round(monthly*12).toLocaleString() + ' ' + cur + '/yr)';
-        subs.forEach(function(it){ block += '\n   - ' + it.name + ': ' + num(it.amount) + ' ' + cur + '/' + (it.period || 'monthly') + (it.renewal ? ' (renews ' + it.renewal + ')' : ''); });
-      }
-
-      const act = rd('nw:activity') || [];
-      if (act.length) {
-        block += '\nRECENT ACTIVITY:';
-        act.slice().sort(function(a,b){ return b.ts - a.ts; }).slice(0, 10).forEach(function(e) {
-          const d = new Date(e.ts).toLocaleDateString('en-US', { month:'short', day:'numeric' });
-          block += '\n   ' + d + ' ' + (e.delta >= 0 ? '+' : '') + Math.round(e.delta).toLocaleString() + ' ' + cur + ' — ' + (e.name || e.cat);
-        });
-      }
-      return block;
-    } catch (e) { return 'Finance read error: ' + e.message; }
-  }
-
-  // ── Reminders (write tools) ──────────────────────────────────────
-  // Stored in localStorage 'axis_reminders'; push-init.js / service-worker.js
-  // fire the notification when due (checked roughly every minute the app is open).
-  const REMINDERS_KEY = 'axis_reminders';
-  function _fmtReminderWhen(at) {
-    return new Date(at).toLocaleString('en-US', { weekday:'short', month:'short', day:'numeric', hour:'numeric', minute:'2-digit' });
-  }
-  // Resolve add_reminder params to an absolute timestamp, or null if invalid.
-  function _resolveReminderAt(params) {
-    if (typeof params.in_minutes === 'number' && params.in_minutes > 0) {
-      return Date.now() + Math.round(params.in_minutes) * 60000;
-    }
-    if (params.time && /^\d{1,2}:\d{2}$/.test(params.time)) {
-      const parts = params.time.split(':');
-      const hh = parseInt(parts[0], 10), mm = parseInt(parts[1], 10);
-      let d;
-      if (params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)) d = new Date(params.date + 'T00:00:00');
-      else { d = new Date(); d.setHours(0, 0, 0, 0); }
-      d.setHours(hh, mm, 0, 0);
-      // No explicit date and the time already passed today → roll to tomorrow.
-      if (!params.date && d.getTime() <= Date.now()) d.setDate(d.getDate() + 1);
-      return d.getTime();
-    }
-    return null;
-  }
-
-  async function addReminder(params) {
-    params = params || {};
-    const text = String(params.text || '').trim();
-    if (!text) return 'A reminder needs some text.';
-    const at = _resolveReminderAt(params);
-    if (at == null) return 'A reminder needs a time ("HH:MM") or in_minutes.';
-    const when = _fmtReminderWhen(at);
-
-    // Prefer the user's Google Calendar — their phone then fires the alert
-    // natively, even when this app is closed. A short timed event with a
-    // popup reminder at the event time does the job.
-    const tok = await GoogleAuth.getToken();
-    if (tok) {
-      try {
-        const tz    = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const start = new Date(at);
-        const end   = new Date(at + 60000); // 1-min block
-        const body  = {
-          summary:   text,
-          start:     { dateTime: start.toISOString(), timeZone: tz },
-          end:       { dateTime: end.toISOString(),   timeZone: tz },
-          reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 0 }] },
-        };
-        const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events',
-          { method:'POST', headers:{ 'Authorization':'Bearer '+tok, 'Content-Type':'application/json' }, body: JSON.stringify(body) });
-        if (res.ok) return 'Reminder added to your calendar for ' + when + ': "' + text + '" — your phone will notify you.';
-        // else fall through to the local fallback
-      } catch (_) {}
-    }
-
-    // Fallback: local PWA reminder (fires only while the app is open).
-    const arr = lsGet(REMINDERS_KEY) || [];
-    arr.push({ id: 'rem_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7), text: text, at: at, fired: false });
-    lsSet(REMINDERS_KEY, arr);
-    const ungranted = (typeof Notification === 'undefined' || Notification.permission !== 'granted');
-    return 'Reminder set for ' + when + ' (in-app): "' + text + '".'
-      + (ungranted ? ' Turn on notifications so it can alert you.' : '')
-      + ' Connect Google Calendar for reliable phone alerts.';
-  }
-  function deleteReminder(params) {
-    const q = String((params && params.text) || '').trim().toLowerCase();
-    if (!q) return 'Which reminder? Provide its text.';
-    const arr = lsGet(REMINDERS_KEY) || [];
-    const kept = arr.filter(function(r){ return r.fired || (r.text || '').toLowerCase().indexOf(q) === -1; });
-    if (kept.length === arr.length) return 'No matching pending reminder found.';
-    lsSet(REMINDERS_KEY, kept);
-    return 'Reminder cancelled.';
-  }
-
-  // ── Supabase sync after tool actions ────────────────────────────
-  // Mirrors the exact scope + row key that health.html and index.html use,
-  // so the cloud value is up-to-date before any page reload can overwrite it.
-  function _collectScope(scopeFn) {
-    const out = {};
-    for (let i = 0; i < localStorage.length; i++) {
-      const k = localStorage.key(i);
-      if (!k || !scopeFn(k)) continue;
-      try { out[k] = JSON.parse(localStorage.getItem(k)); } catch(_) {}
-    }
-    return out;
-  }
-
-  async function syncAfterAction(tool) {
-    // health scope  (same row key health.html uses)
-    if (tool === 'set_water_target' || tool === 'set_calorie_target') {
-      const data = _collectScope(function(k){
-        return k === 'po_water_v1' || k.indexOf('calorie_') === 0 || k.indexOf('stack:') === 0;
-      });
-      await _supaUpsert('health', data);
-    }
-    // goals scope  (same as index.html)
-    if (tool === 'add_goal' || tool === 'update_goal' || tool === 'delete_goal' ||
-        tool === 'add_todo' || tool === 'update_todo' || tool === 'delete_todo') {
-      const data = _collectScope(function(k){
-        return k === 'axis_goals' || k === 'goal_streak_v1' || k.indexOf('goals:') === 0;
-      });
-      await _supaUpsert('goals', data);
-    }
-    // add_calendar_event / mark_email_read hit external APIs directly — no localStorage to sync
-  }
-
-  async function executeAction(tool, params) {
-    // Respect the user's tool permissions (Settings → Axis AI)
-    const _tp = getAIPrefs().tools;
-    const _cat = (tool === 'set_calorie_target' || tool === 'set_water_target') ? 'targets'
-      : (tool === 'add_calendar_event' || tool === 'delete_calendar_event' || tool === 'move_calendar_event') ? 'calendar'
-      : (tool === 'mark_email_read' || tool === 'send_email' || tool === 'create_draft') ? 'email'
-      : (tool === 'add_reminder' || tool === 'delete_reminder') ? 'reminders'
-      : 'goals';
-    if (!_tp[_cat]) return 'That action is turned off in Settings → Axis AI.';
-
-    let result;
-    if (tool === 'set_calorie_target') {
-      lsSet('calorie_targets_v1', Object.assign(lsGet('calorie_targets_v1')||{}, params));
-      result = 'Calorie target set to '+params.kcal+' kcal/day'+(params.protein?' · '+params.protein+'g protein':'')+(params.carbs?' · '+params.carbs+'g carbs':'')+(params.fat?' · '+params.fat+'g fat':'');
-    } else if (tool === 'set_water_target') {
-      const state = lsGet('po_water_v1') || {};
-      if (!state.settings) state.settings = {};
-      state.settings.targetMl = params.target_ml;
-      lsSet('po_water_v1', state);
-      result = 'Water target updated to ' + params.target_ml + ' ml/day';
-    } else if (tool === 'add_goal') {
-      const goals = lsGet('axis_goals') || [];
-      const start = params.start != null ? params.start : null;
-      const goal = {
-        id: _genId('g'),
-        category: params.category || 'custom',
-        title: params.title,
-        targetValue: params.target != null ? params.target : null,
-        unit: params.unit || '',
-        startValue: start,
-        currentValue: params.current != null ? params.current : start,
-        startDate: new Date().toISOString().slice(0, 10),
-        deadline: params.deadline || null,
-      };
-      goals.push(goal);
-      lsSet('axis_goals', goals);
-      result = 'Long-term goal "' + params.title + '" created';
-    } else if (tool === 'update_goal') {
-      const goals = lsGet('axis_goals') || [];
-      const idx   = goals.findIndex(function(g){ return g.id === params.id; });
-      if (idx===-1) return 'Goal not found: ' + params.id;
-      if (params.title    != null) goals[idx].title        = params.title;
-      if (params.target   != null) goals[idx].targetValue  = params.target;
-      if (params.unit     != null) goals[idx].unit         = params.unit;
-      if (params.start    != null) goals[idx].startValue   = params.start;
-      if (params.current  != null) goals[idx].currentValue = params.current;
-      if (params.deadline != null) goals[idx].deadline     = params.deadline;
-      lsSet('axis_goals', goals);
-      result = 'Goal "' + goals[idx].title + '" updated';
-    } else if (tool === 'delete_goal') {
-      const goals = lsGet('axis_goals') || [];
-      const idx   = goals.findIndex(function(g){ return g.id === params.id; });
-      if (idx===-1) return 'Goal not found: ' + params.id;
-      const title = goals[idx].title;
-      goals.splice(idx, 1);
-      lsSet('axis_goals', goals);
-      result = 'Goal "' + title + '" deleted';
-    } else if (tool === 'add_todo') {
-      if (!params.text) return 'No task text provided';
-      const dayKey = _resolveDayKey(params.when);
-      const todos = lsGet('goals:' + dayKey) || [];
-      todos.push({ text: params.text, done: false });
-      lsSet('goals:' + dayKey, todos);
-      result = 'Added "' + params.text + '" to ' + (params.when === 'tomorrow' ? 'tomorrow' : 'today');
-    } else if (tool === 'update_todo') {
-      const dayKey = _resolveDayKey(params.when);
-      const todos = lsGet('goals:' + dayKey) || [];
-      const q = String(params.text || '').toLowerCase();
-      let idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase() === q; });
-      if (idx === -1) idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase().indexOf(q) !== -1; });
-      if (idx === -1) return 'Task not found: ' + params.text;
-      if (params.new_text != null) todos[idx].text = params.new_text;
-      if (params.done != null) {
-        todos[idx].done = !!params.done;
-        todos[idx].doneAt = params.done ? new Date().toISOString() : undefined;
-      }
-      lsSet('goals:' + dayKey, todos);
-      result = 'Updated "' + todos[idx].text + '"' + (params.done != null ? (params.done ? ' — marked done' : ' — marked not done') : '');
-    } else if (tool === 'delete_todo') {
-      const dayKey = _resolveDayKey(params.when);
-      const todos = lsGet('goals:' + dayKey) || [];
-      const q = String(params.text || '').toLowerCase();
-      let idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase() === q; });
-      if (idx === -1) idx = todos.findIndex(function(t){ return (t.text || '').toLowerCase().indexOf(q) !== -1; });
-      if (idx === -1) return 'Task not found: ' + params.text;
-      const removed = todos[idx].text;
-      todos.splice(idx, 1);
-      lsSet('goals:' + dayKey, todos);
-      result = 'Deleted "' + removed + '"';
-    } else if (tool === 'add_calendar_event') {
-      return await addCalendarEvent(params);
-    } else if (tool === 'delete_calendar_event') {
-      return await deleteCalendarEvent(params);
-    } else if (tool === 'move_calendar_event') {
-      return await moveCalendarEvent(params);
-    } else if (tool === 'mark_email_read') {
-      return await markEmailRead(params.id);
-    } else if (tool === 'send_email') {
-      return await sendEmail(params);
-    } else if (tool === 'create_draft') {
-      return await createDraft(params);
-    } else if (tool === 'add_reminder') {
-      return addReminder(params);
-    } else if (tool === 'delete_reminder') {
-      return deleteReminder(params);
-    } else {
-      return 'Unknown tool: ' + tool;
-    }
-    // Push the affected scope to Supabase immediately so a page refresh can't
-    // overwrite the new value with a stale cloud snapshot.
-    await syncAfterAction(tool);
-    return result;
-  }
-
-  function parseActions(text) {
-    const actions = [];
-    const clean   = text.replace(/<action>([\s\S]*?)<\/action>/g, function(_, inner) {
-      try { const p = JSON.parse(inner.trim()); if (p.tool && p.params) actions.push(p); } catch(_) {}
-      return '';
-    }).replace(/\n{3,}/g, '\n\n').trim();
-    return { clean, actions };
-  }
-
-  // READ tools return data to the model for a follow-up turn (vs. write tools,
-  // which fire-and-forget with a confirmation card). `pref` gates each one on a
-  // Settings → Axis AI toggle (null = always available).
-  const READ_TOOLS = {
-    search_gmail: { pref: 'email',    run: function(p){ return searchGmail(p.query); } },
-    read_email:   { pref: 'email',    run: function(p){ return readEmail(p.id); } },
-    search_web:   { pref: 'web',      run: function(p){ return searchWeb(p.query); } },
-    fetch_url:    { pref: 'web',      run: function(p){ return fetchUrl(p.url); } },
-    get_calendar: { pref: 'calendar', run: function(p){ return getCalendar(p); } },
-    get_weather:  { pref: null,       run: function(p){ return getWeather(p.location); } },
-    get_finances: { pref: 'finances', run: function(p){ return getFinances(p); } },
-    find_place:     { pref: null,     run: function(p){ return findPlace(p); } },
-    get_directions: { pref: null,     run: function(p){ return getDirections(p); } }
-  };
-
-  // Tools that require an explicit user tap before running (destructive /
-  // outbound). Value is the prompt shown on the confirm card.
-  const CONFIRM_TOOLS = {
-    delete_calendar_event: 'Delete this calendar event?',
-    move_calendar_event:   'Reschedule this calendar event?',
-    send_email: function(p){ return 'Send email to ' + ((p && p.to) || '?') + ((p && p.subject) ? ' — "' + p.subject + '"' : '') + '?'; }
-  };
-
-  // ── Send message ─────────────────────────────────────────────────
-  async function sendMessage(text) {
-    text = text.trim();
-    if (!text) return;
-    const input   = document.getElementById('chatInput');
-    const sendBtn = document.getElementById('chatSend');
-    input.value   = '';
-    input.disabled = true; sendBtn.disabled = true;
-
-    // First visible user turn in this chat → eligible for AI auto-naming
-    const isFirstUserTurn = !chatHistory.some(function(m){ return m.role === 'user' && !m.hidden; });
-    const namingSessionId = activeSessionId;
-
-    const userMsg = { role: 'user', content: text, ts: Date.now() };
-    chatHistory.push(userMsg);
-    appendMsg('user', text);
-
-    const typingEl = appendTyping();
-    const thread   = document.getElementById('chatThread');
-    const { wrap: aiWrap, bubble: aiBubble, textNode: aiText } = buildMsgEl('ai', '');
-    aiBubble.classList.add('streaming');
-    let attached = false;
-
-    try {
-      const full = await streamClaude(chatHistory.slice(), function(accumulated) {
-        if (!attached) { typingEl.remove(); thread.appendChild(aiWrap); attached = true; }
-        aiText.textContent = accumulated;
-        scrollToBottom();
-      });
-      aiBubble.classList.remove('streaming');
-      if (!attached) { typingEl.remove(); appendMsg('ai', 'No response received.'); }
-      else {
-        const { clean, actions } = parseActions(full);
-        renderRich(aiText, clean);
-        const aiMsg = { role: 'assistant', content: full, ts: Date.now() };
-        chatHistory.push(aiMsg);
-        // Background memory extraction — don't await, non-blocking
-        extractMemories(text, clean || full, activeSessionId);
-        // Execute tool actions. search_gmail / search_web are READ tools: their
-        // results are fed back to the model for a follow-up turn rather than
-        // shown as a confirmation card.
-        const results = [];
-        const readBlocks = [];
-        const _toolPrefs = getAIPrefs().tools;
-        aiMsg.actions = results;
-        for (const action of actions) {
-          const rt = READ_TOOLS[action.tool];
-          if (rt) {
-            if (rt.pref && !_toolPrefs[rt.pref]) continue; // disabled in Settings → Axis AI
-            readBlocks.push(await rt.run(action.params || {}));
-            continue;
-          }
-          if (CONFIRM_TOOLS[action.tool]) {
-            // Don't execute yet — render a confirm card; persist the outcome on tap.
-            appendConfirmCard(action, function(r){ results.push(r); saveCurrentSession(); });
-            continue;
-          }
-          const r = await executeAction(action.tool, action.params);
-          results.push(r);
-          appendActionCard(r);
-        }
-
-        // Round-trip: feed search results back so the AI can answer from them.
-        if (readBlocks.length) {
-          // If the AI emitted only the search action with no prose, drop the
-          // empty first bubble — the follow-up turn carries the real answer.
-          // Mark it hidden so it stays in API context but doesn't re-render as
-          // an empty bubble after a reload.
-          if (!clean.trim()) { aiWrap.remove(); aiMsg.hidden = true; }
-          const toolMsg = {
-            role: 'user',
-            content: 'SEARCH RESULTS (reference only — read these and answer the user in plain prose; do not repeat raw lines or invent links or message IDs):\n\n'
-              + readBlocks.join('\n\n'),
-            hidden: true,
-            ts: Date.now()
-          };
-          chatHistory.push(toolMsg);
-
-          const typing2 = appendTyping();
-          const built2  = buildMsgEl('ai', '');
-          built2.bubble.classList.add('streaming');
-          let attached2 = false;
-          try {
-            const follow = await streamClaude(chatHistory.slice(), function(acc) {
-              if (!attached2) { typing2.remove(); thread.appendChild(built2.wrap); attached2 = true; }
-              built2.textNode.textContent = acc; scrollToBottom();
-            });
-            built2.bubble.classList.remove('streaming');
-            if (!attached2) { typing2.remove(); }
-            const parsed2 = parseActions(follow);
-            renderRich(built2.textNode, parsed2.clean);
-            chatHistory.push({ role: 'assistant', content: follow, ts: Date.now() });
-            // Run any write actions the follow-up emitted (skip read tools — no recursion).
-            for (const a2 of parsed2.actions) {
-              if (READ_TOOLS[a2.tool]) continue;
-              if (CONFIRM_TOOLS[a2.tool]) { appendConfirmCard(a2, function(){ saveCurrentSession(); }); continue; }
-              const r2 = await executeAction(a2.tool, a2.params);
-              appendActionCard(r2);
-            }
-          } catch (err2) {
-            built2.bubble.classList.remove('streaming');
-            typing2.remove();
-            if (attached2) built2.wrap.remove();
-            console.error('[chat] search follow-up error:', err2 && err2.message);
-          }
-        }
-
-        saveCurrentSession();
-        // Name the conversation from its first message (background, non-blocking)
-        if (isFirstUserTurn && namingSessionId !== BRIEFING_SESSION_ID) {
-          autoNameSession(namingSessionId, text);
-        }
-      }
+      body.innerHTML = escapeHtml(body.textContent);
     } catch (err) {
-      aiBubble.classList.remove('streaming');
-      typingEl.remove();
-      if (attached) aiWrap.remove();
-      chatHistory.pop();
-      const errMsg = (err && err.message) ? err.message : String(err);
-      console.error('[chat] sendMessage error:', errMsg);
-      appendMsg('ai', 'Error: ' + errMsg);
-    } finally {
-      input.disabled = false; sendBtn.disabled = false; input.focus();
+      body.classList.remove('thinking');
+      body.textContent = localBriefing();
     }
   }
+  function localBriefing() {
+    // Offline / error fallback — composed from local data, in voice.
+    const water = waterData(), supp = supplementData(), goals = goalData();
+    const bits = [];
+    bits.push('You are at ' + water.doneMl + 'ml of ' + water.targetMl + 'ml today, Sir — ' + water.pct + '%.');
+    if (supp.total) bits.push(supp.done + ' of ' + supp.total + ' supplements logged.');
+    bits.push(goals.total ? (goals.done + ' of ' + goals.total + ' goals done.') : 'No goals set yet.');
+    return bits.join(' ');
+  }
 
-  // ── Daily Briefing (persistent, one chat forever) ────────────────
-  // opts.silent → generate + persist without touching the DOM (used when the
-  // wake-time trigger fires while the user is in another conversation).
-  async function runTodaysBriefing(opts) {
-    const silent   = !!(opts && opts.silent);
-    const todayKey = todayStr();
-    const sessions = getSessions();
-    const session  = sessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-    if (session && Array.isArray(session.briefingDates) && session.briefingDates.includes(todayKey)) return;
-    if (_briefingRunning) return;
-    _briefingRunning = true;
-
-    const thread    = document.getElementById('chatThread');
-    const now       = new Date();
-    const dateLabel = now.toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
-
-    let sep = null, loadRow = null, bWrap = null, bBubble = null, bText = null, attached = false;
-
-    if (!silent) {
-      sep = document.createElement('div');
-      sep.className   = 'chat-date-sep';
-      sep.textContent = dateLabel;
-      thread.appendChild(sep);
-
-      loadRow = document.createElement('div');
-      loadRow.className = 'briefing-loading-row';
-      loadRow.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div><span>Preparing your briefing…</span>';
-      thread.appendChild(loadRow);
-      scrollToBottom();
-
-      const built = buildMsgEl('ai', '', { isBriefing: true });
-      bWrap = built.wrap; bBubble = built.bubble; bText = built.textNode;
-      bBubble.classList.add('streaming');
-    }
-
-    let briefingFull = '';
-
-    function attachBriefing() {
-      if (silent || attached) return;
-      attached = true;
-      if (loadRow && loadRow.parentNode) loadRow.remove();
-      if (bWrap && !bWrap.parentNode) thread.appendChild(bWrap);
-    }
-
-    const bp = getAIPrefs().briefing;
-    let briefingRequest = 'Daily briefing — ' + dateLabel + '. Format strictly as follows:\n'
-      + '1. Start with the date as a bold header: "' + dateLabel + '"\n';
-    let _bn = 2;
-    if (bp.goals)    briefingRequest += _bn++ + '. Long-term goals: brief current status and one concrete action for today to stay on track.\n';
-    if (bp.calendar) briefingRequest += _bn++ + '. Calendar: highlight any events today or tomorrow (skip if none).\n';
-    if (bp.calendar) briefingRequest += _bn++ + '. Leave-by: if your context contains a TRAVEL line, give it as a one-line leave-by reminder; otherwise skip this line entirely.\n';
-    if (bp.emails)   briefingRequest += _bn++ + '. Emails: flag up to two unread emails worth acting on (skip if none).\n';
-    if (bp.health)   briefingRequest += _bn++ + '. Health: one line on hydration/nutrition pace for the day (skip if no data).\n';
-    briefingRequest += 'Tone: concise, professional, butler. No exclamation marks, no motivational language. Under 120 words total.';
-
-    // Build API messages: existing session history + today's request
-    const existingMsgs = (session && session.messages ? session.messages : [])
-      .map(function(m){ return { role: m.role, content: m.content || '' }; })
-      .filter(function(m){ return m.content; });
-    const apiMessages = existingMsgs.concat([{ role: 'user', content: briefingRequest }]);
-
+  // ── Ask / response surface ─────────────────────────────────────────
+  let busy = false;
+  async function ask(text) {
+    text = String(text || '').trim();
+    if (!text || busy) return;
+    busy = true;
+    $('send').disabled = true;
+    const resp = $('response'), q = $('responseQ'), b = $('responseBody');
+    resp.classList.remove('empty');
+    q.textContent = text;
+    b.classList.add('thinking'); b.textContent = '';
+    b.innerHTML = '<span class="cursor"></span>';
+    scrollResponse();
     try {
-      briefingFull = await streamClaude(apiMessages, function(accumulated) {
-        if (silent) return;
-        attachBriefing();
-        bText.textContent = accumulated;
-        scrollToBottom();
+      let first = true;
+      await streamChat([{ role: 'user', content: text }], function (full) {
+        if (first) { b.classList.remove('thinking'); first = false; }
+        b.innerHTML = escapeHtml(full) + '<span class="cursor"></span>';
+        scrollResponse();
       });
-      if (!briefingFull) throw new Error('empty response from API');
-      if (!silent) {
-        bBubble.classList.remove('streaming');
-        attachBriefing();
-        renderRich(bText, briefingFull);
-        // Non-silent briefings only render inside the briefing thread → branchable
-        addBranchButton(bBubble, function(){ branchOffBriefing(briefingFull); });
-      }
-
-      // Persist hidden user msg + assistant briefing to the session
-      const hiddenUserMsg = { role: 'user', content: briefingRequest, hidden: true, ts: Date.now() };
-      const assistantMsg  = { role: 'assistant', content: briefingFull, briefing: true, ts: Date.now() };
-
-      const sessions2 = getSessions();
-      const s2 = sessions2.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-      if (s2) {
-        if (!Array.isArray(s2.briefingDates)) s2.briefingDates = [];
-        s2.briefingDates.push(todayKey);
-        if (!Array.isArray(s2.messages)) s2.messages = [];
-        s2.messages.push(hiddenUserMsg);
-        s2.messages.push(assistantMsg);
-        s2.preview = dateLabel + ' — ' + stripMd(briefingFull).slice(0, 50) + '…';
-        touch(s2);
-        saveSessions(sessions2);
-        pushSessions();
-      }
-
-      // Rebuild chatHistory from saved session if it's the one on screen
-      if (activeSessionId === BRIEFING_SESSION_ID) {
-        const s3 = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-        if (s3) {
-          chatHistory = (s3.messages || []).map(function(m){
-            return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
-          });
-        }
-      }
-
-      // Legacy cache for push-init
-      const obj = { date: todayKey, text: briefingFull };
-      try { localStorage.setItem('axis_briefing_cache', JSON.stringify(obj)); } catch(_) {}
-      _supaUpsert('briefing', obj);
-
+      b.innerHTML = escapeHtml(b.textContent);
     } catch (err) {
-      const errMsg = (err && err.message) ? err.message : String(err);
-      console.error('[briefing] error:', errMsg);
-      if (!silent) {
-        bBubble.classList.remove('streaming');
-        attachBriefing();
-        if (briefingFull) {
-          renderRich(bText, briefingFull + '\n\n[Briefing cut short — ' + errMsg + ']');
-        } else {
-          bText.textContent = 'Could not load briefing: ' + errMsg;
-        }
-        const retryBtn = document.createElement('button');
-        retryBtn.className   = 'briefing-retry-btn';
-        retryBtn.textContent = '⟳ Retry';
-        retryBtn.addEventListener('click', function() {
-          retryBtn.remove();
-          if (bWrap) bWrap.remove();
-          if (sep && sep.parentNode) sep.remove();
-          runTodaysBriefing();
-        });
-        bBubble.appendChild(retryBtn);
-      }
+      b.classList.remove('thinking');
+      b.textContent = 'I could not reach the network, Sir. ' + (err.message || '');
     } finally {
-      _briefingRunning = false;
-    }
-
-    renderSidebar();
-  }
-
-  // ── Wake-time scheduling ─────────────────────────────────────────
-  // The briefing should fire at the user's wake time, not merely on app open.
-  // (A PWA can't run while fully closed — this fires whenever the app is open
-  //  at/after wake time, and stays armed while it's open.)
-  function getWakeMinutes() {
-    const raw = lsRaw('dash_wake_time') || '08:00';
-    const m = /^(\d{1,2}):(\d{2})$/.exec(raw);
-    if (!m) return 8 * 60;
-    return (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60);
-  }
-  // Briefing fires at the user's chosen briefing time, falling back to wake time.
-  function getBriefingMinutes() {
-    const t = getAIPrefs().briefing.time;
-    const m = /^(\d{1,2}):(\d{2})$/.exec(t || '');
-    if (m) return (parseInt(m[1], 10) % 24) * 60 + (parseInt(m[2], 10) % 60);
-    return getWakeMinutes();
-  }
-  function briefingDoneToday() {
-    const s = getSessions().find(function(x){ return x.id === BRIEFING_SESSION_ID; });
-    return !!(s && Array.isArray(s.briefingDates) && s.briefingDates.includes(todayStr()));
-  }
-  function maybeRunBriefingNow() {
-    if (!getAIPrefs().briefing.enabled) return; // briefing disabled in Settings → Axis AI
-    if (briefingDoneToday()) return;
-    const now    = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    if (nowMin < getBriefingMinutes()) return; // before briefing time — keep waiting
-    const silent = activeSessionId !== BRIEFING_SESSION_ID;
-    runTodaysBriefing({ silent: silent });
-  }
-  function scheduleBriefing() {
-    clearTimeout(_briefingTimer);
-    if (!getAIPrefs().briefing.enabled) return; // disabled — nothing to schedule
-    const now    = new Date();
-    const nowMin = now.getHours() * 60 + now.getMinutes();
-    const wake   = getBriefingMinutes();
-    if (!briefingDoneToday() && nowMin < wake) {
-      const msUntil = ((wake - nowMin) * 60 - now.getSeconds()) * 1000;
-      _briefingTimer = setTimeout(maybeRunBriefingNow, Math.max(1000, msUntil));
-    }
-    // Safety net: re-check every 5 min (covers crossing wake time with the tab
-    // left open, clock drift, and day rollover).
-    if (!_briefingInterval) {
-      _briefingInterval = setInterval(function() {
-        maybeRunBriefingNow();
-        if (!briefingDoneToday()) scheduleBriefing();
-      }, 5 * 60 * 1000);
+      busy = false;
+      $('send').disabled = $('input').value.trim() === '';
     }
   }
 
-  // ── New chat (regular — no briefing) ─────────────────────────────
-  function newChat() {
-    saveCurrentSession();
-    const id = genSessionId();
-    activeSessionId = id;
-    localStorage.setItem(ACTIVE_KEY, id);
-    chatHistory = [];
-    upsertSession({ id, createdAt: new Date().toISOString(), messages: [], preview: 'New conversation' });
-    document.getElementById('chatThread').innerHTML = '';
-    closeSidebar();
-    renderSidebar();
+  function escapeHtml(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
+  function scrollDown() { const s = $('surface'); s.scrollTop = s.scrollHeight; }
+  function scrollResponse() { $('response').scrollIntoView({ block: 'start', behavior: 'smooth' }); }
 
-  // ── Load session ─────────────────────────────────────────────────
-  async function loadSession(id) {
-    saveCurrentSession();
-    activeSessionId = id;
-    localStorage.setItem(ACTIVE_KEY, id);
-    const session = getSessions().find(function(s){ return s.id === id; });
-    if (!session) return;
-    chatHistory = (session.messages || []).map(function(m){
-      return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
+  // ── Input wiring ───────────────────────────────────────────────────
+  const input = $('input'), send = $('send');
+  input.addEventListener('input', function () { send.disabled = input.value.trim() === '' || busy; });
+  function submit() { const v = input.value; input.value = ''; send.disabled = true; ask(v); }
+  send.addEventListener('click', submit);
+  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+
+  // ── Voice (Web Speech API) ─────────────────────────────────────────
+  (function () {
+    const mic = $('mic');
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { mic.style.display = 'none'; return; }
+    const rec = new SR();
+    rec.lang = 'en-US'; rec.interimResults = true; rec.continuous = false;
+    let listening = false, finalText = '';
+    rec.onresult = function (e) {
+      let interim = '';
+      finalText = '';
+      for (let i = 0; i < e.results.length; i++) {
+        const t = e.results[i][0].transcript;
+        if (e.results[i].isFinal) finalText += t; else interim += t;
+      }
+      input.value = (finalText + interim).trim();
+      send.disabled = input.value.trim() === '';
+    };
+    rec.onend = function () {
+      listening = false; mic.classList.remove('listening');
+      if (input.value.trim()) submit();
+    };
+    rec.onerror = function () { listening = false; mic.classList.remove('listening'); };
+    mic.addEventListener('click', function () {
+      if (listening) { rec.stop(); return; }
+      try { input.value = ''; finalText = ''; rec.start(); listening = true; mic.classList.add('listening'); } catch (_) {}
     });
-    renderThread(session.messages || []);
-    closeSidebar();
-    renderSidebar();
-    if (id === BRIEFING_SESSION_ID) {
-      await runTodaysBriefing();
-    }
-  }
+  })();
 
-  // ── Rename / delete sessions ─────────────────────────────────────
-  function renameSession(id) {
-    const sessions = getSessions();
-    const s = sessions.find(function(x){ return x.id === id; });
-    if (!s) return;
-    const current = s.title || stripMd(s.preview) || '';
-    const name = window.prompt('Rename conversation', current);
-    if (name === null) return;
-    const t = name.trim();
-    if (t) { s.title = t; s.autoTitled = true; } else { delete s.title; }
-    touch(s);
-    saveSessions(sessions);
-    pushSessions();
-    renderSidebar();
-  }
+  // ── Future George flow ─────────────────────────────────────────────
+  const fgOverlay = $('fgOverlay');
+  let fgStep = 0, fgDraft = null;
 
-  function deleteSession(id) {
-    if (id === BRIEFING_SESSION_ID) return; // briefing is permanent
-    if (!window.confirm('Delete this conversation? This cannot be undone.')) return;
-    const remaining = getSessions().filter(function(x){ return x.id !== id; });
-    saveSessions(remaining);
-    const tomb = getDeleted(); tomb[id] = Date.now(); saveDeleted(tomb); // tombstone so it stays deleted across devices
-    pushSessions();
-    if (activeSessionId === id) {
-      activeSessionId = BRIEFING_SESSION_ID;
-      localStorage.setItem(ACTIVE_KEY, BRIEFING_SESSION_ID);
-      const bs = getSessions().find(function(x){ return x.id === BRIEFING_SESSION_ID; });
-      const msgs = (bs && bs.messages) ? bs.messages : [];
-      chatHistory = msgs.map(function(m){
-        return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
-      });
-      renderThread(msgs);
-    }
-    renderSidebar();
-  }
-
-  // ── Sidebar ──────────────────────────────────────────────────────
-  const ICON_KEBAB = '<svg width="4" height="16" viewBox="0 0 4 16" fill="currentColor"><circle cx="2" cy="2" r="1.9"></circle><circle cx="2" cy="8" r="1.9"></circle><circle cx="2" cy="14" r="1.9"></circle></svg>';
-
-  // ── Row options popover ──────────────────────────────────────────
-  let _rowMenuId = null;
-  function openRowMenu(btn, sessionId) {
-    const menu = document.getElementById('rowMenu');
-    _rowMenuId = sessionId;
-    menu.classList.add('open');           // display first so we can measure
-    const r  = btn.getBoundingClientRect();
-    const mw = menu.offsetWidth;
-    const mh = menu.offsetHeight;
-    let left = r.right - mw;
-    if (left < 8) left = 8;
-    let top = r.bottom + 6;
-    if (top + mh > window.innerHeight - 8) top = r.top - mh - 6; // flip up near bottom
-    menu.style.left = left + 'px';
-    menu.style.top  = top + 'px';
-  }
-  function closeRowMenu() {
-    const menu = document.getElementById('rowMenu');
-    if (menu) menu.classList.remove('open');
-    _rowMenuId = null;
-  }
-
-  function renderSidebar() {
-    const list = document.getElementById('sidebarList');
-    list.innerHTML = '';
-    const allSessions = getSessions();
-
-    // Briefing session pinned at top
-    const briefingSession = allSessions.find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-    if (briefingSession) {
-      const row = document.createElement('div');
-      row.className = 'sidebar-row sidebar-briefing-row' + (activeSessionId === BRIEFING_SESSION_ID ? ' active' : '');
-      const main = document.createElement('button');
-      main.className = 'sidebar-row-main';
-      main.innerHTML = '<span class="sidebar-row-date">⚡ Daily Briefing</span>'
-        + '<span class="sidebar-row-preview">' + escHtml(stripMd(briefingSession.preview) || 'Daily Briefing') + '</span>';
-      main.addEventListener('click', function(){ loadSession(BRIEFING_SESSION_ID); });
-      row.appendChild(main);
-      list.appendChild(row);
-    }
-
-    // Regular sessions sorted newest first
-    const regular = allSessions
-      .filter(function(s){ return s.id !== BRIEFING_SESSION_ID; })
-      .slice()
-      .sort(function(a, b){ return b.createdAt.localeCompare(a.createdAt); });
-
-    if (!regular.length && !briefingSession) {
-      list.innerHTML = '<p class="sidebar-empty">No past conversations</p>';
-      return;
-    }
-
-    regular.forEach(function(s) {
-      const row = document.createElement('div');
-      row.className = 'sidebar-row' + (s.id === activeSessionId ? ' active' : '');
-
-      const main = document.createElement('button');
-      main.className = 'sidebar-row-main';
-      const d = new Date(s.createdAt);
-      const dateLabel = d.toLocaleDateString('en-US', {
-        month: 'short', day: 'numeric',
-        year: d.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
-      });
-      const display = s.title ? s.title : (stripMd(s.preview) || 'New conversation');
-      main.innerHTML = '<span class="sidebar-row-date">' + escHtml(dateLabel) + '</span>'
-        + '<span class="sidebar-row-preview">' + escHtml(display) + '</span>';
-      main.addEventListener('click', function(){ loadSession(s.id); });
-      row.appendChild(main);
-
-      const acts = document.createElement('div');
-      acts.className = 'sidebar-row-actions';
-      const menuBtn = document.createElement('button');
-      menuBtn.className = 'sidebar-row-menu-btn';
-      menuBtn.setAttribute('aria-label', 'Conversation options');
-      menuBtn.innerHTML = ICON_KEBAB;
-      menuBtn.addEventListener('click', function(e){
-        e.stopPropagation();
-        if (_rowMenuId === s.id) { closeRowMenu(); return; }
-        openRowMenu(menuBtn, s.id);
-      });
-      acts.appendChild(menuBtn);
-      row.appendChild(acts);
-
-      list.appendChild(row);
+  function fgWorkingCopy() {
+    const base = (fgProfile && typeof fgProfile === 'object') ? JSON.parse(JSON.stringify(fgProfile)) : {};
+    FG_DIMENSIONS.forEach(function (d) {
+      if (!base[d.key] || typeof base[d.key] !== 'object') base[d.key] = { summary: '', goals: [] };
+      if (typeof base[d.key].summary !== 'string') base[d.key].summary = '';
+      if (!Array.isArray(base[d.key].goals)) base[d.key].goals = [];
     });
+    return base;
   }
-
-  function openSidebar() {
-    renderSidebar();
-    document.getElementById('chatSidebar').classList.add('open');
-    document.getElementById('sidebarOverlay').classList.add('open');
+  function openFG() {
+    fgDraft = fgWorkingCopy();
+    fgStep = 0;
+    fgOverlay.classList.add('open');
+    fgOverlay.setAttribute('aria-hidden', 'false');
+    renderFGStep();
   }
-  function closeSidebar() {
-    closeRowMenu();
-    document.getElementById('chatSidebar').classList.remove('open');
-    document.getElementById('sidebarOverlay').classList.remove('open');
+  function closeFG() {
+    fgOverlay.classList.remove('open');
+    fgOverlay.setAttribute('aria-hidden', 'true');
+    $('fgSaving').textContent = '';
   }
-
-  // ── Boot ─────────────────────────────────────────────────────────
-  async function boot() {
-    document.getElementById('aiGreeting').textContent = getGreeting();
-
-    await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
-    // Travel plan depends on calendar events being loaded first; ready it
-    // before any briefing renders.
-    await computeTravelPlan();
-
-    // Sync memories from Supabase (cross-device)
-    const remoteMemories = await _supaFetch('axis_memory');
-    if (Array.isArray(remoteMemories) && remoteMemories.length) {
-      const local = getMemories();
-      const merged = remoteMemories.concat(local.filter(function(rm) {
-        return !remoteMemories.some(function(r) { return r.fact === rm.fact; });
-      }));
-      merged.sort(function(a, b) { return b.timestamp - a.timestamp; });
-      lsSet(MEMORY_KEY, merged.slice(0, MEMORY_MAX));
-    }
-
-    // Sync sessions from Supabase (cross-device, conflict-free union merge)
-    const remoteSessions = await _supaFetch('chat_sessions');
-    if (remoteSessions) {
-      _sessApplying = true;
-      try { mergeSessionState(remoteSessions); } finally { _sessApplying = false; }
-    }
-    // Live updates from other devices
-    subscribeSessions();
-
-    // Ensure the permanent briefing session exists
-    ensureBriefingSessionExists();
-
-    // Restore last active session; default to briefing session
-    let activeId = localStorage.getItem(ACTIVE_KEY);
-    let session  = activeId ? getSessions().find(function(s){ return s.id === activeId; }) : null;
-    if (!session) {
-      activeId = BRIEFING_SESSION_ID;
-      session  = getSessions().find(function(s){ return s.id === BRIEFING_SESSION_ID; });
-    }
-    activeSessionId = activeId;
-    localStorage.setItem(ACTIVE_KEY, activeId);
-
-    if (session && session.messages && session.messages.length) {
-      chatHistory = session.messages.map(function(m){
-        return { role: m.role, content: m.content, hidden: m.hidden, briefing: m.briefing, ts: m.ts };
-      });
-      renderThread(session.messages);
-    }
-
-    // Daily briefing: only run at/after the user's briefing time — not merely
-    // on open. If the app is opened earlier, it's scheduled to fire then.
-    const nowMin = new Date().getHours() * 60 + new Date().getMinutes();
-    if (getAIPrefs().briefing.enabled && !briefingDoneToday() && nowMin >= getBriefingMinutes()) {
-      const silent = activeSessionId !== BRIEFING_SESSION_ID;
-      await runTodaysBriefing({ silent: silent });
-    }
-    scheduleBriefing();
-    renderSidebar();
-
-    // Wire UI
-    const input   = document.getElementById('chatInput');
-    const sendBtn = document.getElementById('chatSend');
-    sendBtn.addEventListener('click', function(){ sendMessage(input.value); });
-    input.addEventListener('keydown', function(e){
-      if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(input.value); }
-    });
-    document.getElementById('aiHomeBtn').addEventListener('click', function() {
-      let url = 'index.html';
-      try { url = sessionStorage.getItem('axisReturnUrl') || 'index.html'; } catch (_) {}
-      window.location.href = url;
-    });
-    document.getElementById('sidebarToggle').addEventListener('click', openSidebar);
-    document.getElementById('sidebarClose').addEventListener('click',  closeSidebar);
-
-    // Row options popover: item actions, outside-click + scroll dismissal
-    document.getElementById('rowMenu').addEventListener('click', function(e){
-      const item = e.target.closest('.row-menu-item');
-      if (!item) return;
-      const id = _rowMenuId;
-      closeRowMenu();
-      if (!id) return;
-      if (item.dataset.act === 'rename')      renameSession(id);
-      else if (item.dataset.act === 'delete') deleteSession(id);
-    });
-    document.addEventListener('click', function(e){
-      if (!_rowMenuId) return;
-      if (e.target.closest('#rowMenu') || e.target.closest('.sidebar-row-menu-btn')) return;
-      closeRowMenu();
-    });
-    document.getElementById('sidebarList').addEventListener('scroll', closeRowMenu, { passive: true });
-    window.addEventListener('resize', closeRowMenu);
-    document.getElementById('sidebarOverlay').addEventListener('click', closeSidebar);
-    document.getElementById('sidebarNewBtn').addEventListener('click', newChat);
-    document.getElementById('memoryBtn').addEventListener('click', openMemoryPanel);
-    document.getElementById('memoryPanelClose').addEventListener('click', closeMemoryPanel);
-    document.getElementById('memoryOverlay').addEventListener('click', closeMemoryPanel);
-    document.getElementById('memoryClearBtn').addEventListener('click', function() {
-      if (confirm('Clear all memories? This cannot be undone.')) clearAllMemories();
-    });
+  function renderProgress() {
+    $('fgProgress').innerHTML = FG_DIMENSIONS.map(function (_, i) {
+      const cls = i < fgStep ? 'done' : i === fgStep ? 'active' : '';
+      return '<span class="seg ' + cls + '"></span>';
+    }).join('');
   }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', boot, { once: true });
-  } else {
-    boot();
+  function renderFGStep() {
+    const d = FG_DIMENSIONS[fgStep];
+    renderProgress();
+    $('fgDomain').textContent = (fgStep + 1) + ' / ' + FG_DIMENSIONS.length + ' · ' + d.label;
+    $('fgQuestion').textContent = d.question;
+    $('fgHint').textContent = d.hint;
+    const ans = $('fgAnswer');
+    ans.value = (fgDraft[d.key] && fgDraft[d.key].summary) || '';
+    $('fgBack').style.visibility = fgStep === 0 ? 'hidden' : 'visible';
+    $('fgNext').textContent = fgStep === FG_DIMENSIONS.length - 1 ? 'Save' : 'Next';
+    $('fgSaving').textContent = '';
+    setTimeout(function () { ans.focus(); }, 60);
   }
+  function captureFG() {
+    const d = FG_DIMENSIONS[fgStep];
+    fgDraft[d.key].summary = $('fgAnswer').value.trim();
+  }
+  $('fgOpen').addEventListener('click', openFG);
+  $('fgClose').addEventListener('click', closeFG);
+  $('fgBack').addEventListener('click', function () { captureFG(); if (fgStep > 0) { fgStep--; renderFGStep(); } });
+  $('fgNext').addEventListener('click', async function () {
+    captureFG();
+    if (fgStep < FG_DIMENSIONS.length - 1) { fgStep++; renderFGStep(); return; }
+    // Final — save
+    const btn = this; btn.disabled = true;
+    $('fgSaving').textContent = 'Saving to Axis…';
+    const ok = await saveFG(fgDraft);
+    btn.disabled = false;
+    $('fgSaving').textContent = ok ? 'Saved, Sir.' : 'Saved locally — sync will retry.';
+    renderChips();
+    setTimeout(function () {
+      closeFG();
+      // Re-brief now that the profile changed.
+      runBriefing();
+    }, 700);
+  });
+
+  // ── React to data changes from other tabs/pages ────────────────────
+  window.addEventListener('storage', function (e) {
+    if (!e.key) return;
+    if (e.key === 'po_water_v1' || e.key.indexOf('stack:') === 0 || e.key.indexOf('goals:') === 0 || e.key === 'goal_streak_v1') {
+      renderChips();
+    }
+  });
+
+  // ── Boot ───────────────────────────────────────────────────────────
+  renderClock(); renderGreeting(); renderChips();
+  setInterval(renderClock, 30000);
+  (async function () {
+    await loadFG();
+    renderChips();
+    runBriefing();
+  })();
 })();
 </script>
 </body>
