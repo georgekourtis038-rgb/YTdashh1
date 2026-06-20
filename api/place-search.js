@@ -103,7 +103,7 @@ module.exports = async function handler(req, res) {
   if (!q) return res.status(400).json({ error: 'Missing query parameter "q"' });
 
   const query = near ? (q + ', ' + near) : q;
-  const key   = process.env.GOOGLE_PLACES_API_KEY;
+  const key   = process.env.GOOGLE_MAPS_API_KEY || process.env.GOOGLE_PLACES_API_KEY;
 
   try {
     if (key) {
