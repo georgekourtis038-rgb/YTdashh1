@@ -2315,8 +2315,17 @@ Notes:
       if (!results.length) return 'No places found for "' + (d.query || q) + '".';
       let block = 'Places for "' + (d.query || q) + '":';
       results.forEach(function(p, i) {
-        block += '\n' + (i + 1) + '. ' + (p.name || p.address) + (p.category ? ' (' + p.category + ')' : '')
-          + (p.address ? '\n   ' + p.address : '');
+        const meta = [];
+        if (p.rating)   meta.push('★' + p.rating + (p.ratingCount ? ' (' + p.ratingCount + ')' : ''));
+        if (p.priceLevel) meta.push(p.priceLevel);
+        if (typeof p.openNow === 'boolean') meta.push(p.openNow ? 'open now' : 'closed now');
+        if (p.status)   meta.push(p.status);
+        if (p.category) meta.push(p.category);
+        block += '\n' + (i + 1) + '. ' + (p.name || p.address) + (meta.length ? ' — ' + meta.join(' · ') : '');
+        if (p.address)    block += '\n   ' + p.address;
+        if (p.hoursToday) block += '\n   ' + p.hoursToday;
+        if (p.phone)      block += '\n   ' + p.phone;
+        if (p.website)    block += '\n   ' + p.website;
       });
       return block;
     } catch (e) { return 'Place search error: ' + e.message; }
