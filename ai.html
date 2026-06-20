@@ -1039,20 +1039,47 @@ body {
         const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + tok } });
         if (!res.ok) return [];
         return ((await res.json()).items || []).map(function(ev) {
-          let timeLabel = 'All day', duration = '';
+          let timeLabel = 'All day', duration = '', startMs = null;
           if (ev.start && ev.start.dateTime) {
             const d = new Date(ev.start.dateTime);
             timeLabel = d.toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+            startMs   = d.getTime();
           }
           if (ev.start && ev.start.dateTime && ev.end && ev.end.dateTime) {
             const mins = Math.round((new Date(ev.end.dateTime) - new Date(ev.start.dateTime)) / 60000);
             duration   = mins >= 60 ? (mins/60).toFixed(mins%60===0?0:1)+'h' : mins+'min';
           }
-          return { time: timeLabel, title: ev.summary || '(No title)', duration };
+          return { time: timeLabel, title: ev.summary || '(No title)', duration: duration, location: ev.location || '', startMs: startMs };
         });
       }
       const [todayEvts, tomEvts] = await Promise.all([fetchWindow(todayStart, todayEnd), fetchWindow(tomStart, tomEnd)]);
       _calendarEvents = { today: todayEvts, tomorrow: tomEvts };
+    } catch (_) {}
+  }
+
+  // ── Travel plan — "leave by" for the next located event today ─────
+  // Pre-computed at load (the briefing can't run tools live), using the
+  // user's home/base address as origin + traffic-aware drive time.
+  let _travelPlan = null; // { line }
+  async function computeTravelPlan() {
+    _travelPlan = null;
+    let home = '';
+    try { home = (localStorage.getItem('dash_home_location') || '').trim(); } catch (_) {}
+    if (!home) return;
+    const now = Date.now();
+    const upcoming = (_calendarEvents.today || [])
+      .filter(function(e){ return e.location && e.startMs && e.startMs > now; })
+      .sort(function(a, b){ return a.startMs - b.startMs; });
+    const ev = upcoming[0];
+    if (!ev) return;
+    try {
+      const d = await _directionsData(home, ev.location, 'driving');
+      if (!d || d.error || d.duration_min == null) return;
+      const buffer  = 5;
+      const leaveMs = ev.startMs - (d.duration_min + buffer) * 60000;
+      const leaveStr = new Date(leaveMs).toLocaleTimeString('en-US', { hour:'numeric', minute:'2-digit', hour12:true });
+      _travelPlan = { line: 'Leave by ' + leaveStr + ' for your ' + ev.time + ' "' + ev.title + '" at ' + ev.location
+        + ' — about ' + d.duration_min + ' min drive in current traffic (includes a 5-min buffer).' };
     } catch (_) {}
   }
 
@@ -1198,9 +1225,12 @@ You have read and write access to all Axis data. When George asks you to log som
     if (prefs.context.calendar && (_calendarEvents.today.length || _calendarEvents.tomorrow.length)) {
       p += '\nCALENDAR:';
       p += _calendarEvents.today.length ? '\n  Today:' : '\n  Today: nothing scheduled';
-      _calendarEvents.today.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
+      _calendarEvents.today.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':'')+(ev.location?' @ '+ev.location:''); });
       p += _calendarEvents.tomorrow.length ? '\n  Tomorrow:' : '\n  Tomorrow: nothing scheduled';
-      _calendarEvents.tomorrow.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':''); });
+      _calendarEvents.tomorrow.forEach(function(ev){ p += '\n    '+ev.time+' — '+ev.title+(ev.duration?' ('+ev.duration+')':'')+(ev.location?' @ '+ev.location:''); });
+    }
+    if (prefs.context.calendar && _travelPlan && _travelPlan.line) {
+      p += '\nTRAVEL: ' + _travelPlan.line;
     }
     if (prefs.context.email && _cachedGmailEmails.length) {
       p += '\nUNREAD EMAILS:';
@@ -2331,16 +2361,22 @@ Notes:
     } catch (e) { return 'Place search error: ' + e.message; }
   }
 
+  // Shared directions fetch — returns parsed JSON ({ distance_km, duration_min,
+  // summary } or { error }). Used by the get_directions tool and the travel plan.
+  async function _directionsData(from, to, mode) {
+    const res = await fetch('/api/directions?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to)
+      + (mode ? '&mode=' + encodeURIComponent(mode) : ''));
+    if (!res.ok) return { error: 'Directions failed (HTTP ' + res.status + ').' };
+    return await res.json();
+  }
+
   // Read tool: distance + travel time between two places (serverless).
   async function getDirections(params) {
     params = params || {};
     const from = String(params.from || '').trim(), to = String(params.to || '').trim();
     if (!from || !to) return 'Directions need both a "from" and a "to".';
     try {
-      const res = await fetch('/api/directions?from=' + encodeURIComponent(from) + '&to=' + encodeURIComponent(to)
-        + (params.mode ? '&mode=' + encodeURIComponent(params.mode) : ''));
-      if (!res.ok) return 'Directions failed (HTTP ' + res.status + ').';
-      const d = await res.json();
+      const d = await _directionsData(from, to, params.mode);
       if (d.error) return d.error;
       return d.summary || ('~' + d.distance_km + ' km, ~' + d.duration_min + ' min.');
     } catch (e) { return 'Directions error: ' + e.message; }
@@ -2827,6 +2863,7 @@ Notes:
     let _bn = 2;
     if (bp.goals)    briefingRequest += _bn++ + '. Long-term goals: brief current status and one concrete action for today to stay on track.\n';
     if (bp.calendar) briefingRequest += _bn++ + '. Calendar: highlight any events today or tomorrow (skip if none).\n';
+    if (bp.calendar) briefingRequest += _bn++ + '. Leave-by: if your context contains a TRAVEL line, give it as a one-line leave-by reminder; otherwise skip this line entirely.\n';
     if (bp.emails)   briefingRequest += _bn++ + '. Emails: flag up to two unread emails worth acting on (skip if none).\n';
     if (bp.health)   briefingRequest += _bn++ + '. Health: one line on hydration/nutrition pace for the day (skip if no data).\n';
     briefingRequest += 'Tone: concise, professional, butler. No exclamation marks, no motivational language. Under 120 words total.';
@@ -3138,6 +3175,9 @@ Notes:
     document.getElementById('aiGreeting').textContent = getGreeting();
 
     await Promise.all([fetchCalendarEvents(), fetchGmailEmails()]);
+    // Travel plan depends on calendar events being loaded first; ready it
+    // before any briefing renders.
+    await computeTravelPlan();
 
     // Sync memories from Supabase (cross-device)
     const remoteMemories = await _supaFetch('axis_memory');

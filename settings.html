@@ -539,6 +539,13 @@ html, body {
           </div>
           <input class="setting-input setting-input-time" id="settingSleep" type="time" value="23:00">
         </div>
+        <div class="setting-row col">
+          <div class="setting-row-left">
+            <div class="setting-row-label">Home / base address</div>
+            <div class="setting-row-sub">Used for travel times &amp; "leave by" reminders</div>
+          </div>
+          <input class="setting-input" id="settingHome" type="text" placeholder="e.g. 12 Main St, Oakville" autocomplete="off">
+        </div>
       </div>
     </div>
 
@@ -1061,6 +1068,7 @@ html, body {
     document.getElementById('settingHeight').value = lsRaw('dash_height') || '175';
     document.getElementById('settingWake').value   = lsRaw('dash_wake_time')  || '08:00';
     document.getElementById('settingSleep').value  = lsRaw('dash_sleep_time') || '23:00';
+    document.getElementById('settingHome').value   = lsRaw('dash_home_location') || '';
 
     const sex = lsRaw('dash_sex') || 'male';
     document.querySelectorAll('.sex-btn').forEach(b => b.classList.toggle('active', b.dataset.sex === sex));
@@ -1103,6 +1111,7 @@ html, body {
     const sleep = document.getElementById('settingSleep').value;
     lsRawSet('dash_wake_time',  wake);
     lsRawSet('dash_sleep_time', sleep);
+    lsRawSet('dash_home_location', document.getElementById('settingHome').value.trim());
 
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_wake_time',  newValue: wake }));
     window.dispatchEvent(new StorageEvent('storage', { key: 'dash_sleep_time', newValue: sleep }));
@@ -1156,7 +1165,7 @@ html, body {
   const ST_URL     = 'https://oyylbiscxnymnmetyrho.supabase.co';
   const ST_ANONKEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95eWxiaXNjeG55bW5tZXR5cmhvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAxMzQ1MDgsImV4cCI6MjA5NTcxMDUwOH0.3xxHcp3Z4vJWHEGFV_iUW_YeJ2gdUPqYiNAQkYnR-qU';
   const ST_ROW_KEY = 'settings';
-  const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex', 'axis_ai_prefs'];
+  const ST_LS_KEYS = ['dash_wake_time', 'dash_sleep_time', 'dash_name', 'dash_age', 'dash_height', 'dash_sex', 'dash_home_location', 'axis_ai_prefs'];
 
   let stSupa = null, stPushTimer = null, stLastJson = null, stSuppressSync = false;
   const _stOrigSet = window.__lsOrigSet || localStorage.setItem.bind(localStorage);
